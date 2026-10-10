@@ -1,0 +1,6 @@
+[
+  { "id": "han_enfeoffed", "scope": "state", "duration": -1, "stack": "unique", "on_turn": "influence_tick", "params": { "amount": 1 } },
+  { "id": "farm_expanding", "scope": "node", "duration": 3, "stack": "unique", "on_remove": "farm_expand_finish", "params": { "amount": 1000 } },
+  { "id": "sacked", "scope": "node", "duration": 12, "stack": "refresh", "params": { "farm_mult": 0.5 } },
+  { "id": "season_winter", "scope": "global", "duration": -1, "stack": "unique", "on_turn": "season_winter" }
+]

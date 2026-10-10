@@ -1,0 +1,1734 @@
+{
+ "id": "mvp_119bc",
+ "start": {
+  "year": -119,
+  "month": 1
+ },
+ "max_months": 240,
+ "player_faction": "han",
+ "factions": [
+  {
+   "id": "han",
+   "name": "汉",
+   "kind": "major",
+   "money": 3000
+  },
+  {
+   "id": "xiongnu",
+   "name": "匈奴",
+   "kind": "major",
+   "money": 1000
+  },
+  {
+   "id": "dong_qiemi",
+   "name": "东且弥",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "cheshi_qian",
+   "name": "车师前",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "cheshi_hou",
+   "name": "车师后",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "yan_qi",
+   "name": "焉耆",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "wei_li",
+   "name": "尉犁",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "wu_lei",
+   "name": "乌垒",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "lun_tai",
+   "name": "轮台",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "qiu_ci",
+   "name": "龟兹",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "gu_mo",
+   "name": "姑墨",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "wen_su",
+   "name": "温宿",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "shu_le",
+   "name": "疏勒",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "sha_che",
+   "name": "莎车",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "yu_tian",
+   "name": "于阗",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "jing_jue",
+   "name": "精绝",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "qie_mo",
+   "name": "且末",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "lou_lan",
+   "name": "楼兰",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "juan_du",
+   "name": "捐毒",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "xiu_xun",
+   "name": "休循",
+   "kind": "citystate",
+   "counts_for_victory": true
+  },
+  {
+   "id": "dawan",
+   "name": "大宛",
+   "kind": "great"
+  },
+  {
+   "id": "kangju",
+   "name": "康居",
+   "kind": "great"
+  },
+  {
+   "id": "dayuezhi",
+   "name": "大月氏",
+   "kind": "great"
+  },
+  {
+   "id": "jibin",
+   "name": "罽宾",
+   "kind": "great"
+  },
+  {
+   "id": "wusun",
+   "name": "乌孙",
+   "kind": "great"
+  }
+ ],
+ "nodes": [
+  {
+   "id": "chang_an",
+   "name": "长安",
+   "type": "source",
+   "faction": "han",
+   "pop": 0,
+   "pos": [
+    835,
+    372
+   ],
+   "walls": 3,
+   "farm_cap": 0,
+   "pasture_cap": 0,
+   "farm_dev": 0.0,
+   "grain": 100000000,
+   "horses": 0,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "long_xi",
+   "name": "陇西",
+   "type": "city",
+   "faction": "han",
+   "pop": 30000,
+   "pos": [
+    795,
+    368
+   ],
+   "walls": 2,
+   "farm_cap": 15000,
+   "pasture_cap": 5000,
+   "farm_dev": 0.73,
+   "grain": 540000,
+   "horses": 500,
+   "counts_for_victory": false,
+   "tags": [
+    "depot"
+   ]
+  },
+  {
+   "id": "wu_wei",
+   "name": "武威",
+   "type": "city",
+   "faction": "han",
+   "pop": 20000,
+   "pos": [
+    735,
+    345
+   ],
+   "walls": 2,
+   "farm_cap": 10000,
+   "pasture_cap": 8000,
+   "farm_dev": 0.73,
+   "grain": 360000,
+   "horses": 800,
+   "counts_for_victory": false,
+   "tags": [
+    "hexi_commandery"
+   ]
+  },
+  {
+   "id": "zhang_ye",
+   "name": "张掖",
+   "type": "city",
+   "faction": "han",
+   "pop": 20000,
+   "pos": [
+    720,
+    290
+   ],
+   "walls": 2,
+   "farm_cap": 10000,
+   "pasture_cap": 8000,
+   "farm_dev": 0.73,
+   "grain": 360000,
+   "horses": 800,
+   "counts_for_victory": false,
+   "tags": [
+    "hexi_commandery"
+   ]
+  },
+  {
+   "id": "jiu_quan",
+   "name": "酒泉",
+   "type": "city",
+   "faction": "han",
+   "pop": 25000,
+   "pos": [
+    665,
+    282
+   ],
+   "walls": 2,
+   "farm_cap": 12000,
+   "pasture_cap": 6000,
+   "farm_dev": 0.76,
+   "grain": 450000,
+   "horses": 600,
+   "counts_for_victory": false,
+   "tags": [
+    "hexi_commandery"
+   ]
+  },
+  {
+   "id": "ju_yan",
+   "name": "居延",
+   "type": "city",
+   "faction": "han",
+   "pop": 5000,
+   "pos": [
+    730,
+    222
+   ],
+   "walls": 2,
+   "farm_cap": 3000,
+   "pasture_cap": 3000,
+   "farm_dev": 0.61,
+   "grain": 90000,
+   "horses": 300,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "dun_huang",
+   "name": "敦煌",
+   "type": "city",
+   "faction": "han",
+   "pop": 10000,
+   "pos": [
+    600,
+    258
+   ],
+   "walls": 2,
+   "farm_cap": 6000,
+   "pasture_cap": 2000,
+   "farm_dev": 0.61,
+   "grain": 180000,
+   "horses": 200,
+   "counts_for_victory": false,
+   "tags": [
+    "hexi_commandery",
+    "depot"
+   ]
+  },
+  {
+   "id": "yumen_guan",
+   "name": "玉门关",
+   "type": "pass",
+   "faction": "han",
+   "pop": 0,
+   "pos": [
+    572,
+    236
+   ],
+   "walls": 2,
+   "farm_cap": 0,
+   "pasture_cap": 0,
+   "farm_dev": 0.0,
+   "grain": 0,
+   "horses": 0,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "yang_guan",
+   "name": "阳关",
+   "type": "pass",
+   "faction": "han",
+   "pop": 0,
+   "pos": [
+    578,
+    272
+   ],
+   "walls": 2,
+   "farm_cap": 0,
+   "pasture_cap": 0,
+   "farm_dev": 0.0,
+   "grain": 0,
+   "horses": 0,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "long_cheng",
+   "name": "龙城",
+   "type": "nomad",
+   "faction": "xiongnu",
+   "pop": 100000,
+   "pos": [
+    776,
+    82
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 200000,
+   "farm_dev": 0.0,
+   "grain": 0,
+   "horses": 120000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "chanyu_ting",
+   "name": "单于庭",
+   "type": "nomad",
+   "faction": "xiongnu",
+   "pop": 250000,
+   "pos": [
+    805,
+    140
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 500000,
+   "farm_dev": 0.0,
+   "grain": 0,
+   "horses": 300000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "zhaoxin_cheng",
+   "name": "赵信城",
+   "type": "city",
+   "faction": "xiongnu",
+   "pop": 20000,
+   "pos": [
+    760,
+    113
+   ],
+   "walls": 1,
+   "farm_cap": 2000,
+   "pasture_cap": 30000,
+   "farm_dev": 0.95,
+   "grain": 120000,
+   "horses": 18000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "fanfuren_cheng",
+   "name": "范夫人城",
+   "type": "city",
+   "faction": "xiongnu",
+   "pop": 15000,
+   "pos": [
+    778,
+    165
+   ],
+   "walls": 1,
+   "farm_cap": 1000,
+   "pasture_cap": 30000,
+   "farm_dev": 0.95,
+   "grain": 90000,
+   "horses": 18000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "youxian_wang",
+   "name": "右贤王部",
+   "type": "nomad",
+   "faction": "xiongnu",
+   "pop": 200000,
+   "pos": [
+    600,
+    85
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 400000,
+   "farm_dev": 0.0,
+   "grain": 0,
+   "horses": 240000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "hu_jie",
+   "name": "呼揭",
+   "type": "nomad",
+   "faction": "xiongnu",
+   "pop": 50000,
+   "pos": [
+    470,
+    25
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 100000,
+   "farm_dev": 0.0,
+   "grain": 0,
+   "horses": 60000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "yi_wu",
+   "name": "伊吾",
+   "type": "nomad",
+   "faction": "xiongnu",
+   "pop": 15000,
+   "pos": [
+    620,
+    175
+   ],
+   "walls": 0,
+   "farm_cap": 1000,
+   "pasture_cap": 30000,
+   "farm_dev": 0.95,
+   "grain": 90000,
+   "horses": 18000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "dong_qiemi",
+   "name": "东且弥",
+   "type": "city",
+   "faction": "dong_qiemi",
+   "pop": 1948,
+   "pos": [
+    525,
+    135
+   ],
+   "walls": 1,
+   "farm_cap": 600,
+   "pasture_cap": 4000,
+   "farm_dev": 0.95,
+   "grain": 23376,
+   "horses": 1200,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "cheshi_qian",
+   "name": "车师前",
+   "type": "city",
+   "faction": "cheshi_qian",
+   "pop": 6050,
+   "pos": [
+    455,
+    142
+   ],
+   "walls": 2,
+   "farm_cap": 2500,
+   "pasture_cap": 6000,
+   "farm_dev": 0.89,
+   "grain": 72600,
+   "horses": 1800,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "cheshi_hou",
+   "name": "车师后",
+   "type": "city",
+   "faction": "cheshi_hou",
+   "pop": 4774,
+   "pos": [
+    487,
+    178
+   ],
+   "walls": 1,
+   "farm_cap": 1500,
+   "pasture_cap": 8000,
+   "farm_dev": 0.95,
+   "grain": 57288,
+   "horses": 2400,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "yan_qi",
+   "name": "焉耆",
+   "type": "city",
+   "faction": "yan_qi",
+   "pop": 32100,
+   "pos": [
+    445,
+    190
+   ],
+   "walls": 2,
+   "farm_cap": 14000,
+   "pasture_cap": 10000,
+   "farm_dev": 0.84,
+   "grain": 385200,
+   "horses": 3000,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "wei_li",
+   "name": "尉犁",
+   "type": "city",
+   "faction": "wei_li",
+   "pop": 9600,
+   "pos": [
+    435,
+    218
+   ],
+   "walls": 1,
+   "farm_cap": 4000,
+   "pasture_cap": 3000,
+   "farm_dev": 0.88,
+   "grain": 115200,
+   "horses": 900,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "wu_lei",
+   "name": "乌垒",
+   "type": "city",
+   "faction": "wu_lei",
+   "pop": 1200,
+   "pos": [
+    422,
+    196
+   ],
+   "walls": 1,
+   "farm_cap": 3000,
+   "pasture_cap": 1000,
+   "farm_dev": 0.3,
+   "grain": 14400,
+   "horses": 300,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "lun_tai",
+   "name": "轮台",
+   "type": "city",
+   "faction": "lun_tai",
+   "pop": 1500,
+   "pos": [
+    402,
+    184
+   ],
+   "walls": 1,
+   "farm_cap": 5000,
+   "pasture_cap": 1000,
+   "farm_dev": 0.3,
+   "grain": 18000,
+   "horses": 300,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "qiu_ci",
+   "name": "龟兹",
+   "type": "city",
+   "faction": "qiu_ci",
+   "pop": 81317,
+   "pos": [
+    385,
+    202
+   ],
+   "walls": 3,
+   "farm_cap": 35000,
+   "pasture_cap": 15000,
+   "farm_dev": 0.85,
+   "grain": 975804,
+   "horses": 4500,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "gu_mo",
+   "name": "姑墨",
+   "type": "city",
+   "faction": "gu_mo",
+   "pop": 24500,
+   "pos": [
+    340,
+    200
+   ],
+   "walls": 2,
+   "farm_cap": 10000,
+   "pasture_cap": 5000,
+   "farm_dev": 0.9,
+   "grain": 294000,
+   "horses": 1500,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "wen_su",
+   "name": "温宿",
+   "type": "city",
+   "faction": "wen_su",
+   "pop": 8400,
+   "pos": [
+    310,
+    185
+   ],
+   "walls": 1,
+   "farm_cap": 3500,
+   "pasture_cap": 4000,
+   "farm_dev": 0.88,
+   "grain": 100800,
+   "horses": 1200,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "shu_le",
+   "name": "疏勒",
+   "type": "city",
+   "faction": "shu_le",
+   "pop": 18647,
+   "pos": [
+    240,
+    210
+   ],
+   "walls": 2,
+   "farm_cap": 8000,
+   "pasture_cap": 5000,
+   "farm_dev": 0.85,
+   "grain": 223764,
+   "horses": 1500,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "sha_che",
+   "name": "莎车",
+   "type": "city",
+   "faction": "sha_che",
+   "pop": 16373,
+   "pos": [
+    248,
+    245
+   ],
+   "walls": 2,
+   "farm_cap": 7000,
+   "pasture_cap": 3000,
+   "farm_dev": 0.86,
+   "grain": 196476,
+   "horses": 900,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "yu_tian",
+   "name": "于阗",
+   "type": "city",
+   "faction": "yu_tian",
+   "pop": 19300,
+   "pos": [
+    290,
+    290
+   ],
+   "walls": 2,
+   "farm_cap": 8000,
+   "pasture_cap": 3000,
+   "farm_dev": 0.88,
+   "grain": 231600,
+   "horses": 900,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "jing_jue",
+   "name": "精绝",
+   "type": "city",
+   "faction": "jing_jue",
+   "pop": 3360,
+   "pos": [
+    350,
+    300
+   ],
+   "walls": 1,
+   "farm_cap": 1500,
+   "pasture_cap": 500,
+   "farm_dev": 0.82,
+   "grain": 40320,
+   "horses": 150,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "qie_mo",
+   "name": "且末",
+   "type": "city",
+   "faction": "qie_mo",
+   "pop": 1610,
+   "pos": [
+    405,
+    305
+   ],
+   "walls": 1,
+   "farm_cap": 700,
+   "pasture_cap": 500,
+   "farm_dev": 0.84,
+   "grain": 19320,
+   "horses": 150,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "lou_lan",
+   "name": "楼兰",
+   "type": "city",
+   "faction": "lou_lan",
+   "pop": 14100,
+   "pos": [
+    445,
+    292
+   ],
+   "walls": 2,
+   "farm_cap": 5000,
+   "pasture_cap": 3000,
+   "farm_dev": 0.95,
+   "grain": 169200,
+   "horses": 900,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "juan_du",
+   "name": "捐毒",
+   "type": "nomad",
+   "faction": "juan_du",
+   "pop": 1100,
+   "pos": [
+    178,
+    212
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 3000,
+   "farm_dev": 0.0,
+   "grain": 13200,
+   "horses": 1800,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "xiu_xun",
+   "name": "休循",
+   "type": "nomad",
+   "faction": "xiu_xun",
+   "pop": 1030,
+   "pos": [
+    148,
+    185
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 3000,
+   "farm_dev": 0.0,
+   "grain": 12360,
+   "horses": 1800,
+   "counts_for_victory": true,
+   "tags": []
+  },
+  {
+   "id": "yu_cheng",
+   "name": "郁成",
+   "type": "city",
+   "faction": "dawan",
+   "pop": 50000,
+   "pos": [
+    195,
+    158
+   ],
+   "walls": 2,
+   "farm_cap": 20000,
+   "pasture_cap": 20000,
+   "farm_dev": 0.92,
+   "grain": 600000,
+   "horses": 6000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "da_wan",
+   "name": "大宛",
+   "type": "city",
+   "faction": "dawan",
+   "pop": 200000,
+   "pos": [
+    160,
+    143
+   ],
+   "walls": 3,
+   "farm_cap": 80000,
+   "pasture_cap": 60000,
+   "farm_dev": 0.92,
+   "grain": 2400000,
+   "horses": 18000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "ershi_cheng",
+   "name": "贰师城",
+   "type": "city",
+   "faction": "dawan",
+   "pop": 50000,
+   "pos": [
+    140,
+    165
+   ],
+   "walls": 2,
+   "farm_cap": 20000,
+   "pasture_cap": 40000,
+   "farm_dev": 0.92,
+   "grain": 600000,
+   "horses": 12000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "kang_ju",
+   "name": "康居",
+   "type": "nomad",
+   "faction": "kangju",
+   "pop": 600000,
+   "pos": [
+    80,
+    100
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 1000000,
+   "farm_dev": 0.0,
+   "grain": 7200000,
+   "horses": 600000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "da_yuezhi",
+   "name": "大月氏",
+   "type": "city",
+   "faction": "dayuezhi",
+   "pop": 400000,
+   "pos": [
+    45,
+    215
+   ],
+   "walls": 2,
+   "farm_cap": 100000,
+   "pasture_cap": 300000,
+   "farm_dev": 0.95,
+   "grain": 4800000,
+   "horses": 90000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "ji_bin",
+   "name": "罽宾",
+   "type": "city",
+   "faction": "jibin",
+   "pop": 300000,
+   "pos": [
+    60,
+    325
+   ],
+   "walls": 2,
+   "farm_cap": 100000,
+   "pasture_cap": 50000,
+   "farm_dev": 0.95,
+   "grain": 3600000,
+   "horses": 15000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "chi_gu",
+   "name": "乌孙",
+   "type": "nomad",
+   "faction": "wusun",
+   "pop": 530000,
+   "pos": [
+    265,
+    125
+   ],
+   "walls": 1,
+   "farm_cap": 0,
+   "pasture_cap": 1000000,
+   "farm_dev": 0.0,
+   "grain": 6360000,
+   "horses": 600000,
+   "counts_for_victory": false,
+   "tags": []
+  },
+  {
+   "id": "yi_lie",
+   "name": "伊列",
+   "type": "nomad",
+   "faction": "wusun",
+   "pop": 100000,
+   "pos": [
+    280,
+    65
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 200000,
+   "farm_dev": 0.0,
+   "grain": 1200000,
+   "horses": 120000,
+   "counts_for_victory": false,
+   "tags": []
+  }
+ ],
+ "routes": [
+  {
+   "a": "chang_an",
+   "b": "long_xi",
+   "terrain": "road",
+   "days": 20
+  },
+  {
+   "a": "long_xi",
+   "b": "wu_wei",
+   "terrain": "road",
+   "days": 25
+  },
+  {
+   "a": "wu_wei",
+   "b": "zhang_ye",
+   "terrain": "road",
+   "days": 11
+  },
+  {
+   "a": "zhang_ye",
+   "b": "jiu_quan",
+   "terrain": "road",
+   "days": 11
+  },
+  {
+   "a": "jiu_quan",
+   "b": "dun_huang",
+   "terrain": "road",
+   "days": 14
+  },
+  {
+   "a": "zhang_ye",
+   "b": "ju_yan",
+   "terrain": "road",
+   "days": 14
+  },
+  {
+   "a": "jiu_quan",
+   "b": "ju_yan",
+   "terrain": "road",
+   "days": 18
+  },
+  {
+   "a": "dun_huang",
+   "b": "yumen_guan",
+   "terrain": "road",
+   "days": 7
+  },
+  {
+   "a": "dun_huang",
+   "b": "yang_guan",
+   "terrain": "road",
+   "days": 5
+  },
+  {
+   "a": "cheshi_qian",
+   "b": "yan_qi",
+   "terrain": "road",
+   "days": 10
+  },
+  {
+   "a": "yan_qi",
+   "b": "wei_li",
+   "terrain": "road",
+   "days": 6
+  },
+  {
+   "a": "yan_qi",
+   "b": "wu_lei",
+   "terrain": "road",
+   "days": 5
+  },
+  {
+   "a": "wei_li",
+   "b": "wu_lei",
+   "terrain": "road",
+   "days": 5
+  },
+  {
+   "a": "wu_lei",
+   "b": "lun_tai",
+   "terrain": "road",
+   "days": 5
+  },
+  {
+   "a": "lun_tai",
+   "b": "qiu_ci",
+   "terrain": "road",
+   "days": 5
+  },
+  {
+   "a": "qiu_ci",
+   "b": "gu_mo",
+   "terrain": "road",
+   "days": 9
+  },
+  {
+   "a": "gu_mo",
+   "b": "wen_su",
+   "terrain": "road",
+   "days": 7
+  },
+  {
+   "a": "wen_su",
+   "b": "shu_le",
+   "terrain": "road",
+   "days": 15
+  },
+  {
+   "a": "lou_lan",
+   "b": "wei_li",
+   "terrain": "road",
+   "days": 15
+  },
+  {
+   "a": "lou_lan",
+   "b": "qie_mo",
+   "terrain": "road",
+   "days": 8
+  },
+  {
+   "a": "jing_jue",
+   "b": "yu_tian",
+   "terrain": "road",
+   "days": 12
+  },
+  {
+   "a": "yu_tian",
+   "b": "sha_che",
+   "terrain": "road",
+   "days": 12
+  },
+  {
+   "a": "sha_che",
+   "b": "shu_le",
+   "terrain": "road",
+   "days": 7
+  },
+  {
+   "a": "xiu_xun",
+   "b": "yu_cheng",
+   "terrain": "road",
+   "days": 11
+  },
+  {
+   "a": "yu_cheng",
+   "b": "da_wan",
+   "terrain": "road",
+   "days": 8
+  },
+  {
+   "a": "da_wan",
+   "b": "ershi_cheng",
+   "terrain": "road",
+   "days": 6
+  },
+  {
+   "a": "dong_qiemi",
+   "b": "cheshi_hou",
+   "terrain": "road",
+   "days": 11
+  },
+  {
+   "a": "yi_wu",
+   "b": "cheshi_qian",
+   "terrain": "road",
+   "days": 34
+  },
+  {
+   "a": "fanfuren_cheng",
+   "b": "zhaoxin_cheng",
+   "terrain": "steppe",
+   "days": 11
+  },
+  {
+   "a": "zhaoxin_cheng",
+   "b": "chanyu_ting",
+   "terrain": "steppe",
+   "days": 10
+  },
+  {
+   "a": "chanyu_ting",
+   "b": "long_cheng",
+   "terrain": "steppe",
+   "days": 13
+  },
+  {
+   "a": "chanyu_ting",
+   "b": "youxian_wang",
+   "terrain": "steppe",
+   "days": 42
+  },
+  {
+   "a": "youxian_wang",
+   "b": "hu_jie",
+   "terrain": "steppe",
+   "days": 29
+  },
+  {
+   "a": "youxian_wang",
+   "b": "dong_qiemi",
+   "terrain": "steppe",
+   "days": 18
+  },
+  {
+   "a": "youxian_wang",
+   "b": "yi_wu",
+   "terrain": "steppe",
+   "days": 18
+  },
+  {
+   "a": "da_wan",
+   "b": "kang_ju",
+   "terrain": "steppe",
+   "days": 18
+  },
+  {
+   "a": "chi_gu",
+   "b": "yi_lie",
+   "terrain": "steppe",
+   "days": 12
+  },
+  {
+   "a": "chi_gu",
+   "b": "kang_ju",
+   "terrain": "steppe",
+   "days": 37
+  },
+  {
+   "a": "hu_jie",
+   "b": "chi_gu",
+   "terrain": "steppe",
+   "days": 46
+  },
+  {
+   "a": "cheshi_hou",
+   "b": "chi_gu",
+   "terrain": "steppe",
+   "days": 46
+  },
+  {
+   "a": "ju_yan",
+   "b": "fanfuren_cheng",
+   "terrain": "desert",
+   "days": 19
+  },
+  {
+   "a": "dun_huang",
+   "b": "yi_wu",
+   "terrain": "desert",
+   "days": 22
+  },
+  {
+   "a": "yumen_guan",
+   "b": "cheshi_qian",
+   "terrain": "desert",
+   "days": 39
+  },
+  {
+   "a": "yang_guan",
+   "b": "lou_lan",
+   "terrain": "desert",
+   "days": 35
+  },
+  {
+   "a": "qie_mo",
+   "b": "jing_jue",
+   "terrain": "desert",
+   "days": 14
+  },
+  {
+   "a": "cheshi_qian",
+   "b": "cheshi_hou",
+   "terrain": "mountain",
+   "days": 15
+  },
+  {
+   "a": "shu_le",
+   "b": "juan_du",
+   "terrain": "mountain",
+   "days": 20
+  },
+  {
+   "a": "juan_du",
+   "b": "xiu_xun",
+   "terrain": "mountain",
+   "days": 13
+  },
+  {
+   "a": "da_wan",
+   "b": "da_yuezhi",
+   "terrain": "mountain",
+   "days": 43
+  },
+  {
+   "a": "sha_che",
+   "b": "da_yuezhi",
+   "terrain": "mountain",
+   "days": 66
+  },
+  {
+   "a": "wen_su",
+   "b": "chi_gu",
+   "terrain": "mountain",
+   "days": 24
+  },
+  {
+   "a": "sha_che",
+   "b": "ji_bin",
+   "terrain": "hazard",
+   "days": 102
+  }
+ ],
+ "trade_routes": [
+  {
+   "id": "north",
+   "name": "北道",
+   "nodes": [
+    "dun_huang",
+    "yumen_guan",
+    "cheshi_qian",
+    "yan_qi",
+    "wu_lei",
+    "lun_tai",
+    "qiu_ci",
+    "gu_mo",
+    "wen_su",
+    "shu_le",
+    "juan_du",
+    "xiu_xun",
+    "yu_cheng",
+    "da_wan"
+   ]
+  },
+  {
+   "id": "south",
+   "name": "南道",
+   "nodes": [
+    "dun_huang",
+    "yang_guan",
+    "lou_lan",
+    "qie_mo",
+    "jing_jue",
+    "yu_tian",
+    "sha_che",
+    "da_yuezhi"
+   ]
+  }
+ ],
+ "relations": [
+  {
+   "state": "dong_qiemi",
+   "han_influence": 5,
+   "xn_intimidation": 70,
+   "xn_resentment": 25,
+   "overlord": "xiongnu",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "cheshi_qian",
+   "han_influence": 5,
+   "xn_intimidation": 70,
+   "xn_resentment": 25,
+   "overlord": "xiongnu",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "cheshi_hou",
+   "han_influence": 5,
+   "xn_intimidation": 70,
+   "xn_resentment": 25,
+   "overlord": "xiongnu",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "yan_qi",
+   "han_influence": 5,
+   "xn_intimidation": 70,
+   "xn_resentment": 25,
+   "overlord": "xiongnu",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "wei_li",
+   "han_influence": 5,
+   "xn_intimidation": 70,
+   "xn_resentment": 25,
+   "overlord": "xiongnu",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "wu_lei",
+   "han_influence": 10,
+   "xn_intimidation": 35,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "lun_tai",
+   "han_influence": 10,
+   "xn_intimidation": 35,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "qiu_ci",
+   "han_influence": 10,
+   "xn_intimidation": 35,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "gu_mo",
+   "han_influence": 10,
+   "xn_intimidation": 30,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "wen_su",
+   "han_influence": 10,
+   "xn_intimidation": 18,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "shu_le",
+   "han_influence": 10,
+   "xn_intimidation": 18,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "sha_che",
+   "han_influence": 10,
+   "xn_intimidation": 18,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "yu_tian",
+   "han_influence": 10,
+   "xn_intimidation": 18,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "jing_jue",
+   "han_influence": 10,
+   "xn_intimidation": 18,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "qie_mo",
+   "han_influence": 10,
+   "xn_intimidation": 18,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "lou_lan",
+   "han_influence": 5,
+   "xn_intimidation": 70,
+   "xn_resentment": 25,
+   "overlord": "xiongnu",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "juan_du",
+   "han_influence": 10,
+   "xn_intimidation": 15,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "xiu_xun",
+   "han_influence": 10,
+   "xn_intimidation": 15,
+   "xn_resentment": 10,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "dawan",
+   "han_influence": 10,
+   "xn_intimidation": 20,
+   "xn_resentment": 5,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "kangju",
+   "han_influence": 10,
+   "xn_intimidation": 20,
+   "xn_resentment": 5,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "dayuezhi",
+   "han_influence": 10,
+   "xn_intimidation": 20,
+   "xn_resentment": 5,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "jibin",
+   "han_influence": 10,
+   "xn_intimidation": 20,
+   "xn_resentment": 5,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  },
+  {
+   "state": "wusun",
+   "han_influence": 15,
+   "xn_intimidation": 35,
+   "xn_resentment": 5,
+   "overlord": "",
+   "han_status": "none",
+   "tax_level": 0
+  }
+ ],
+ "armies": [
+  {
+   "id": "han_g_dunhuang",
+   "faction": "han",
+   "at": "dun_huang",
+   "units": {
+    "infantry": 5000,
+    "crossbow": 3000,
+    "cavalry": 2000
+   },
+   "horses": 2000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "han_g_jiuquan",
+   "faction": "han",
+   "at": "jiu_quan",
+   "units": {
+    "infantry": 4000,
+    "crossbow": 2000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "han_g_zhangye",
+   "faction": "han",
+   "at": "zhang_ye",
+   "units": {
+    "infantry": 4000,
+    "crossbow": 2000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "han_g_wuwei",
+   "faction": "han",
+   "at": "wu_wei",
+   "units": {
+    "infantry": 4000,
+    "crossbow": 2000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "han_g_juyan",
+   "faction": "han",
+   "at": "ju_yan",
+   "units": {
+    "infantry": 2000,
+    "crossbow": 1000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "han_g_longxi",
+   "faction": "han",
+   "at": "long_xi",
+   "units": {
+    "infantry": 3000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "han_g_yumen",
+   "faction": "han",
+   "at": "yumen_guan",
+   "units": {
+    "infantry": 1000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "han_g_yangguan",
+   "faction": "han",
+   "at": "yang_guan",
+   "units": {
+    "infantry": 1000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true
+  },
+  {
+   "id": "xn_youxian_1",
+   "faction": "xiongnu",
+   "at": "youxian_wang",
+   "units": {
+    "horse_archer": 20000
+   },
+   "horses": 40000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false
+  },
+  {
+   "id": "xn_chanyu_1",
+   "faction": "xiongnu",
+   "at": "chanyu_ting",
+   "units": {
+    "horse_archer": 25000
+   },
+   "horses": 50000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false
+  },
+  {
+   "id": "xn_longcheng_1",
+   "faction": "xiongnu",
+   "at": "long_cheng",
+   "units": {
+    "horse_archer": 12000
+   },
+   "horses": 24000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false
+  },
+  {
+   "id": "xn_hujie_1",
+   "faction": "xiongnu",
+   "at": "hu_jie",
+   "units": {
+    "horse_archer": 5000
+   },
+   "horses": 10000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false
+  },
+  {
+   "id": "xn_yiwu_1",
+   "faction": "xiongnu",
+   "at": "yi_wu",
+   "units": {
+    "horse_archer": 8000
+   },
+   "horses": 16000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false
+  },
+  {
+   "id": "xn_zhaoxin_1",
+   "faction": "xiongnu",
+   "at": "zhaoxin_cheng",
+   "units": {
+    "horse_archer": 4000
+   },
+   "horses": 8000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false
+  },
+  {
+   "id": "xn_fanfuren_1",
+   "faction": "xiongnu",
+   "at": "fanfuren_cheng",
+   "units": {
+    "horse_archer": 3000
+   },
+   "horses": 6000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false
+  }
+ ],
+ "han_central_pool": {
+  "infantry": 10000,
+  "crossbow": 8000,
+  "cavalry": 8000
+ }
+}

@@ -1,0 +1,6 @@
+{
+  "infantry":     { "name": "步兵", "row": "front",  "melee": 1.0, "ranged": 0.0, "mdef": 1.2, "rdef": 1.0, "speed": 1.0, "horses": 0, "siege": 1.0, "cost_money_per_1000": 10, "tags": [] },
+  "crossbow":     { "name": "弩兵", "row": "back",   "melee": 0.4, "ranged": 1.5, "mdef": 0.6, "rdef": 1.0, "speed": 1.0, "horses": 0, "siege": 0.8, "cost_money_per_1000": 15, "tags": ["anti_mobile"] },
+  "cavalry":      { "name": "骑兵", "row": "mobile", "melee": 1.3, "ranged": 0.3, "mdef": 1.0, "rdef": 0.8, "speed": 2.0, "horses": 1, "siege": 0.2, "cost_money_per_1000": 30, "tags": [] },
+  "horse_archer": { "name": "弓骑", "row": "mobile", "melee": 0.8, "ranged": 1.0, "mdef": 0.8, "rdef": 0.9, "speed": 2.2, "horses": 2, "siege": 0.1, "cost_money_per_1000": 0,  "tags": [] }
+}
