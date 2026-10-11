@@ -38,6 +38,8 @@ var tuntian_started := false
 var season_flags := {}   # 由全局 Buff 回调写入，如 {"winter": true}
 var requests: Array = []  # 西域国家向汉/匈奴提出的请求（请求册封等），供 UI/AI 消费
 var convoy_losses := 0
+var campaigns := {}   # AI 战役：势力 id -> {target, stage, members, phase, deadline}
+var ai_factions: Array = []  # 由 AI 控制的势力；默认空（测试用），游戏用 enable_default_ai()
 
 
 static func load_json(path: String) -> Variant:
@@ -104,6 +106,7 @@ func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, deci
 	central = sc["han_central_pool"].duplicate()
 	buffs = []
 	season_flags = {}
+	campaigns = {}
 	requests = []
 	streak = {"han": 0, "xiongnu": 0}
 	stats = {"battles": 0, "han_casualties": 0, "xn_casualties": 0, "horses_captured": 0, "hexi_lost": 0, "han_vassals_peak": 0, "sieges_won": 0}
@@ -118,6 +121,7 @@ func _init_node(n: Dictionary) -> void:
 	n["depot"] = {}
 	n["under_siege_by"] = ""
 	n["farm_cap_base"] = n["farm_cap"]
+	n["pop_init"] = n["pop"]
 	n["starving"] = false
 	n["starve_streak"] = 0
 	n["militia"] = {}
@@ -162,6 +166,18 @@ func controller(node: Dictionary) -> String:
 	if relations.has(f):
 		return relations[f]["overlord"]
 	return ""
+
+## 玩家对面的势力交给 AI。
+func enable_default_ai() -> void:
+	ai_factions = ["xiongnu" if player_faction == "han" else "han"]
+
+## 该节点 1 跳内是否有敌对势力控制的节点或敌军。
+func hostile_near(node_id: String, fid: String) -> bool:
+	for nb in neighbors(node_id):
+		var c := controller(nodes[nb])
+		if c != "" and is_hostile(c, fid):
+			return true
+	return false
 
 func is_hostile(f1: String, f2: String) -> bool:
 	return (f1 == "han" and f2 == "xiongnu") or (f1 == "xiongnu" and f2 == "han")

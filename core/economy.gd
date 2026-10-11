@@ -38,9 +38,14 @@ static func harvest(s, n: Dictionary) -> float:
 	return need * eff * float(f["farm_yield_per_worker_year"]) * Buffs.product(s, "farm_mult", n["id"])
 
 static func _node_pop(s, n: Dictionary) -> void:
-	if n["pop"] <= 0 or n["type"] == "nomad":
+	if n["pop"] <= 0:
 		return
 	var p: Dictionary = s.bal["pop"]
+	if n["type"] == "nomad":
+		# 游牧部领自给：有马即按年增长；动员出去的人口随军队损耗不回流，靠自然增长补充，同时释放可再征额度
+		n["pop"] += int(n["pop"] * float(p["growth_year_if_surplus"]) / 12.0)
+		n["levied_out"] = maxi(0, int(n["levied_out"]) - int(n["pop"] * float(p["growth_year_if_surplus"]) / 12.0))
+		return
 	if n["starving"]:
 		n["pop"] = int(n["pop"] * (1.0 - float(p["starve_loss_month"])))
 		return
@@ -104,6 +109,11 @@ static func _army_food(s, a: Dictionary) -> void:
 			_attrit(s, a, float(s.bal["attrition"][key]))
 
 static func _attrit(s, a: Dictionary, rate: float) -> void:
+	if a["is_convoy"]:
+		a["laborers"] = maxi(0, int(a["laborers"]) - int(ceil(float(a["laborers"]) * rate)))
+		if a["laborers"] == 0:
+			s.remove_army(a["id"])
+		return
 	var lost := 0
 	for t in a["units"]:
 		var d := int(ceil(float(a["units"][t]) * rate))

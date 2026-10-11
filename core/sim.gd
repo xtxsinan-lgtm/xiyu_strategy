@@ -6,6 +6,7 @@ const Buffs = preload("res://core/buffs.gd")
 const Economy = preload("res://core/economy.gd")
 const Diplomacy = preload("res://core/diplomacy.gd")
 const Warfare = preload("res://core/warfare.gd")
+const AI = preload("res://core/ai.gd")
 const Cal = preload("res://core/calendar.gd")
 
 ## 开局：挂载全局季节 Buff 并执行首个回合的回合初结算。
@@ -62,6 +63,8 @@ static func _turn_start(s) -> void:
 			s.central[t] = mini(int(h["central_cap"][t]), int(s.central.get(t, 0)) + int(h["central_regen_year"][t]))
 		s.factions["han"]["money"] += int(h["annual_money"])
 		s.log_event("court", "年度拨款：钱 +%d，中央军补充" % int(h["annual_money"]))
+	for fid in s.ai_factions:
+		AI.run(s, fid)
 
 static func _turn_end(s) -> void:
 	_victory(s)

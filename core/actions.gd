@@ -139,13 +139,20 @@ static func transport(s, fid: String, from_id: String, to_id: String, amount: in
 		return _fail("目的地非己方")
 	if float(amount) > float(laborers) * float(f["laborer_carry"]):
 		return _fail("民夫载量不足")
-	if laborers > int(n["pop"]) / 2 or s.stock(n, fid) < float(amount):
+	var is_source: bool = n["type"] == "source"  # 长安：后方无限补给，民夫由内地征发，不占边郡人口
+	if (not is_source and laborers > int(n["pop"]) / 2) or s.stock(n, fid) < float(amount):
 		return _fail("民夫或存粮不足")
-	var path := Pathfinding.path_to(s, from_id, to_id, 1.0, {}, true)
+	var avoid := {}
+	for id in s.nodes:
+		var c: String = s.controller(s.nodes[id])
+		if c != "" and s.is_hostile(c, fid):
+			avoid[id] = true
+	var path := Pathfinding.path_to(s, from_id, to_id, 1.0, avoid, true)
 	if path.is_empty():
-		return _fail("无路径")
-	s.set_stock(n, fid, s.stock(n, fid) - float(amount))
-	n["pop"] -= laborers
+		return _fail("无安全路径")
+	if not is_source:
+		s.set_stock(n, fid, s.stock(n, fid) - float(amount))
+		n["pop"] -= laborers
 	var a: Dictionary = s.new_army(fid, from_id, {}, 0, amount, laborers)
 	a["is_convoy"] = true
 	a["garrison"] = false
@@ -154,3 +161,68 @@ static func transport(s, fid: String, from_id: String, to_id: String, amount: in
 	a["name"] = "运输队 " + a["id"]
 	a["plan"]["triggers"] = []
 	return {"ok": true, "id": a["id"]}
+
+## 中央军征召（§4.1）：从中央军池扣兵，在汉控制的节点编成新军（骑兵按 1 兵 1 马配马，马取自该节点马群，不足则减骑兵）。
+static func recruit_central(s, comp: Dictionary, at: String) -> Dictionary:
+	var n: Dictionary = s.nodes[at]
+	if s.controller(n) != "han":
+		return _fail("非汉控制节点")
+	for t in comp:
+		if int(comp[t]) > int(s.central.get(t, 0)):
+			return _fail("中央军不足: " + t)
+	var use := comp.duplicate()
+	var horses := 0
+	for t in use.keys():
+		var need := int(s.units[t]["horses"]) * int(use[t])
+		if need > 0:
+			var have := int(n["horses"]) - horses
+			if have < need:
+				use[t] = have / int(s.units[t]["horses"])
+				need = int(use[t]) * int(s.units[t]["horses"])
+			horses += need
+	n["horses"] -= horses
+	for t in use:
+		s.central[t] = int(s.central[t]) - int(use[t])
+	var a: Dictionary = s.new_army("han", at, use, horses)
+	s.apply_preset(a, "balanced")
+	Economy.refill(s, a, n)
+	return {"ok": true, "id": a["id"]}
+
+## 匈奴部领动员（§4.2）：每次征 pop×ratio 的弓骑兵（每骑耗马 2 匹随军），累计不超过 pop 初值×levy_ratio；动员越多人口越少、放牧越弱。
+static func levy_xiongnu(s, node_id: String, ratio := 0.05) -> Dictionary:
+	var n: Dictionary = s.nodes[node_id]
+	if s.controller(n) != "xiongnu" or n["type"] not in ["nomad", "city"]:
+		return _fail("非匈奴部领")
+	var cap := int(float(n["pop"] + n["levied_out"]) * float(s.bal["xiongnu"]["levy_ratio"]))
+	var amount := mini(int(float(n["pop"]) * ratio), cap - int(n["levied_out"]))
+	var per_horse: int = int(s.units["horse_archer"]["horses"])
+	amount = mini(amount, int(n["horses"]) / per_horse)
+	if amount < 500:
+		return _fail("可征兵力不足")
+	n["pop"] -= amount
+	n["horses"] -= amount * per_horse
+	n["levied_out"] += amount
+	var a: Dictionary = {}
+	for x in s.armies_at(node_id):
+		if x["faction"] == "xiongnu" and x["id"].begins_with("xn_levy_"):
+			a = x
+	if a.is_empty():
+		a = s.new_army("xiongnu", node_id, {"horse_archer": 0}, 0, 0, 0, "xn_levy_" + node_id)
+		s.apply_preset(a, "aggressive")
+	a["units"]["horse_archer"] += amount
+	a["horses"] += amount * per_horse
+	a["init_size"] = s.army_size(a)
+	return {"ok": true, "amount": amount}
+
+## 移民实边（§3.2 的简化版）：花钱从内地向己方边郡迁入人口（每 10 人 1 钱），单次不超过 5000 人，不超过初始人口。
+## 完整的人口迁徙行动（途中耗粮、占用运输）仍待细化。
+static func settle(s, node_id: String, count: int) -> Dictionary:
+	var n: Dictionary = s.nodes[node_id]
+	var fid: String = s.controller(n)
+	if fid != "han" or n["faction"] != "han" or n["type"] == "pass":
+		return _fail("仅限汉直辖城")
+	var c := mini(mini(count, 5000), int(n["pop_init"]) - int(n["pop"]))
+	if c <= 0 or not _pay(s, fid, c / 10):
+		return _fail("无需或钱不足")
+	n["pop"] += c
+	return {"ok": true, "count": c}

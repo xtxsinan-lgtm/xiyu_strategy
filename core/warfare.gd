@@ -71,7 +71,8 @@ static func _move(s, a: Dictionary) -> void:
 static func _unload(s, a: Dictionary) -> void:
 	var n: Dictionary = s.nodes[a["loc"]["node"]]
 	s.set_stock(n, a["faction"], s.stock(n, a["faction"]) + float(a["grain"]))
-	n["pop"] += int(a["laborers"])
+	if a["origin"] != "" and s.nodes[a["origin"]]["type"] != "source":
+		n["pop"] += int(a["laborers"])
 	s.log_event("convoy", "%s 抵达 %s，运入粮 %d" % [a["name"], n["name"], int(a["grain"])], {"node": n["id"]})
 	s.remove_army(a["id"])
 
@@ -115,6 +116,9 @@ static func _anchor(a: Dictionary) -> String:
 static func _check_triggers(s, a: Dictionary) -> void:
 	if a["garrison"] or a["status"] == "retreating":
 		return
+	if int(a.get("trigger_cd", 0)) > 0:
+		a["trigger_cd"] = int(a["trigger_cd"]) - 1
+		return
 	for t in a["plan"]["triggers"]:
 		if _cond(s, a, t):
 			_react(s, a, t["react"], t["cond"])
@@ -148,8 +152,10 @@ static func _react(s, a: Dictionary, react: String, cond: String) -> void:
 			dest = a["origin"]
 		"return_supply":
 			dest = _nearest_supply(s, a)
-	if dest == "":
+	if dest == "" or (a["loc"].has("node") and a["loc"]["node"] == dest):
+		a["trigger_cd"] = 9
 		return
+	a["trigger_cd"] = 9
 	if a["loc"].has("route"):
 		_reverse(a, s)
 		var tail := Pathfinding.path_to(s, a["loc"]["to"], dest, Actions.army_speed(s, a), {}, true)
@@ -225,7 +231,7 @@ static func _fight(s, att: Dictionary, def: Dictionary, wall_att: float, wall_de
 	elif res["winner"] == "b":
 		_rout(s, att)
 	for x in [att, def]:
-		if s.armies.has(x["id"]) and s.army_size(x) == 0:
+		if s.armies.has(x["id"]) and s.army_size(x) == 0 and not x["is_convoy"]:
 			s.remove_army(x["id"])
 	return res["winner"]
 

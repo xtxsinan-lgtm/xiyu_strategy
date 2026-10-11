@@ -37,6 +37,7 @@ func _init() -> void:
 	test_diplomacy()
 	test_determinism()
 	test_integration()
+	test_ai()
 	test_long_run()
 	print("failures: ", fails)
 	quit(1 if fails > 0 else 0)
@@ -203,6 +204,39 @@ func test_integration() -> void:
 		if e["kind"] in ["battle", "capture"]:
 			print("   ", e["date"], " ", e["text"])
 			break
+
+func test_ai() -> void:
+	var s = fresh(1)
+	s.ai_factions = ["han", "xiongnu"]
+	while s.turn < 8:
+		Sim.advance_turn(s)
+	var campaigns := 0
+	for e in s.log:
+		if e["kind"] == "ai" and "集结" in e["text"]:
+			campaigns += 1
+	check(campaigns > 0, "匈奴 AI 发起集结战役")
+	check(s.stats["battles"] > 0, "AI 战役引发战斗")
+	var xn_levy := false
+	for id in s.armies:
+		if id.begins_with("xn_levy_"):
+			xn_levy = true
+	check(xn_levy, "匈奴 AI 在兵力不足时动员部领")
+	check(Actions.recruit_central(s, {"infantry": 999999}, "long_xi")["ok"] == false, "中央军不足时拒绝征召")
+	check(Actions.settle(fresh(), "dun_huang", 100)["ok"] == false, "人口未减少时无需移民")
+	var s2 = fresh(1)
+	s2.ai_factions = ["han", "xiongnu"]
+	while s2.turn < 30 and s2.winner == "":
+		Sim.advance_turn(s2)
+	var unloaded := 0
+	for e in s2.log:
+		if e["kind"] == "convoy" and "运入粮" in e["text"]:
+			unloaded += 1
+	check(unloaded > 5, "Han AI 持续向边郡运粮（卸货 %d 次）" % unloaded)
+	check(Sim.han_condition(s2)["count"] > 5, "Han AI 外交经营出多个属国")
+	# 运输避开敌控节点
+	var s3 = fresh()
+	s3.nodes["jiu_quan"]["faction"] = "xiongnu"
+	check(not Actions.transport(s3, "han", "chang_an", "dun_huang", 10000, 1000)["ok"], "运输不穿越敌控节点（无安全路径）")
 
 func snapshot_run(seed_value: int, turns: int) -> int:
 	var s = fresh(seed_value)
