@@ -11,8 +11,8 @@
     "pastoral_self_per_pop_month": 1.2
   },
   "pop": { "growth_year_if_surplus": 0.02, "starve_loss_month": 0.05 },
-  "horses": { "spring_growth": 0.15, "overgraze_death_month": 0.05 },
-  "farm": { "expand_cost_money": 200, "expand_amount": 1000, "expand_turns": 3, "burn_dev_loss": 0.25, "min_dev": 0.1, "potential_mult": 2.0 },
+  "horses": { "spring_growth": 0.15, "overgraze_death_month": 0.05, "winter_no_fodder_death_month": 0.03 },
+  "farm": { "expand_cost_money": 200, "expand_amount": 1000, "expand_turns": 3, "expand_dev_step": 0.2, "expand_laborers_per_step": 0.05, "burn_dev_loss": 0.25, "min_dev": 0.1, "potential_mult": 2.0 },
   "han": {
     "annual_money": 5000,
     "central_regen_year": { "infantry": 4000, "crossbow": 3000, "cavalry": 3000 },
@@ -41,13 +41,17 @@
     "xn_vassal_min_intimidation": 60,
     "tax_rates": [ {"money": 0, "res": 0}, {"money": 0.005, "res": 0.5}, {"money": 0.01, "res": 1.0}, {"money": 0.02, "res": 2.0} ],
     "han_conquest_influence_neighbor": -15,
-    "great_threshold_mult": 1.5, "levy_grain_resentment": 5
+    "great_threshold_mult": 1.5, "levy_grain_resentment": 5,
+    "marriage_cost_money": 300, "marriage_cost_influence": 10,
+    "hostage_cost_influence": 15,
+    "gift_decay": 0.015,
+    "lean_w_resentment": 0.5, "lean_far_per_hop": 1.0, "request_enfeoff_lean": 20, "request_cooldown_turns": 4
   },
   "trade": { "influence_per_state_month": 1.5, "money_per_state_month": 5, "ban_intimidation": 60 },
   "citystate": { "defect_to_han_margin": 20, "rebel_xn_intimidation_below": 20, "rebel_xn_resentment_above": 50, "defect_to_xn_margin": 30 },
   "grain_price": { "vassal_money_per_100": 10, "enfeoffed_money_per_100": 13 },
   "victory": {
-    "han_required": 11, "han_must_have": ["wu_lei", "cheshi_qian"], "han_hold_turns": 4,
+    "han_required": 11, "han_must_have": ["wu_lei", "cheshi_qian"], "han_depot_nodes": ["wu_lei", "lun_tai"], "han_depot_grain": 60000, "han_max_intimidation": 40, "han_hold_turns": 4,
     "xn_targets": ["wu_wei", "zhang_ye", "jiu_quan", "dun_huang"], "xn_hold_turns": 2,
     "score": { "han_vassal": 10, "hexi_held": 15, "horses_per_1000": 1 }
   },
