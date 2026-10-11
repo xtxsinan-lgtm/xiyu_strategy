@@ -39,6 +39,7 @@ func _init() -> void:
 	test_integration()
 	test_ai()
 	test_court()
+	test_characters()
 	test_long_run()
 	print("failures: ", fails)
 	quit(1 if fails > 0 else 0)
@@ -267,6 +268,27 @@ func test_court() -> void:
 	Sim.advance_turn(s)
 	Sim.advance_turn(s)
 	check(s.winner == "xiongnu" and "召回" in s.win_reason, "信任归零被召回，汉方失败")
+
+func test_characters() -> void:
+	var Ch = preload("res://core/characters.gd")
+	var s = fresh()
+	check(s.characters.size() >= 60, "人物花名册已载入（%d 人）" % s.characters.size())
+	check(s.characters["han_zhangqian"]["present"] and Ch.court_envoy(s)["id"] == "han_zhangqian", "前119年西域使节为张骞")
+	check(not s.characters["han_fujiezi"]["present"], "傅介子尚未登场")
+	check(Ch.ruler_of(s, "xiongnu").is_empty() or true, "ruler_of 不崩溃")
+	check(Ch.ruler_of(s, "shu_le")["named"] == false, "史料缺名小国以称号占位")
+	check(Ch.ruler_of(s, "dawan")["id"] == "dw_wugua", "大宛王为毋寡")
+	# 推进到前113年：张骞已去世
+	while s.year() < -113 and s.winner == "":
+		s.trust = 100.0  # 避免被召回终止对局
+		Sim.advance_turn(s)
+	check(not s.characters["han_zhangqian"]["alive"], "张骞前114年去世")
+	check(Ch.court_envoy(s).is_empty() or Ch.court_envoy(s)["id"] != "han_zhangqian", "使节职位不再是张骞")
+	while s.year() < -98 and s.winner == "":
+		s.trust = 100.0
+		Sim.advance_turn(s)
+	check(s.characters["han_liling"]["faction_now"] == "xiongnu", "李陵前99年后转属匈奴")
+	check(s.characters["han_liling"]["alive"], "李陵尚在世")
 
 func snapshot_run(seed_value: int, turns: int) -> int:
 	var s = fresh(seed_value)

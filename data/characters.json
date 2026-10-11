@@ -1,0 +1,1879 @@
+{
+ "version": "0.1",
+ "note": "史实人物花名册。birth/death 为公元前年份（负数）；null=史无明载或未能核实。verification=searched 表示关键年份已在网络检索结果中得到确认或交叉印证；recalled 表示凭记忆写入，待用中华书局点校本核对。attrs 为游戏设计估值（非史实），basis 说明依据。",
+ "characters": [
+  {
+   "defect": null,
+   "id": "han_wudi",
+   "name": "汉武帝刘彻",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "emperor",
+   "named": true,
+   "birth": -156,
+   "death": -87,
+   "active_from": -119,
+   "active_to": -87,
+   "verification": "recalled",
+   "sources": [
+    "《史记·孝武本纪》",
+    "《汉书·武帝纪》"
+   ],
+   "notes": "在位前141—前87；轮台诏在前89年（检索多篇一致）",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "han_zhaodi",
+   "name": "汉昭帝刘弗陵",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "emperor",
+   "named": true,
+   "birth": -94,
+   "death": -74,
+   "active_from": -87,
+   "active_to": -74,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·昭帝纪》"
+   ],
+   "notes": "在位前87—前74；生年为记忆值",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "han_xuandi",
+   "name": "汉宣帝刘询",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "emperor",
+   "named": true,
+   "birth": -91,
+   "death": -49,
+   "active_from": -74,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·宣帝纪》"
+   ],
+   "notes": "在位前74—前49；生年为记忆值",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "han_huoguang",
+   "name": "霍光",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "official",
+   "named": true,
+   "birth": null,
+   "death": -68,
+   "active_from": -87,
+   "active_to": -68,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·霍光金日磾传》"
+   ],
+   "notes": "武帝托孤辅政（检索确认辅政集团含霍光、金日磾、上官桀、桑弘羊、田千秋），卒年为记忆值",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "han_sangongyang",
+   "name": "桑弘羊",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "official",
+   "named": true,
+   "birth": null,
+   "death": -80,
+   "active_from": -119,
+   "active_to": -80,
+   "verification": "recalled",
+   "sources": [
+    "《史记·平准书》",
+    "《汉书·食货志》"
+   ],
+   "notes": "轮台诏否决其轮台屯田之议（检索确认）；卒年前80为记忆值（上官桀谋反案）",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "han_weiqing",
+   "name": "卫青",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": -106,
+   "active_from": -119,
+   "active_to": -106,
+   "verification": "searched",
+   "sources": [
+    "《史记·卫将军骠骑列传》",
+    "《汉书·卫青霍去病传》"
+   ],
+   "notes": "卒元封五年（前106），谥烈侯（检索确认）；生年史无明载",
+   "attrs": {
+    "ability": null,
+    "caution": null,
+    "martial": 7,
+    "command": 10,
+    "basis": "七击匈奴，漠北之战主将之一"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_huoqubing",
+   "name": "霍去病",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": -140,
+   "death": -117,
+   "active_from": -119,
+   "active_to": -117,
+   "verification": "searched",
+   "sources": [
+    "《史记·卫将军骠骑列传》",
+    "《汉书·卫青霍去病传》"
+   ],
+   "notes": "元狩六年（前117）病逝，年二十四（检索确认），生年据此推得",
+   "attrs": {
+    "ability": null,
+    "caution": null,
+    "martial": 10,
+    "command": 9,
+    "basis": "奔袭突击，漠北大破左贤王部"
+   }
+  },
+  {
+   "defect": {
+    "year": -90,
+    "to": "xiongnu"
+   },
+   "id": "han_ligli",
+   "name": "李广利",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": -89,
+   "active_from": -104,
+   "active_to": -90,
+   "verification": "searched",
+   "sources": [
+    "《汉书·张骞李广利传》"
+   ],
+   "notes": "贰师将军，伐大宛（前104、前102）；征和三年（前90）出击匈奴后降，卒年各说前89/前88，本表取检索所见前89",
+   "attrs": {
+    "ability": null,
+    "caution": null,
+    "martial": 4,
+    "command": 5,
+    "basis": "伐大宛得胜但损失惨重，后败降"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_zhaoponu",
+   "name": "赵破奴",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -91,
+   "verification": "recalled",
+   "sources": [
+    "《史记·卫将军骠骑列传》",
+    "《史记·大宛列传》"
+   ],
+   "notes": "霍去病部下，封从骠侯；前109击姑师、楼兰，前103浚稽将军兵败降匈奴，后逃归；卒年不详（检索未得可靠信息，仅凭记忆）",
+   "attrs": {
+    "ability": null,
+    "caution": null,
+    "martial": 7,
+    "command": 6,
+    "basis": "击姑师、虏楼兰王"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_gongsunao",
+   "name": "公孙敖",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -96,
+   "verification": "recalled",
+   "sources": [
+    "《史记·卫将军骠骑列传》"
+   ],
+   "notes": "卫青旧友，多次失期；生卒年不详（记忆）",
+   "attrs": {
+    "ability": null,
+    "caution": null,
+    "martial": 5,
+    "command": 4,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_lubode",
+   "name": "路博德",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -100,
+   "verification": "recalled",
+   "sources": [
+    "《史记·卫将军骠骑列传》"
+   ],
+   "notes": "伏波将军，平南越（前111）；生卒年不详（记忆）",
+   "attrs": {
+    "ability": null,
+    "caution": null,
+    "martial": 6,
+    "command": 7,
+    "basis": ""
+   }
+  },
+  {
+   "defect": {
+    "year": -99,
+    "to": "xiongnu"
+   },
+   "id": "han_liling",
+   "name": "李陵",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": -74,
+   "active_from": -99,
+   "active_to": -74,
+   "verification": "searched",
+   "sources": [
+    "《汉书·李广苏建传》"
+   ],
+   "notes": "天汉二年（前99）率步卒五千深入，战败降匈奴，前74年病死（检索确认）；降后封右校王（记忆值），由 defect 字段表示转属匈奴",
+   "attrs": {
+    "ability": null,
+    "caution": null,
+    "martial": 8,
+    "command": 8,
+    "basis": "以少击众，转战数日"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_zhaochongguo",
+   "name": "赵充国",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": -137,
+   "death": -52,
+   "active_from": -80,
+   "active_to": -52,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·赵充国辛庆忌传》"
+   ],
+   "notes": "生卒年为记忆值（检索未核）；主屯田、平西羌",
+   "attrs": {
+    "ability": 6,
+    "caution": 8,
+    "martial": 7,
+    "command": 9,
+    "basis": "以屯田代战之主张"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_zhangqian",
+   "name": "张骞",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "envoy",
+   "named": true,
+   "birth": null,
+   "death": -114,
+   "active_from": -119,
+   "active_to": -114,
+   "verification": "searched",
+   "sources": [
+    "《史记·大宛列传》",
+    "《汉书·张骞李广利传》"
+   ],
+   "notes": "元鼎三年（前114）病逝（检索确认）；生年约前164说无独立来源，不采用。二使乌孙在前119年（检索确认）；封博望侯；堂邑氏胡奴甘父随行",
+   "attrs": {
+    "ability": 10,
+    "caution": 8,
+    "martial": 3,
+    "command": 3,
+    "basis": "十三年间两度出使，被匈奴扣留逃归"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_ganfu",
+   "name": "甘父（堂邑父）",
+   "aliases": [
+    "堂邑父"
+   ],
+   "title": "",
+   "faction": "han",
+   "role": "envoy",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -114,
+   "verification": "recalled",
+   "sources": [
+    "《史记·大宛列传》"
+   ],
+   "notes": "胡人，张骞第一次出使的随行；二使是否同行存疑；生卒年不详",
+   "attrs": {
+    "ability": 6,
+    "caution": 6,
+    "martial": 5,
+    "command": 3,
+    "basis": "善射，在匈奴中觅食"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_subu",
+   "name": "苏武",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "envoy",
+   "named": true,
+   "birth": -140,
+   "death": -60,
+   "active_from": -100,
+   "active_to": -60,
+   "verification": "searched",
+   "sources": [
+    "《汉书·李广苏建传》"
+   ],
+   "notes": "前100年出使匈奴被扣十九年，前81年归汉；神爵二年（前60）卒（检索确认）。在游戏起点（前119）尚年幼，active_from 取其出使年",
+   "attrs": {
+    "ability": 8,
+    "caution": 10,
+    "martial": 4,
+    "command": 2,
+    "basis": "持节不屈"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_fujiezi",
+   "name": "傅介子",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "envoy",
+   "named": true,
+   "birth": null,
+   "death": -65,
+   "active_from": -77,
+   "active_to": -65,
+   "verification": "searched",
+   "sources": [
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "前77年刺杀楼兰王，封义阳侯，元康元年（前65）卒（检索确认）",
+   "attrs": {
+    "ability": 9,
+    "caution": 5,
+    "martial": 8,
+    "command": 5,
+    "basis": "酒宴行刺"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_changhui",
+   "name": "常惠",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "envoy",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -100,
+   "active_to": -47,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "随苏武被扣；前72年率乌孙兵联合击匈奴，封长罗侯；检索仅确认其历仕昭宣元三朝，生卒年不详",
+   "attrs": {
+    "ability": 9,
+    "caution": 7,
+    "martial": 5,
+    "command": 6,
+    "basis": "持节发乌孙兵"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_zhengji",
+   "name": "郑吉",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "envoy",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -68,
+   "active_to": -49,
+   "verification": "searched",
+   "sources": [
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "神爵二年（前60）日逐王降，任首任都护、治乌垒城；封安远侯的年份有前60/前59两说；检索未得卒年",
+   "attrs": {
+    "ability": 9,
+    "caution": 8,
+    "martial": 7,
+    "command": 8,
+    "basis": "屯田渠犁，受降日逐王"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_fengfengshi",
+   "name": "冯奉世",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "envoy",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -75,
+   "active_to": -45,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·冯奉世传》"
+   ],
+   "notes": "以卫候使送大宛诸国客，矫制发兵击莎车（前65左右）；检索未得生卒年，仅凭记忆",
+   "attrs": {
+    "ability": 9,
+    "caution": 5,
+    "martial": 7,
+    "command": 7,
+    "basis": "矫诏破莎车"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_hanxuan",
+   "name": "韩宣",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "official",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -49,
+   "active_to": -40,
+   "verification": "searched",
+   "sources": [
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "元帝时西域都护（检索确认其名见于都护名录），在游戏终点前后；任期不详",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "han_ganyanshou",
+   "name": "甘延寿",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -40,
+   "active_to": -30,
+   "verification": "searched",
+   "sources": [
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "元帝时西域都护，前36年与陈汤矫制诛郅支；生卒年不详",
+   "attrs": {
+    "ability": 6,
+    "caution": 5,
+    "martial": 9,
+    "command": 7,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_chentang",
+   "name": "陈汤",
+   "aliases": [],
+   "title": "",
+   "faction": "han",
+   "role": "general",
+   "named": true,
+   "birth": null,
+   "death": -6,
+   "active_from": -40,
+   "active_to": -6,
+   "verification": "searched",
+   "sources": [
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "西域副校尉，前36年诛郅支单于；约卒于成哀之间（检索）；晚于游戏终点前49年，作为扩展剧本备用",
+   "attrs": {
+    "ability": 7,
+    "caution": 3,
+    "martial": 6,
+    "command": 9,
+    "basis": "矫诏灭郅支"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_xijun",
+   "name": "细君公主",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "royal",
+   "named": true,
+   "birth": null,
+   "death": -105,
+   "active_from": -108,
+   "active_to": -105,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "江都王建之女，远嫁乌孙昆莫猎骄靡，元封六年（前105）卒（检索确认）；出嫁年有元封三年（前108）/元封中两说",
+   "attrs": {
+    "ability": 6,
+    "caution": 6,
+    "martial": 1,
+    "command": 1,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_jieyou",
+   "name": "解忧公主",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "royal",
+   "named": true,
+   "birth": null,
+   "death": -49,
+   "active_from": -105,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "先嫁军须靡，后嫁翁归靡，生元贵靡等；检索确认其嫁二位昆弥；约前51年归汉、两年后卒（记忆值，待核）",
+   "attrs": {
+    "ability": 9,
+    "caution": 8,
+    "martial": 1,
+    "command": 1,
+    "basis": "在乌孙五十余年"
+   }
+  },
+  {
+   "defect": null,
+   "id": "han_fengliao",
+   "name": "冯嫽",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "envoy",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -70,
+   "active_to": -45,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "解忧侍女，嫁乌孙右大将；前53年受都护郑吉命劝降乌就屠（检索确认）；生卒年不详",
+   "attrs": {
+    "ability": 9,
+    "caution": 8,
+    "martial": 1,
+    "command": 2,
+    "basis": "锦车持节，称冯夫人"
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_junchen",
+   "name": "军臣单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -126,
+   "active_from": -130,
+   "active_to": -126,
+   "verification": "searched",
+   "sources": [
+    "《史记·匈奴列传》"
+   ],
+   "notes": "伊稚斜之兄，卒前126（检索）；游戏起点前已逝，仅用于世系",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "xn_yizhixie",
+   "name": "伊稚斜单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -114,
+   "active_from": -126,
+   "active_to": -114,
+   "verification": "searched",
+   "sources": [
+    "《史记·匈奴列传》"
+   ],
+   "notes": "军臣之弟，前126—前114在位（检索表格），子乌维、呴犁湖、且鞮侯（检索确认）；漠北之战的匈奴单于",
+   "attrs": {
+    "ability": 5,
+    "caution": 6,
+    "martial": 6,
+    "command": 6,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_wuwei",
+   "name": "乌维单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -105,
+   "active_from": -114,
+   "active_to": -105,
+   "verification": "searched",
+   "sources": [
+    "《史记·匈奴列传》"
+   ],
+   "notes": "伊稚斜子；检索表格将在位年数记为9年，与《史记》「立十年」说略有出入（前114—前105）",
+   "attrs": {
+    "ability": 5,
+    "caution": 6,
+    "martial": 5,
+    "command": 5,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_wushilu",
+   "name": "乌师庐单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -102,
+   "active_from": -105,
+   "active_to": -102,
+   "verification": "searched",
+   "sources": [
+    "《史记·匈奴列传》",
+    "《汉书·匈奴传》"
+   ],
+   "notes": "又作儿单于、詹师庐（名写法不一，见检索）；乌维之子",
+   "attrs": {
+    "ability": 3,
+    "caution": 4,
+    "martial": 4,
+    "command": 3,
+    "basis": "年少"
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_juhuhu",
+   "name": "呴犁湖单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -101,
+   "active_from": -102,
+   "active_to": -101,
+   "verification": "searched",
+   "sources": [
+    "《史记·匈奴列传》"
+   ],
+   "notes": "乌师庐之弟，在位一年",
+   "attrs": {
+    "ability": 4,
+    "caution": 4,
+    "martial": 4,
+    "command": 4,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_qiediehou",
+   "name": "且鞮侯单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -96,
+   "active_from": -101,
+   "active_to": -96,
+   "verification": "searched",
+   "sources": [
+    "《史记·匈奴列传》",
+    "《汉书·匈奴传》"
+   ],
+   "notes": "伊稚斜子、呴犁湖之弟，前101—前96（检索确认）；扣苏武、降李陵之时",
+   "attrs": {
+    "ability": 7,
+    "caution": 7,
+    "martial": 5,
+    "command": 6,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_hulugu",
+   "name": "狐鹿姑单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -85,
+   "active_from": -96,
+   "active_to": -85,
+   "verification": "searched",
+   "sources": [
+    "《汉书·匈奴传》"
+   ],
+   "notes": "且鞮侯之子，前96—前85",
+   "attrs": {
+    "ability": 6,
+    "caution": 6,
+    "martial": 5,
+    "command": 7,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_huyandi",
+   "name": "壶衍鞮单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -68,
+   "active_from": -85,
+   "active_to": -68,
+   "verification": "searched",
+   "sources": [
+    "《汉书·匈奴传》"
+   ],
+   "notes": "前85—前68；放还苏武（前81）",
+   "attrs": {
+    "ability": 5,
+    "caution": 6,
+    "martial": 4,
+    "command": 5,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_xuluquanqu",
+   "name": "虚闾权渠单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -60,
+   "active_from": -68,
+   "active_to": -60,
+   "verification": "searched",
+   "sources": [
+    "《汉书·匈奴传》"
+   ],
+   "notes": "前68—前60（检索：前60年卒）；子稽侯狦（呼韩邪）、屠耆堂外另有子郅支",
+   "attrs": {
+    "ability": 5,
+    "caution": 6,
+    "martial": 5,
+    "command": 6,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_woyanqudi",
+   "name": "握衍朐鞮单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -58,
+   "active_from": -60,
+   "active_to": -58,
+   "verification": "searched",
+   "sources": [
+    "《汉书·匈奴传》"
+   ],
+   "notes": "远亲，夺位；前60年立（检索）；日逐王先贤掸因与其不合降汉；在位年数各说前60—前58/前57",
+   "attrs": {
+    "ability": 3,
+    "caution": 3,
+    "martial": 5,
+    "command": 4,
+    "basis": "暴虐失众"
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_huhanye",
+   "name": "呼韩邪单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -31,
+   "active_from": -58,
+   "active_to": -31,
+   "verification": "searched",
+   "sources": [
+    "《汉书·匈奴传》"
+   ],
+   "notes": "虚闾权渠之子稽侯狦，前58自立，在位至前31（检索）；前51年入朝，娶王昭君",
+   "attrs": {
+    "ability": 8,
+    "caution": 7,
+    "martial": 5,
+    "command": 6,
+    "basis": "附汉求存"
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_zhizhi",
+   "name": "郅支单于",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -36,
+   "active_from": -56,
+   "active_to": -36,
+   "verification": "searched",
+   "sources": [
+    "《汉书·匈奴传》"
+   ],
+   "notes": "名呼屠吾斯，呼韩邪之兄；约前55/前56自立；西迁康居建郅支城，前36年被陈汤、甘延寿所诛",
+   "attrs": {
+    "ability": 5,
+    "caution": 3,
+    "martial": 8,
+    "command": 7,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_rizhu",
+   "name": "日逐王先贤掸",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "noble",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -68,
+   "active_to": -60,
+   "verification": "searched",
+   "sources": [
+    "《汉书·匈奴传》",
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "神爵二年（前60）与握衍朐鞮不和，遣使郑吉请降，率众万二千（检索），封归德侯",
+   "attrs": {
+    "ability": 7,
+    "caution": 7,
+    "martial": 5,
+    "command": 6,
+    "basis": "掌西域僮仆都尉"
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_zhaoxin",
+   "name": "赵信",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "noble",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -123,
+   "active_to": -119,
+   "verification": "recalled",
+   "sources": [
+    "《史记·卫将军骠骑列传》",
+    "《史记·匈奴列传》"
+   ],
+   "notes": "原匈奴降汉、封翕侯，前123年战败复降匈奴，被伊稚斜封自次王，为谋划漠北战略者；赵信城以其名；生卒年不详",
+   "attrs": {
+    "ability": 7,
+    "caution": 7,
+    "martial": 5,
+    "command": 6,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "xn_weilu",
+   "name": "卫律",
+   "aliases": [],
+   "title": "",
+   "faction": "xiongnu",
+   "role": "noble",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -100,
+   "active_to": -85,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·李广苏建传》"
+   ],
+   "notes": "长水胡人，随李延年出使降匈奴，封丁灵王；负责劝降苏武、李陵；生卒年不详；检索仅提及其与李广利相争",
+   "attrs": {
+    "ability": 7,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "ws_liejiaomi",
+   "name": "猎骄靡（昆莫）",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "ruler",
+   "named": true,
+   "birth": -177,
+   "death": -105,
+   "active_from": -119,
+   "active_to": -105,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》",
+    "《史记·大宛列传》"
+   ],
+   "notes": "检索：约前177—前105（据维基，约值）；约前161击败大月氏；娶细君公主；老年将位传军须靡",
+   "attrs": {
+    "ability": 8,
+    "caution": 6,
+    "martial": 7,
+    "command": 7,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "ws_junxumi",
+   "name": "军须靡（昆弥）",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -105,
+   "active_to": -93,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "猎骄靡孙；娶细君、解忧；在位约前2世纪末至前1世纪初（检索，起讫年不定）",
+   "attrs": {
+    "ability": 5,
+    "caution": 6,
+    "martial": 5,
+    "command": 5,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "ws_wengguimi",
+   "name": "翁归靡（肥王）",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -60,
+   "active_from": -93,
+   "active_to": -60,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "检索：约前93—前60在位；前72—前71年与汉军合击匈奴；娶解忧，生元贵靡等；子万年为莎车王、女弟史为龟兹王绛宾妻（检索确认）",
+   "attrs": {
+    "ability": 7,
+    "caution": 7,
+    "martial": 6,
+    "command": 7,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "ws_nimi",
+   "name": "泥靡（狂王）",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -53,
+   "active_from": -60,
+   "active_to": -53,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "翁归靡死后立，有匈奴血统；前53年被乌就屠起兵杀死（检索确认）",
+   "attrs": {
+    "ability": 2,
+    "caution": 2,
+    "martial": 5,
+    "command": 3,
+    "basis": "暴虐失众"
+   }
+  },
+  {
+   "defect": null,
+   "id": "ws_wujiutu",
+   "name": "乌就屠",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -53,
+   "active_to": -40,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "翁归靡与匈奴女之子，前53年杀泥靡，被冯嫽劝降，后为小昆弥（检索确认冯嫽劝降）",
+   "attrs": {
+    "ability": 6,
+    "caution": 6,
+    "martial": 6,
+    "command": 6,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "ws_yuanguimi",
+   "name": "元贵靡",
+   "aliases": [],
+   "title": "",
+   "faction": "wusun",
+   "role": "royal",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -60,
+   "active_to": -45,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "翁归靡与解忧之长子，汉所立大昆弥；乌孙分为大小昆弥（前51）；生卒年不详（记忆）",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "kz_jiangbin",
+   "name": "龟兹王绛宾",
+   "aliases": [],
+   "title": "",
+   "faction": "qiu_ci",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -72,
+   "active_to": -45,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "娶解忧公主之女弟史，数朝汉；检索：约前72年即位（百科表格，待核）；子丞德",
+   "attrs": {
+    "ability": 7,
+    "caution": 6,
+    "martial": 3,
+    "command": 3,
+    "basis": "慕汉制，宫室仿汉"
+   }
+  },
+  {
+   "defect": null,
+   "id": "kz_chengde",
+   "name": "丞德",
+   "aliases": [],
+   "title": "",
+   "faction": "qiu_ci",
+   "role": "royal",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -45,
+   "active_to": -30,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "绛宾之子，自称汉外孙（检索确认）",
+   "attrs": {}
+  },
+  {
+   "defect": null,
+   "id": "ll_changgui",
+   "name": "楼兰王（尝归/安归）",
+   "aliases": [
+    "尝归",
+    "安归"
+   ],
+   "title": "",
+   "faction": "lou_lan",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -77,
+   "active_from": -119,
+   "active_to": -77,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传上》",
+    "《汉书·傅常郑甘陈段传》"
+   ],
+   "notes": "前77年被傅介子斩杀；《汉书》两处所记名不同（尝归/安归），检索未能裁定。前108年赵破奴曾虏楼兰王，此王为其后继者",
+   "attrs": {
+    "ability": 4,
+    "caution": 3,
+    "martial": 3,
+    "command": 3,
+    "basis": "两属汉匈，杀汉使"
+   }
+  },
+  {
+   "defect": null,
+   "id": "ll_weitu",
+   "name": "尉屠耆",
+   "aliases": [],
+   "title": "",
+   "faction": "lou_lan",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -77,
+   "active_to": -60,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传上》"
+   ],
+   "notes": "在汉为质，前77年立为王并改国名鄯善；请汉屯田伊循（检索）",
+   "attrs": {
+    "ability": 6,
+    "caution": 7,
+    "martial": 3,
+    "command": 3,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "sc_wannian",
+   "name": "万年（莎车王）",
+   "aliases": [],
+   "title": "",
+   "faction": "sha_che",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -65,
+   "active_to": -65,
+   "verification": "searched",
+   "sources": [
+    "《汉书·西域传下》"
+   ],
+   "notes": "翁归靡之子，为莎车王；检索确认其父子关系；卒年不详（记忆：被莎车人所杀，其后冯奉世矫制击莎车）",
+   "attrs": {
+    "ability": 3,
+    "caution": 3,
+    "martial": 3,
+    "command": 3,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "dw_wugua",
+   "name": "毋寡",
+   "aliases": [],
+   "title": "",
+   "faction": "dawan",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": -101,
+   "active_from": -119,
+   "active_to": -101,
+   "verification": "searched",
+   "sources": [
+    "《史记·大宛列传》"
+   ],
+   "notes": "大宛王，居贵山城；杀汉使、拒献马，被国人所杀（检索确认前101年卒）；其即位年史无明载，按在位至前101年处理，active_from 取剧本起点",
+   "attrs": {
+    "ability": 3,
+    "caution": 4,
+    "martial": 3,
+    "command": 3,
+    "basis": ""
+   }
+  },
+  {
+   "defect": null,
+   "id": "dw_meicai",
+   "name": "昧蔡",
+   "aliases": [],
+   "title": "",
+   "faction": "dawan",
+   "role": "ruler",
+   "named": true,
+   "birth": null,
+   "death": null,
+   "active_from": -101,
+   "active_to": -95,
+   "verification": "searched",
+   "sources": [
+    "《史记·大宛列传》"
+   ],
+   "notes": "贰师围城后大宛贵人杀毋寡献马三千，汉立昧蔡为王（检索确认）；后被杀（记忆）",
+   "attrs": {
+    "ability": 5,
+    "caution": 6,
+    "martial": 3,
+    "command": 3,
+    "basis": "善待汉使"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_dong_qiemi",
+   "name": "东且弥王",
+   "aliases": [],
+   "title": "",
+   "faction": "dong_qiemi",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_cheshi_qian",
+   "name": "车师前王",
+   "aliases": [],
+   "title": "",
+   "faction": "cheshi_qian",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_cheshi_hou",
+   "name": "车师后王",
+   "aliases": [],
+   "title": "",
+   "faction": "cheshi_hou",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_yan_qi",
+   "name": "焉耆王",
+   "aliases": [],
+   "title": "",
+   "faction": "yan_qi",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_wei_li",
+   "name": "尉犁王",
+   "aliases": [],
+   "title": "",
+   "faction": "wei_li",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_wu_lei",
+   "name": "乌垒王",
+   "aliases": [],
+   "title": "",
+   "faction": "wu_lei",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_lun_tai",
+   "name": "轮台王",
+   "aliases": [],
+   "title": "",
+   "faction": "lun_tai",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_gu_mo",
+   "name": "姑墨王",
+   "aliases": [],
+   "title": "",
+   "faction": "gu_mo",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_wen_su",
+   "name": "温宿王",
+   "aliases": [],
+   "title": "",
+   "faction": "wen_su",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_shu_le",
+   "name": "疏勒王",
+   "aliases": [],
+   "title": "",
+   "faction": "shu_le",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_sha_che",
+   "name": "莎车王",
+   "aliases": [],
+   "title": "",
+   "faction": "sha_che",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_yu_tian",
+   "name": "于阗王",
+   "aliases": [],
+   "title": "",
+   "faction": "yu_tian",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_jing_jue",
+   "name": "精绝王",
+   "aliases": [],
+   "title": "",
+   "faction": "jing_jue",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_qie_mo",
+   "name": "且末王",
+   "aliases": [],
+   "title": "",
+   "faction": "qie_mo",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_juan_du",
+   "name": "捐毒王",
+   "aliases": [],
+   "title": "",
+   "faction": "juan_du",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_xiu_xun",
+   "name": "休循王",
+   "aliases": [],
+   "title": "",
+   "faction": "xiu_xun",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_dayuezhi",
+   "name": "大月氏王",
+   "aliases": [],
+   "title": "",
+   "faction": "dayuezhi",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_kangju",
+   "name": "康居王",
+   "aliases": [],
+   "title": "",
+   "faction": "kangju",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  },
+  {
+   "defect": null,
+   "id": "king_jibin",
+   "name": "罽宾王",
+   "aliases": [],
+   "title": "",
+   "faction": "jibin",
+   "role": "ruler",
+   "named": false,
+   "birth": null,
+   "death": null,
+   "active_from": -119,
+   "active_to": -49,
+   "verification": "recalled",
+   "sources": [
+    "《汉书·西域传》"
+   ],
+   "notes": "《汉书·西域传》载该国王而未必有名；名缺，按设计以称号命名，不虚构",
+   "attrs": {
+    "ability": 5,
+    "caution": 5,
+    "martial": 4,
+    "command": 4,
+    "basis": "占位：数值取中性值"
+   }
+  }
+ ]
+}

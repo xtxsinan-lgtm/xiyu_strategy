@@ -6,6 +6,7 @@ const Buffs = preload("res://core/buffs.gd")
 const Economy = preload("res://core/economy.gd")
 const Diplomacy = preload("res://core/diplomacy.gd")
 const Warfare = preload("res://core/warfare.gd")
+const Characters = preload("res://core/characters.gd")
 const Court = preload("res://core/court.gd")
 const AI = preload("res://core/ai.gd")
 const Cal = preload("res://core/calendar.gd")
@@ -25,6 +26,7 @@ static func step(s) -> bool:
 		Economy.month_end(s)
 		Diplomacy.month_end(s)
 		Court.month_end(s)
+		Characters.refresh(s)
 		Buffs.tick(s, "month")
 	s.tick += 1
 	if s.tick % s.decision_ticks == 0:

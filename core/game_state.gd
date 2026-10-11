@@ -2,6 +2,7 @@ extends RefCounted
 # 游戏状态根对象：纯数据 + 查询。实体全部用 Dictionary，便于存档/哈希/测试。
 
 const Cal = preload("res://core/calendar.gd")
+const Characters = preload("res://core/characters.gd")
 
 var bal: Dictionary
 var units: Dictionary
@@ -40,6 +41,7 @@ var requests: Array = []  # 西域国家向汉/匈奴提出的请求（请求册
 var convoy_losses := 0
 var trust := 50.0     # 汉廷对使节的信任（§5.7）
 var court_prev := {}  # 上月统计快照
+var characters := {}  # 史实人物 id -> 人物（见 core/characters.gd）
 var campaigns := {}   # AI 战役：势力 id -> {target, stage, members, phase, deadline}
 var ai_factions: Array = []  # 由 AI 控制的势力；默认空（测试用），游戏用 enable_default_ai()
 
@@ -109,6 +111,7 @@ func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, deci
 	buffs = []
 	season_flags = {}
 	campaigns = {}
+	Characters.load_all(self)
 	trust = float(bal["court"]["initial"])
 	court_prev = {}
 	requests = []

@@ -28,6 +28,18 @@ if sorted(months) != list(range(1, 13)): errs.append("四季月份未覆盖 1-12
 t = bal["time"]
 if t["decision_ticks"] % (t["ticks_per_month"] * 3): errs.append("decision_ticks 不是整季")
 if (sc["start"]["month"] - 3) % 3: errs.append("开局月份未对齐季首（3/6/9/12）")
+chars = json.load(open("data/characters.json", encoding="utf-8"))["characters"]
+cids = set()
+for ch in chars:
+    if ch["id"] in cids: errs.append(f"人物 id 重复: {ch['id']}")
+    cids.add(ch["id"])
+    if ch["faction"] not in fids: errs.append(f"人物势力不存在: {ch['id']} {ch['faction']}")
+    if ch["birth"] is not None and ch["death"] is not None and ch["death"] < ch["birth"]: errs.append(f"人物卒年早于生年: {ch['id']}")
+    if ch["active_from"] > ch["active_to"]: errs.append(f"人物活跃区间颠倒: {ch['id']}")
+    if ch["verification"] not in ("searched", "recalled"): errs.append(f"人物核对状态非法: {ch['id']}")
+    if not ch["named"] and ch["name"].count("王") == 0: errs.append(f"缺名国王应以称号命名: {ch['id']}")
+    d = ch.get("defect")
+    if d and d["to"] not in fids: errs.append(f"人物转属势力不存在: {ch['id']}")
 print(f"节点 {len(ids)}，路段 {len(sc['routes'])}，势力 {len(fids)}，兵种 {len(units)}")
 print("\n".join(errs) or "OK")
 sys.exit(1 if errs else 0)
