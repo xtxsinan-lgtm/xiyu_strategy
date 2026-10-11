@@ -107,17 +107,26 @@ static func expand_farm(s, node_id: String) -> Dictionary:
 	return {"ok": true, "labor": labor}
 
 ## 下达行军指令：按 Dijkstra 路径逐段前进（速度=最慢兵种），冬季封路段自动绕行/等待。
-static func order_move(s, army_id: String, dest: String) -> Dictionary:
+static func order_move(s, army_id: String, dest: String, avoid_hostile := false) -> Dictionary:
 	var a: Dictionary = s.armies.get(army_id, {})
 	if a.is_empty() or not a["loc"].has("node"):
 		return _fail("军队不在节点上")
-	var path := Pathfinding.path_to(s, a["loc"]["node"], dest, army_speed(s, a), {}, true)
+	var path := Pathfinding.path_to(s, a["loc"]["node"], dest, army_speed(s, a), hostile_nodes(s, a["faction"]) if avoid_hostile else {}, true)
 	if path.is_empty():
 		return _fail("无路径")
 	a["path"] = path
 	a["status"] = "moving"
 	a["garrison"] = false
 	return {"ok": true, "path": path}
+
+## 敌方控制的节点集合（供寻路绕行）。
+static func hostile_nodes(s, fid: String) -> Dictionary:
+	var out := {}
+	for id in s.nodes:
+		var c: String = s.controller(s.nodes[id])
+		if c != "" and s.is_hostile(c, fid):
+			out[id] = true
+	return out
 
 static func army_speed(s, a: Dictionary) -> float:
 	var v := 99.0

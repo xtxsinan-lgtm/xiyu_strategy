@@ -306,7 +306,17 @@ static func _siege_or_capture(s, n: Dictionary, present: Array, side: String) ->
 	for a in present:
 		for t in a["units"]:
 			dmg += float(a["units"][t]) * float(s.units[t]["siege"])
-	n["wall_hp"] = maxf(0.0, float(n["wall_hp"]) - dmg * float(sg["siege_damage_k"]))
+	# 器械攻城 + 人海强攻（强攻损兵，按城防等级）
+	var men = 0
+	for a in present:
+		men += s.army_size(a)
+	dmg = dmg * float(sg["siege_damage_k"]) + float(men) * float(sg["default_assault_ratio"]) * float(sg["assault_wall_per_man"])
+	n["wall_hp"] = maxf(0.0, float(n["wall_hp"]) - dmg)
+	if float(n["wall_hp"]) > 0.0:
+		for a in present:
+			var loss = float(sg["assault_loss_per_wall_level"]) * float(n["walls"])
+			for t in a["units"].keys():
+				a["units"][t] = int(float(a["units"][t]) * (1.0 - loss))
 	if mil_total > 0:
 		var m := {"id": "militia_" + n["id"], "name": n["name"] + "民兵", "faction": s.controller(n), "units": n["militia"].duplicate(), "horses": 0,
 			"plan": {"engage": ["always", 0.0]}, "garrison": true, "starving": 0}

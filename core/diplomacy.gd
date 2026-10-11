@@ -10,6 +10,9 @@ static func month_end(s) -> void:
 		r["xn_intimidation"] = maxf(0.0, float(r["xn_intimidation"]) - _decay(s, r))
 		r["xn_resentment"] = maxf(0.0, float(r["xn_resentment"]) - float(d["resentment_decay_month"]))
 		r["gifted"] = maxf(0.0, float(r.get("gifted", 0.0)) * (1.0 - float(d["gift_decay"])))
+		# 无册封/和亲/属国支撑的影响力会随时间淡去（商路收入另计，见 _trade）
+		if r["han_status"] == "none" and r["marriage"] == "" and r["overlord"] != "han":
+			r["han_influence"] = maxf(0.0, float(r["han_influence"]) - float(d["unsupported_influence_decay_month"]))
 		if r["xn_status"] == "vassal" and r["overlord"] == "xiongnu":
 			_collect_tax(s, r)
 	_trade(s)

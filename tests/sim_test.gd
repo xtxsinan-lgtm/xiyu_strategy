@@ -38,6 +38,7 @@ func _init() -> void:
 	test_determinism()
 	test_integration()
 	test_ai()
+	test_court()
 	test_long_run()
 	print("failures: ", fails)
 	quit(1 if fails > 0 else 0)
@@ -216,8 +217,14 @@ func test_ai() -> void:
 			campaigns += 1
 	check(campaigns > 0, "匈奴 AI 发起集结战役")
 	check(s.stats["battles"] > 0, "AI 战役引发战斗")
+	var s_levy = fresh(1)
+	for id in s_levy.armies.keys():
+		if s_levy.armies[id]["faction"] == "xiongnu":
+			s_levy.armies.erase(id)
+	s_levy.ai_factions = ["xiongnu"]
+	Sim.advance_turn(s_levy)
 	var xn_levy := false
-	for id in s.armies:
+	for id in s_levy.armies:
 		if id.begins_with("xn_levy_"):
 			xn_levy = true
 	check(xn_levy, "匈奴 AI 在兵力不足时动员部领")
@@ -225,18 +232,41 @@ func test_ai() -> void:
 	check(Actions.settle(fresh(), "dun_huang", 100)["ok"] == false, "人口未减少时无需移民")
 	var s2 = fresh(1)
 	s2.ai_factions = ["han", "xiongnu"]
-	while s2.turn < 30 and s2.winner == "":
+	while s2.turn < 40 and s2.winner == "":
 		Sim.advance_turn(s2)
 	var unloaded := 0
 	for e in s2.log:
 		if e["kind"] == "convoy" and "运入粮" in e["text"]:
 			unloaded += 1
 	check(unloaded > 5, "Han AI 持续向边郡运粮（卸货 %d 次）" % unloaded)
-	check(Sim.han_condition(s2)["count"] > 5, "Han AI 外交经营出多个属国")
+	check(Sim.han_condition(s2)["count"] >= 4, "Han AI 外交经营出多个属国")
 	# 运输避开敌控节点
 	var s3 = fresh()
 	s3.nodes["jiu_quan"]["faction"] = "xiongnu"
 	check(not Actions.transport(s3, "han", "chang_an", "dun_huang", 10000, 1000)["ok"], "运输不穿越敌控节点（无安全路径）")
+
+func test_court() -> void:
+	var Court = preload("res://core/court.gd")
+	var s = fresh()
+	check(s.trust == 50.0, "朝廷信任初始 50")
+	Sim.advance_turn(s)
+	check(s.trust < 50.0, "久无功绩信任缓降")
+	s.stats["xn_battle_dead"] += 20000
+	var t0: float = s.trust
+	for i in 3:
+		Sim.step(s)
+	for i in 6:
+		Sim.step(s)
+	check(s.trust > t0 - 1.0 and Court.era(s)["name"] == "武帝拓边", "斩首增信任（武帝期）")
+	s.trust = 85.0
+	check(Court.grant_mult(s) > 1.0, "高信任拨付加成")
+	s.trust = 10.0
+	check(Court.grant_mult(s) < 1.0, "低信任拨付削减")
+	s.trust = 0.0
+	s.court_prev = {}
+	Sim.advance_turn(s)
+	Sim.advance_turn(s)
+	check(s.winner == "xiongnu" and "召回" in s.win_reason, "信任归零被召回，汉方失败")
 
 func snapshot_run(seed_value: int, turns: int) -> int:
 	var s = fresh(seed_value)

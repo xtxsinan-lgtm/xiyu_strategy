@@ -32,12 +32,14 @@ var events: Array = []  # 当前回合事件（供 UI 回放）
 var winner := ""
 var win_reason := ""
 var streak := {"han": 0, "xiongnu": 0}
-var stats := {"battles": 0, "han_casualties": 0, "xn_casualties": 0, "horses_captured": 0, "hexi_lost": 0, "han_vassals_peak": 0, "sieges_won": 0, "horses_lost": 0}
+var stats := {"battles": 0, "han_casualties": 0, "xn_casualties": 0, "horses_captured": 0, "hexi_lost": 0, "han_vassals_peak": 0, "sieges_won": 0, "horses_lost": 0, "xn_battle_dead": 0, "han_battle_dead": 0}
 var next_army_id := 1
 var tuntian_started := false
 var season_flags := {}   # 由全局 Buff 回调写入，如 {"winter": true}
 var requests: Array = []  # 西域国家向汉/匈奴提出的请求（请求册封等），供 UI/AI 消费
 var convoy_losses := 0
+var trust := 50.0     # 汉廷对使节的信任（§5.7）
+var court_prev := {}  # 上月统计快照
 var campaigns := {}   # AI 战役：势力 id -> {target, stage, members, phase, deadline}
 var ai_factions: Array = []  # 由 AI 控制的势力；默认空（测试用），游戏用 enable_default_ai()
 
@@ -107,9 +109,11 @@ func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, deci
 	buffs = []
 	season_flags = {}
 	campaigns = {}
+	trust = float(bal["court"]["initial"])
+	court_prev = {}
 	requests = []
 	streak = {"han": 0, "xiongnu": 0}
-	stats = {"battles": 0, "han_casualties": 0, "xn_casualties": 0, "horses_captured": 0, "hexi_lost": 0, "han_vassals_peak": 0, "sieges_won": 0}
+	stats = {"battles": 0, "han_casualties": 0, "xn_casualties": 0, "horses_captured": 0, "hexi_lost": 0, "han_vassals_peak": 0, "sieges_won": 0, "horses_lost": 0, "xn_battle_dead": 0, "han_battle_dead": 0}
 
 
 func _init_node(n: Dictionary) -> void:

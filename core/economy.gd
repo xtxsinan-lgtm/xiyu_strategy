@@ -96,6 +96,12 @@ static func _army_food(s, a: Dictionary) -> void:
 	var eat := minf(need, float(a["grain"]))
 	a["grain"] -= eat
 	need -= eat
+	if need > 0.01 and a["faction"] == "xiongnu" and int(a["horses"]) > 0:
+		# 杀马换粮（§3.4）：每匹折 horse_slaughter_food 粮；每骑配马随之减少
+		var n_kill := mini(int(a["horses"]), int(ceil(need / float(f["horse_slaughter_food"]))))
+		a["horses"] -= n_kill
+		s.stats["horses_lost"] += n_kill
+		need = maxf(0.0, need - float(n_kill) * float(f["horse_slaughter_food"]))
 	if need > 0.01:
 		a["starving"] = int(a["starving"]) + 1
 		var loss: float = s.bal["attrition"]["no_food_month"]

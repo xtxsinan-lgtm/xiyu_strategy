@@ -151,8 +151,10 @@ static func resolve(s, a: Dictionary, b: Dictionary, wall_a := 0.0, wall_b := 0.
 static func _account(s, a: Dictionary, loss: int) -> void:
 	if a["faction"] == "han":
 		s.stats["han_casualties"] += loss
+		s.stats["han_battle_dead"] += loss
 	else:
 		s.stats["xn_casualties"] += loss
+		s.stats["xn_battle_dead"] += loss
 
 static func _scale_horses(a: Dictionary, before: int, after: int) -> void:
 	if before > 0 and after < before:

@@ -28,7 +28,7 @@
     "evade_speed_margin": 1.3, "wall_def_per_level": 0.5,
     "starving_combat_mult": 0.7, "ambush_ranged_mult": 1.5, "convoy_capture_ratio": 0.5
   },
-  "siege": { "wall_hp_per_level": 1000, "siege_damage_k": 0.05, "starve_attrition": 0.15, "starve_surrender_chance": 0.3, "default_assault_ratio": 0.5 },
+  "siege": { "wall_hp_per_level": 1000, "siege_damage_k": 0.05, "starve_attrition": 0.15, "starve_surrender_chance": 0.3, "default_assault_ratio": 0.5, "assault_wall_per_man": 0.05, "assault_loss_per_wall_level": 0.005 },
   "attrition": { "no_food_month": 0.10, "desert_month": 0.01, "mountain_month": 0.01, "hazard_month": 0.03 },
   "diplomacy": {
     "influence_max": 100, "intimidation_decay_month": 2, "resentment_decay_month": 1,
@@ -44,7 +44,7 @@
     "great_threshold_mult": 1.5, "levy_grain_resentment": 5,
     "marriage_cost_money": 300, "marriage_cost_influence": 10,
     "hostage_cost_influence": 15,
-    "gift_decay": 0.015,
+    "gift_decay": 0.015, "unsupported_influence_decay_month": 0.5,
     "lean_w_resentment": 0.5, "lean_far_per_hop": 1.0, "request_enfeoff_lean": 20, "request_cooldown_turns": 4
   },
   "trade": { "influence_per_state_month": 1.5, "money_per_state_month": 5, "ban_intimidation": 60 },
@@ -54,6 +54,18 @@
     "han_required": 11, "han_must_have": ["wu_lei", "cheshi_qian"], "han_depot_nodes": ["wu_lei", "lun_tai"], "han_depot_grain": 60000, "han_max_intimidation": 40, "han_hold_turns": 4,
     "xn_targets": ["wu_wei", "zhang_ye", "jiu_quan", "dun_huang"], "xn_hold_turns": 2,
     "score": { "han_vassal": 10, "hexi_held": 15, "horses_per_1000": 1 }
+  },
+  "court": {
+    "initial": 50, "recall_below": 1, "idle_decay_month": 0.3,
+    "kill_per_1000": 0.5, "loss_per_1000": -0.6, "horse_per_1000": 0.5,
+    "new_vassal": 3.0, "lost_commandery": -8.0,
+    "grant_mult": [ {"min": 80, "mult": 1.3}, {"min": 50, "mult": 1.0}, {"min": 20, "mult": 0.7}, {"min": 0, "mult": 0.4} ],
+    "eras": [
+      {"until_year": -89, "name": "武帝拓边", "kill": 1.0, "loss": 1.5, "vassal": 1.0},
+      {"until_year": -87, "name": "轮台诏后", "kill": 0.3, "loss": 1.5, "vassal": 1.5},
+      {"until_year": -74, "name": "昭帝霍光", "kill": 0.5, "loss": 1.2, "vassal": 1.5},
+      {"until_year": 0, "name": "宣帝", "kill": 1.5, "loss": 1.0, "vassal": 1.2}
+    ]
   },
   "local_militia_ratio": 0.12, "great_militia_ratio": 0.05,
   "presets": {

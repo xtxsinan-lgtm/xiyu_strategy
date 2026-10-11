@@ -38,6 +38,7 @@ func report(s) -> void:
 		if r["overlord"] == "xiongnu":
 			xn_vassals += 1
 	print("  长安粮仓 陇西%d 乌垒汉仓%d 轮台汉仓%d 敦煌%d" % [s.nodes["long_xi"]["grain"], s.stock(s.nodes["wu_lei"], "han"), s.stock(s.nodes["lun_tai"], "han"), s.nodes["dun_huang"]["grain"]])
+	print("  信任 %.1f" % s.trust)
 	print("[%s 回合%d] 汉属国 %d(必需%s 威吓%s 屯粮%d) 匈奴属国 %d 河西持有 %d/4 战斗 %d 汉损 %d 匈损 %d 钱 %d 截粮 %d" % [s.date_text(), s.turn, hc["count"], hc["must"], hc["intim"], hc["depot_grain"], xn_vassals, hexi, s.stats["battles"], s.stats["han_casualties"], s.stats["xn_casualties"], s.factions["han"]["money"], s.convoy_losses])
 
 func dump(s) -> void:

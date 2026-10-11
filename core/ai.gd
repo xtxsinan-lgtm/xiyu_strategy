@@ -31,21 +31,31 @@ static func _field_armies(s, fid: String) -> Array:
 
 # ---------- 战役（集结 → 进攻）----------
 ## 避免各军先后零星到达被各个击破：先集结到离目标最近的己方节点，全部到齐（或超时）再同时出击。
-static func _stage_node(s, fid: String, target: String) -> String:
-	var res = Pathfinding.dijkstra(s, target, 1.0, {}, true)
+static func _stage_node(s, fid: String, target: String, members: Array) -> String:
+	var from_target = Pathfinding.dijkstra(s, target, 1.0, {}, true)["dist"]
+	var hostile = Actions.hostile_nodes(s, fid)
+	var reach = {}
+	for a in members:
+		var r = Pathfinding.dijkstra(s, a["loc"]["node"], Actions.army_speed(s, a), hostile, true)["dist"]
+		if reach.is_empty():
+			reach = r
+		else:
+			for k in reach.keys():
+				if not r.has(k):
+					reach.erase(k)
 	var best = ""
 	var bd = INF
-	for id in res["dist"]:
+	for id in reach:
 		var n: Dictionary = s.nodes[id]
-		if id == target or s.controller(n) != fid or n["type"] == "source":
+		if id == target or s.controller(n) != fid or n["type"] == "source" or not from_target.has(id):
 			continue
-		if res["dist"][id] < bd:
-			bd = res["dist"][id]
+		if from_target[id] < bd:
+			bd = from_target[id]
 			best = id
 	return best
 
 static func _start_campaign(s, fid: String, target: String, members: Array) -> bool:
-	var stage = _stage_node(s, fid, target)
+	var stage = _stage_node(s, fid, target, members)
 	if stage == "":
 		return false
 	var ids = []
@@ -53,7 +63,7 @@ static func _start_campaign(s, fid: String, target: String, members: Array) -> b
 		s.apply_preset(a, "aggressive")
 		a["garrison"] = false
 		a.erase("mission")
-		if Actions.order_move(s, a["id"], stage)["ok"] or a["loc"].get("node", "") == stage:
+		if Actions.order_move(s, a["id"], stage, true)["ok"] or a["loc"].get("node", "") == stage:
 			ids.append(a["id"])
 	if ids.is_empty():
 		return false
@@ -155,41 +165,46 @@ static func _xn_levy(s) -> void:
 	var total = 0
 	for a in _field_armies(s, "xiongnu"):
 		total += s.army_size(a)
-	if total >= 40000:
+	if total >= 60000:
 		return
 	for id in ["youxian_wang", "chanyu_ting", "hu_jie", "long_cheng"]:
 		Actions.levy_xiongnu(s, id)
 
 ## 示威：把一支闲置军队派到「汉影响力压过匈奴威吓」的独立/汉属邻国驻留 3 回合，借威吓辐射（§5.1）压住倾向。
 static func _xn_presence(s, pool: Array) -> void:
-	var target = ""
-	var gap = 0.0
+	var ranked = []
 	for sid in s.relations:
 		var r: Dictionary = s.relations[sid]
 		if s.kind_of(sid) != "citystate" or r["overlord"] == "xiongnu":
 			continue
 		var g = float(r["han_influence"]) - float(r["xn_intimidation"])
-		if g > gap:
-			gap = g
-			target = sid
-	if target == "":
-		return
+		if g > 0.0:
+			ranked.append([g, sid])
+	ranked.sort_custom(func(x, y): return x[0] > y[0])
+	var used = {}
+	for i in mini(3, ranked.size()):
+		var a = _send_presence(s, pool, ranked[i][1], used)
+		if a != null:
+			used[a["id"]] = true
+
+static func _send_presence(s, pool: Array, target: String, used: Dictionary):
 	var cap_node = s.nodes_of_state(target)[0]
 	var best = null
 	var best_days = 1e9
 	for a in pool:
-		if s.army_size(a) < 3000:
+		if s.army_size(a) < 3000 or used.has(a["id"]) or a.has("mission"):
 			continue
 		var d = Pathfinding.days_to(s, a["loc"]["node"], cap_node["id"], Actions.army_speed(s, a), true)
 		if d < best_days:
 			best_days = d
 			best = a
 	if best == null or best_days > 120.0:
-		return
+		return null
 	s.apply_preset(best, "balanced")
 	best["garrison"] = false
 	best["mission"] = {"kind": "presence", "until": s.turn + 3 + int(best_days / 90.0)}
 	Actions.order_move(s, best["id"], cap_node["id"])
+	return best
 
 ## 税率：怨恨低于上限则逐档加税，高于上限则降档；已叛离/非属国不处理。
 static func _xn_tax(s, prof: Dictionary) -> void:
@@ -283,10 +298,14 @@ static func _han_counterattack(s, prof: Dictionary) -> void:
 	if _campaign_tick(s, "han"):
 		return
 	var lost = ""
-	for id in s.bal["victory"]["xn_targets"]:
-		if s.controller(s.nodes[id]) == "xiongnu":
-			lost = id
-			break
+	var lost_days = 1e9
+	for n in s.nodes.values():
+		# 汉直辖节点（含玉门关/阳关）被匈奴占领；优先河西四郡，其次离长安近者
+		if n["faction"] == "han" and s.controller(n) == "xiongnu":
+			var d = Pathfinding.days_to(s, "chang_an", n["id"], 1.0, true) - (1000.0 if n["id"] in s.bal["victory"]["xn_targets"] else 0.0)
+			if d < lost_days:
+				lost_days = d
+				lost = n["id"]
 	if lost == "":
 		return
 	var members = []

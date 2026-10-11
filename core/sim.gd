@@ -6,6 +6,7 @@ const Buffs = preload("res://core/buffs.gd")
 const Economy = preload("res://core/economy.gd")
 const Diplomacy = preload("res://core/diplomacy.gd")
 const Warfare = preload("res://core/warfare.gd")
+const Court = preload("res://core/court.gd")
 const AI = preload("res://core/ai.gd")
 const Cal = preload("res://core/calendar.gd")
 
@@ -23,6 +24,7 @@ static func step(s) -> bool:
 	if Cal.is_month_end(s.tick):
 		Economy.month_end(s)
 		Diplomacy.month_end(s)
+		Court.month_end(s)
 		Buffs.tick(s, "month")
 	s.tick += 1
 	if s.tick % s.decision_ticks == 0:
@@ -60,9 +62,10 @@ static func _turn_start(s) -> void:
 	if s.month() == 12:
 		var h: Dictionary = s.bal["han"]
 		for t in h["central_regen_year"]:
-			s.central[t] = mini(int(h["central_cap"][t]), int(s.central.get(t, 0)) + int(h["central_regen_year"][t]))
-		s.factions["han"]["money"] += int(h["annual_money"])
-		s.log_event("court", "年度拨款：钱 +%d，中央军补充" % int(h["annual_money"]))
+			s.central[t] = mini(int(h["central_cap"][t]), int(s.central.get(t, 0)) + int(float(h["central_regen_year"][t]) * Court.grant_mult(s)))
+		var grant := int(float(h["annual_money"]) * Court.grant_mult(s))
+		s.factions["han"]["money"] += grant
+		s.log_event("court", "年度拨款：钱 +%d（信任 %.0f），中央军补充" % [grant, s.trust])
 	for fid in s.ai_factions:
 		AI.run(s, fid)
 
