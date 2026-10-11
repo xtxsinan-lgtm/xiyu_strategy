@@ -11,7 +11,7 @@ var scenario_id := ""
 var start_year := -119
 var start_month := 1
 var max_turns := 240
-var decision_ticks := 3
+var decision_ticks := 9
 var player_faction := "han"
 
 var tick := 0
@@ -45,7 +45,7 @@ static func load_json(path: String) -> Variant:
 	return JSON.parse_string(f.get_as_text())
 
 
-func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, decision_ticks_value := 3) -> void:
+func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, decision_ticks_value := -1) -> void:
 	bal = load_json("res://data/balance.json")
 	units = load_json("res://data/units.json")
 	ai_profiles = load_json("res://data/ai_profiles.json")
@@ -56,9 +56,9 @@ func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, deci
 	scenario_id = sc["id"]
 	start_year = int(sc["start"]["year"])
 	start_month = int(sc["start"]["month"])
-	max_turns = int(sc["max_months"])
+	max_turns = int(sc["max_turns"])
 	player_faction = sc.get("player_faction", "han")
-	decision_ticks = decision_ticks_value
+	decision_ticks = decision_ticks_value if decision_ticks_value > 0 else int(bal["time"]["decision_ticks"])
 	rng.seed = seed_value
 	tick = 0
 	turn = 0

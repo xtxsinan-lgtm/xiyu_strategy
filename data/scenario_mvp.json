@@ -2,9 +2,8 @@
  "id": "mvp_119bc",
  "start": {
   "year": -119,
-  "month": 1
+  "month": 3
  },
- "max_months": 240,
  "player_faction": "han",
  "factions": [
   {
@@ -832,7 +831,7 @@
   },
   {
    "id": "da_wan",
-   "name": "大宛",
+   "name": "贵山城",
    "type": "city",
    "faction": "dawan",
    "pop": 200000,
@@ -889,7 +888,7 @@
   },
   {
    "id": "da_yuezhi",
-   "name": "大月氏",
+   "name": "蓝氏城",
    "type": "city",
    "faction": "dayuezhi",
    "pop": 400000,
@@ -927,7 +926,7 @@
   },
   {
    "id": "chi_gu",
-   "name": "乌孙",
+   "name": "赤谷城",
    "type": "nomad",
    "faction": "wusun",
    "pop": 530000,
@@ -1322,7 +1321,10 @@
    "xn_resentment": 25,
    "overlord": "xiongnu",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "vassal",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "cheshi_qian",
@@ -1331,7 +1333,10 @@
    "xn_resentment": 25,
    "overlord": "xiongnu",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "vassal",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "cheshi_hou",
@@ -1340,7 +1345,10 @@
    "xn_resentment": 25,
    "overlord": "xiongnu",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "vassal",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "yan_qi",
@@ -1349,7 +1357,10 @@
    "xn_resentment": 25,
    "overlord": "xiongnu",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "vassal",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "wei_li",
@@ -1358,7 +1369,10 @@
    "xn_resentment": 25,
    "overlord": "xiongnu",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "vassal",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "wu_lei",
@@ -1367,7 +1381,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "lun_tai",
@@ -1376,7 +1393,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "qiu_ci",
@@ -1385,7 +1405,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "gu_mo",
@@ -1394,7 +1417,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "wen_su",
@@ -1403,7 +1429,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "shu_le",
@@ -1412,7 +1441,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "sha_che",
@@ -1421,7 +1453,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "yu_tian",
@@ -1430,7 +1465,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "jing_jue",
@@ -1439,7 +1477,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "qie_mo",
@@ -1448,7 +1489,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "lou_lan",
@@ -1457,7 +1501,10 @@
    "xn_resentment": 25,
    "overlord": "xiongnu",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "vassal",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "juan_du",
@@ -1466,7 +1513,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "xiu_xun",
@@ -1475,7 +1525,10 @@
    "xn_resentment": 10,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "dawan",
@@ -1484,7 +1537,10 @@
    "xn_resentment": 5,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "kangju",
@@ -1493,7 +1549,10 @@
    "xn_resentment": 5,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "dayuezhi",
@@ -1502,7 +1561,10 @@
    "xn_resentment": 5,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "jibin",
@@ -1511,7 +1573,10 @@
    "xn_resentment": 5,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   },
   {
    "state": "wusun",
@@ -1520,7 +1585,10 @@
    "xn_resentment": 5,
    "overlord": "",
    "han_status": "none",
-   "tax_level": 0
+   "tax_level": 0,
+   "xn_status": "none",
+   "marriage": "",
+   "hostage": ""
   }
  ],
  "armies": [
@@ -1730,5 +1798,6 @@
   "infantry": 10000,
   "crossbow": 8000,
   "cavalry": 8000
- }
+ },
+ "max_turns": 280
 }

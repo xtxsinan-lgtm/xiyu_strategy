@@ -1,6 +1,6 @@
 {
-  "time": { "decision_ticks": 3, "ticks_per_month": 3, "days_per_tick": 10 },
-  "calendar": { "harvest_month": 8, "winter_months": [11, 12, 1], "spring_months": [2, 3, 4], "summer_months": [5, 6, 7], "autumn_months": [8, 9, 10] },
+  "time": { "decision_ticks": 9, "ticks_per_month": 3, "days_per_tick": 10 },
+  "calendar": { "harvest_month": 9, "winter_months": [12, 1, 2], "spring_months": [3, 4, 5], "summer_months": [6, 7, 8], "autumn_months": [9, 10, 11] },
   "food": {
     "civilian_per_month": 2.0, "soldier_per_month": 3.0, "laborer_per_month": 3.0,
     "horse_fodder_per_month_off_pasture": 1.0,
@@ -47,8 +47,8 @@
   "citystate": { "defect_to_han_margin": 20, "rebel_xn_intimidation_below": 20, "rebel_xn_resentment_above": 50, "defect_to_xn_margin": 30 },
   "grain_price": { "vassal_money_per_100": 10, "enfeoffed_money_per_100": 13 },
   "victory": {
-    "han_required": 11, "han_must_have": ["wu_lei", "cheshi_qian"], "han_hold_turns": 12,
-    "xn_targets": ["wu_wei", "zhang_ye", "jiu_quan", "dun_huang"], "xn_hold_turns": 6,
+    "han_required": 11, "han_must_have": ["wu_lei", "cheshi_qian"], "han_hold_turns": 4,
+    "xn_targets": ["wu_wei", "zhang_ye", "jiu_quan", "dun_huang"], "xn_hold_turns": 2,
     "score": { "han_vassal": 10, "hexi_held": 15, "horses_per_1000": 1 }
   },
   "local_militia_ratio": 0.12, "great_militia_ratio": 0.05,

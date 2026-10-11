@@ -1,7 +1,6 @@
 config_version=5
 [application]
-config/name="湘南行军 · Godot 学习版"
-run/main_scene="res://main.tscn"
+config/name="西域策略"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 [display]
 window/size/viewport_width=1440
