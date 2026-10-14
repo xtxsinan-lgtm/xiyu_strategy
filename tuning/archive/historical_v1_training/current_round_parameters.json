@@ -1,0 +1,241 @@
+{
+  "training_seeds": [
+    9001,
+    9020
+  ],
+  "note": "重复训练种子用于比较，不能将各轮合并为独立验证。baseline/final有完整文件哈希；候选轮这里只记录参数与代码修正阶段。",
+  "rounds": [
+    {
+      "round": 1,
+      "farm_yield": 72,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 9000,
+      "changes": "属国门槛与季度赏赐修正"
+    },
+    {
+      "round": 2,
+      "farm_yield": 72,
+      "xn_max_field_troops": 32000,
+      "long_plan_reserve_per_month": null,
+      "changes": "试验覆盖兵力上限：月32000、季16000"
+    },
+    {
+      "round": 3,
+      "farm_yield": 72,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 9000,
+      "changes": "新增居延运粮、净运达预测；防守提前60天、留粮8月、运输上限14"
+    },
+    {
+      "round": 4,
+      "farm_yield": 72,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 9000,
+      "changes": "运输预留征夫与库存；原始入站粮预测；防守提前30天、留粮4月、上限10"
+    },
+    {
+      "round": 5,
+      "farm_yield": 80,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 9000,
+      "changes": "防守留粮6月"
+    },
+    {
+      "round": 6,
+      "farm_yield": 84,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 9000,
+      "changes": "恢复净运达预测、远征采用剩余预算"
+    },
+    {
+      "round": 7,
+      "farm_yield": 88,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 4500,
+      "changes": "产量与季制保留兵力试验"
+    },
+    {
+      "round": 8,
+      "farm_yield": 86,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 7000,
+      "changes": "远征征夫扣除已排队运输；后续保留此修正"
+    },
+    {
+      "round": 9,
+      "farm_yield": 82,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 7000,
+      "changes": "产量试验"
+    },
+    {
+      "round": 10,
+      "farm_yield": 83,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 6000,
+      "changes": "产量与保留兵力试验"
+    },
+    {
+      "round": 11,
+      "farm_yield": 85,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 5500,
+      "changes": "产量与保留兵力试验"
+    },
+    {
+      "round": 12,
+      "farm_yield": 84,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 6000,
+      "changes": "产量试验"
+    },
+    {
+      "round": 13,
+      "farm_yield": 84.5,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 6000,
+      "changes": "产量试验"
+    },
+    {
+      "round": 14,
+      "farm_yield": 84.25,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 5750,
+      "changes": "产量与保留兵力试验"
+    },
+    {
+      "round": 15,
+      "farm_yield": 84.1,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 5625,
+      "changes": "产量与保留兵力试验"
+    },
+    {
+      "round": 16,
+      "farm_yield": 84.2,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 5600,
+      "changes": "产量与保留兵力试验"
+    },
+    {
+      "round": 17,
+      "farm_yield": 84.15,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 5600,
+      "changes": "产量试验"
+    },
+    {
+      "round": 18,
+      "farm_yield": 84.125,
+      "xn_max_field_troops": 36000,
+      "long_plan_reserve_per_month": 5600,
+      "changes": "产量试验"
+    },
+    {
+      "round": 19,
+      "farm_yield": 84,
+      "xn_max_field_troops": 37000,
+      "long_plan_reserve_per_month": 6050,
+      "changes": "恢复整数量级产量，月动员37000、季24900"
+    },
+    {
+      "round": 20,
+      "farm_yield": 84,
+      "xn_max_field_troops": 35000,
+      "long_plan_reserve_per_month": 5050,
+      "changes": "月动员35000、季24900；仅重跑月制，季制等同r19"
+    },
+    {
+      "round": 21,
+      "farm_yield": 84,
+      "xn_max_field_troops": 34000,
+      "long_plan_reserve_per_month": null,
+      "changes": "模拟器 --xn-cap 34000；仅月制"
+    },
+    {
+      "round": 22,
+      "farm_yield": 84,
+      "xn_max_field_troops": 28000,
+      "long_plan_reserve_per_month": null,
+      "changes": "模拟器 --xn-cap 28000；仅月制"
+    },
+    {
+      "round": 23,
+      "farm_yield": 84,
+      "xn_max_field_troops": 42000,
+      "long_plan_reserve_per_month": null,
+      "changes": "模拟器 --xn-cap 42000；仅月制"
+    },
+    {
+      "round": 24,
+      "farm_yield": 84,
+      "xn_max_field_troops": 40000,
+      "long_plan_reserve_per_month": null,
+      "changes": "模拟器 --xn-cap 40000；仅月制"
+    },
+    {
+      "round": 25,
+      "farm_yield": 84,
+      "xn_max_field_troops": 41000,
+      "long_plan_reserve_per_month": null,
+      "changes": "模拟器 --xn-cap 41000；仅月制"
+    },
+    {
+      "round": 26,
+      "farm_yield": 84,
+      "xn_cap_override": {
+        "monthly": 40500,
+        "quarterly": 25000
+      },
+      "changes": "独立季制样本汉14/20偏高，调整动员目标；独立样本10001–10020全部保留为候选验证，最终另用新种子。"
+    },
+    {
+      "round": 27,
+      "farm_yield": 84,
+      "xn_cap_override": {
+        "monthly": 40750,
+        "quarterly": 24950
+      },
+      "changes": "与r26并行比较相邻动员目标，固定相同训练种子。"
+    },
+    {
+      "round": 28,
+      "farm_yield": 84,
+      "xn_cap_override": {
+        "monthly": 40600,
+        "quarterly": 25500
+      },
+      "changes": "固定训练种子的动员目标候选。"
+    },
+    {
+      "round": 29,
+      "farm_yield": 84,
+      "xn_cap_override": {
+        "quarterly": 26000
+      },
+      "changes": "季制动员目标继续比较；仅季制。"
+    }
+  ],
+  "independent_quarterly_validation": {
+    "seeds": [
+      10001,
+      10020
+    ],
+    "farm_yield": 84,
+    "xn_cap_override": 24900,
+    "note": "季制等效动员目标已固定为24900；显式覆盖目标，不依赖随后月制上限的选择。"
+  },
+  "candidate_validation_10001": {
+    "monthly_wins": {
+      "han": 16,
+      "xiongnu": 4
+    },
+    "quarterly_wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "monthly_cap": 41000,
+    "quarterly_cap": 24900,
+    "note": "两种模式都未达目标；作为后续调参依据，不能作为最终独立验证。"
+  }
+}

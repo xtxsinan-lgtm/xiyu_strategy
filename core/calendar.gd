@@ -28,7 +28,7 @@ static func season_cn(season: String) -> String:
 	return {"spring": "春", "summer": "夏", "autumn": "秋", "winter": "冬"}[season]
 
 static func date_text(tick: int, start_year: int, start_month: int) -> String:
-	var y := year_of(tick, start_year, start_month)
-	var m := month_of(tick, start_month)
-	var xun := tick % TICKS_PER_MONTH
+	var y = year_of(tick, start_year, start_month)
+	var m = month_of(tick, start_month)
+	var xun = tick % TICKS_PER_MONTH
 	return "前%d年%d月%s" % [-y, m, ["上旬", "中旬", "下旬"][xun]]

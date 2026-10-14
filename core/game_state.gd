@@ -7,42 +7,47 @@ var bal: Dictionary
 var units: Dictionary
 var buff_defs: Dictionary
 var ai_profiles: Dictionary
-var scenario_id := ""
-var start_year := -119
-var start_month := 1
-var max_turns := 240
-var decision_ticks := 3
-var player_faction := "han"
+var scenario_id = ""
+var start_year = -119
+var start_month = 1
+var max_turns = 240
+var decision_ticks = 3
+var player_faction = "han"
 
-var tick := 0
-var turn := 0
-var rng := RandomNumberGenerator.new()
+var tick = 0
+var day_offset = 0  # 旬内日序，0–9；命令仍按月/季提交
+var turn = 0
+var rng = RandomNumberGenerator.new()
 
-var factions := {}    # id -> {id,name,kind,money}
-var nodes := {}       # id -> node dict
-var routes := []      # [{a,b,terrain,days,raided_by}]
-var adj := {}         # node id -> [route idx]
-var relations := {}   # state id -> relation dict
-var armies := {}      # id -> army dict
-var trade_routes := []
-var buffs := []
-var central := {}     # 汉中央军池
+var factions = {}    # id -> {id,name,kind,money}
+var nodes = {}       # id -> node dict
+var routes = []      # [{a,b,terrain,days,raided_by}]
+var adj = {}         # node id -> [route idx]
+var relations = {}   # state id -> relation dict
+var armies = {}      # id -> army dict
+var trade_routes = []
+var buffs = []
+var central = {}     # 汉中央军池
 var log: Array = []   # 全部历史事件
 var events: Array = []  # 当前回合事件（供 UI 回放）
-var winner := ""
-var win_reason := ""
-var streak := {"han": 0, "xiongnu": 0}
-var stats := {"battles": 0, "han_casualties": 0, "xn_casualties": 0, "horses_captured": 0, "hexi_lost": 0, "han_vassals_peak": 0, "sieges_won": 0}
-var next_army_id := 1
-var tuntian_started := false
+var winner = ""
+var win_reason = ""
+var streak = {"han": 0, "xiongnu": 0}
+var stats = {"battles": 0, "han_casualties": 0, "xn_casualties": 0, "horses_captured": 0, "hexi_lost": 0, "han_vassals_peak": 0, "sieges_won": 0}
+var next_army_id = 1
+var tuntian_started = false
 
 
 static func load_json(path: String) -> Variant:
-	var f := FileAccess.open(path, FileAccess.READ)
+	var f = FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		push_error("无法读取 " + path)
 		return null
 	return JSON.parse_string(f.get_as_text())
+
+
+static func mixed_seed(seed_value: int) -> int:
+	return str(seed_value).sha256_buffer().decode_s64(0) & 0x7FFFFFFFFFFFFFFF
 
 
 func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, decision_ticks_value := 3) -> void:
@@ -59,7 +64,8 @@ func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, deci
 	max_turns = int(sc["max_months"])
 	player_faction = sc.get("player_faction", "han")
 	decision_ticks = decision_ticks_value
-	rng.seed = seed_value
+	# 相邻外部种子先分散，再初始化 RNG；存档仍保存精确 RNG 状态。
+	rng.seed = mixed_seed(seed_value)
 	tick = 0
 	turn = 0
 	winner = ""
@@ -90,9 +96,10 @@ func load_scenario(path := "res://data/scenario_mvp.json", seed_value := 1, deci
 	armies = {}
 	next_army_id = 1
 	for a in sc["armies"]:
-		var ar := new_army(a["faction"], a["at"], a["units"], int(a.get("horses", 0)), int(a.get("grain", 0)), int(a.get("laborers", 0)), a["id"])
+		var ar = new_army(a["faction"], a["at"], a["units"], int(a.get("horses", 0)), int(a.get("grain", 0)), int(a.get("laborers", 0)), a["id"])
 		apply_preset(ar, a.get("preset", "balanced"))
 		ar["origin"] = a["at"]
+		ar["name"] = a.get("name", a["id"])
 		if a.get("garrison", false):
 			ar["garrison"] = true
 	central = sc["han_central_pool"].duplicate()
@@ -112,12 +119,13 @@ func _init_node(n: Dictionary) -> void:
 	n["farm_cap_base"] = n["farm_cap"]
 	n["starving"] = false
 	n["starve_streak"] = 0
+	n["pop_cap"] = int(n["pop"] * bal["pop"]["cap_mult"])
 	n["militia"] = {}
 	var fid: String = n["faction"]
 	var kind: String = factions[fid]["kind"] if factions.has(fid) else "major"
 	if kind == "citystate" or kind == "great":
 		var ratio: float = bal["local_militia_ratio"] if kind == "citystate" else bal["great_militia_ratio"]
-		var total := int(n["pop"] * ratio)
+		var total = int(n["pop"] * ratio)
 		if kind == "citystate":
 			n["militia"] = {"infantry": total / 2, "crossbow": total - total / 2}
 		else:
@@ -126,7 +134,7 @@ func _init_node(n: Dictionary) -> void:
 
 # ---------- 查询 ----------
 func date_text() -> String:
-	return Cal.date_text(tick, start_year, start_month)
+	return "前%d年%d月%d日" % [-year(), month(), (tick % 3) * 10 + day_offset + 1]
 
 func month() -> int:
 	return Cal.month_of(tick, start_month)
@@ -138,7 +146,7 @@ func season() -> String:
 	return Cal.season_of(month())
 
 func is_winter() -> bool:
-	return month() in bal["calendar"]["winter_months"]
+	return float(month()) in bal["calendar"]["winter_months"]
 
 func kind_of(fid: String) -> String:
 	return factions[fid]["kind"] if factions.has(fid) else ""
@@ -166,7 +174,7 @@ func route_between(a: String, b: String) -> int:
 	return -1
 
 func neighbors(id: String) -> Array:
-	var out := []
+	var out = []
 	for idx in adj[id]:
 		var r: Dictionary = routes[idx]
 		out.append(r["b"] if r["a"] == id else r["a"])
@@ -179,7 +187,7 @@ func route_closed(idx: int) -> bool:
 	return routes[idx]["closed_in_winter"] and is_winter()
 
 func armies_at(node_id: String) -> Array:
-	var out := []
+	var out = []
 	for id in armies:
 		var a: Dictionary = armies[id]
 		if a["loc"].has("node") and a["loc"]["node"] == node_id:
@@ -192,8 +200,8 @@ func army_node(a: Dictionary) -> String:
 func hops(from_id: String, to_id: String, limit := 9) -> int:
 	if from_id == to_id:
 		return 0
-	var seen := {from_id: 0}
-	var q := [from_id]
+	var seen = {from_id: 0}
+	var q = [from_id]
 	while not q.is_empty():
 		var cur: String = q.pop_front()
 		if seen[cur] >= limit:
@@ -207,7 +215,7 @@ func hops(from_id: String, to_id: String, limit := 9) -> int:
 	return 99
 
 func nodes_of_state(sid: String) -> Array:
-	var out := []
+	var out = []
 	for id in nodes:
 		if nodes[id]["faction"] == sid:
 			out.append(nodes[id])
@@ -236,7 +244,7 @@ func new_army(fid: String, at: String, u: Dictionary, horses := 0, grain := 0, l
 	if id == "":
 		id = "%s_%d" % [fid, next_army_id]
 		next_army_id += 1
-	var a := {
+	var a = {
 		"id": id, "faction": fid, "units": u.duplicate(), "horses": horses, "grain": float(grain), "laborers": laborers,
 		"loc": {"node": at}, "plan": {"steps": [], "triggers": [], "engage": ["always", 0.0], "preset": "balanced", "step_ticks": 0},
 		"is_convoy": false, "starving": 0, "prev_node": at, "origin": at, "init_size": 0, "status": "idle",
@@ -247,7 +255,7 @@ func new_army(fid: String, at: String, u: Dictionary, horses := 0, grain := 0, l
 	return a
 
 func army_size(a: Dictionary) -> int:
-	var s := 0
+	var s = 0
 	for t in a["units"]:
 		s += int(a["units"][t])
 	return s
@@ -265,11 +273,42 @@ func remove_army(id: String) -> void:
 	armies.erase(id)
 
 func log_event(kind: String, text: String, extra := {}) -> void:
-	var e := {"tick": tick, "turn": turn, "date": date_text(), "kind": kind, "text": text}
+	var e = {"tick": tick, "turn": turn, "date": date_text(), "day": tick * 10 + day_offset, "kind": kind, "text": text}
 	e.merge(extra)
 	events.append(e)
 	log.append(e)
 
 func state_hash() -> int:
-	var snap := {"tick": tick, "nodes": nodes, "armies": armies, "relations": relations, "factions": factions, "winner": winner}
+	var snap = {"tick": tick, "nodes": nodes, "armies": armies, "relations": relations, "factions": factions, "winner": winner}
 	return JSON.stringify(snap, "", true).hash()
+
+
+# ---------- 存档（二进制 Variant 保留浮点精度，兼容旧文本存档）----------
+const SAVE_PREFIX := "XIYU_SAVE_2\n"
+const SAVE_KEYS := ["tick", "turn", "factions", "nodes", "routes", "adj", "relations", "armies", "trade_routes", "buffs", "central", "log", "winner", "win_reason", "streak", "stats", "next_army_id", "decision_ticks", "player_faction", "scenario_id", "start_year", "start_month", "max_turns"]
+
+func to_save() -> String:
+	var d := {}
+	for k in SAVE_KEYS:
+		d[k] = get(k)
+	d["rng_seed"] = rng.seed
+	d["rng_state"] = rng.state
+	return SAVE_PREFIX + Marshalls.raw_to_base64(var_to_bytes(d))
+
+func from_save(text: String) -> bool:
+	var d = bytes_to_var(Marshalls.base64_to_raw(text.substr(SAVE_PREFIX.length()))) if text.begins_with(SAVE_PREFIX) else str_to_var(text)
+	if typeof(d) != TYPE_DICTIONARY or not d.has("rng_seed") or not d.has("rng_state"):
+		return false
+	bal = load_json("res://data/balance.json")
+	units = load_json("res://data/units.json")
+	ai_profiles = load_json("res://data/ai_profiles.json")
+	buff_defs = {}
+	for b in load_json("res://data/buffs.json"):
+		buff_defs[b["id"]] = b
+	for k in SAVE_KEYS:
+		if d.has(k):
+			set(k, d[k])
+	rng.seed = d["rng_seed"]
+	rng.state = d["rng_state"]
+	events = []
+	return true

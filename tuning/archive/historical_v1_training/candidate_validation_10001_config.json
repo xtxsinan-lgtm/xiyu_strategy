@@ -1,0 +1,421 @@
+{
+  "date": "2026-10-13",
+  "scenario": "historical_v1",
+  "farm_yield_per_worker_year": 84,
+  "effective_xn_troop_targets": {
+    "monthly": 41000,
+    "quarterly": 24900
+  },
+  "training_seeds": [
+    9001,
+    9020
+  ],
+  "independent_validation_seeds": [
+    10001,
+    10020
+  ],
+  "quarterly_validation_override": {
+    "xn-cap": 24900,
+    "note": "等价于最终默认季度目标：41000 - 2 * 8050。AI其他位置不使用这两个字段。"
+  },
+  "ai_profiles": {
+    "han_default": {
+      "w_cost": 1.0,
+      "w_risk": 1.2,
+      "money_reserve": 800,
+      "attack_win_prob": 0.65,
+      "gift_batch": 3,
+      "defense_warning_days": 30,
+      "defense_food_months": 6.0,
+      "defense_batch": 3500,
+      "max_convoys": 10
+    },
+    "xiongnu_default": {
+      "w_cost": 1.0,
+      "w_risk": 0.8,
+      "autumn_aggression": 1.5,
+      "min_siege_ratio": 1.5,
+      "max_resentment": 55,
+      "rally_month": 4,
+      "attack_month": 8,
+      "max_field_troops": 41000,
+      "infantry_target": 4000,
+      "min_attack_probability": 0.58,
+      "siege_months": 5,
+      "raiders": 2,
+      "raid_troops": 2000,
+      "presence_troops": 2000,
+      "long_plan_reserve_per_month": 8050
+    }
+  },
+  "balance": {
+    "time": {
+      "decision_ticks": 3,
+      "ticks_per_month": 3,
+      "days_per_tick": 10
+    },
+    "calendar": {
+      "harvest_month": 8,
+      "winter_months": [
+        11,
+        12,
+        1
+      ],
+      "spring_months": [
+        2,
+        3,
+        4
+      ],
+      "summer_months": [
+        5,
+        6,
+        7
+      ],
+      "autumn_months": [
+        8,
+        9,
+        10
+      ]
+    },
+    "food": {
+      "civilian_per_month": 2.0,
+      "soldier_per_month": 3.0,
+      "laborer_per_month": 3.0,
+      "horse_fodder_per_month_off_pasture": 1.0,
+      "farm_yield_per_worker_year": 84,
+      "labor_ratio_city": 0.4,
+      "labor_ratio_colony": 0.6,
+      "soldier_carry": 3,
+      "laborer_carry": 15,
+      "milk_per_horse_month": {
+        "spring": 0.4,
+        "summer": 0.6,
+        "autumn": 0.4,
+        "winter": 0.1
+      },
+      "horse_slaughter_food": 50,
+      "pastoral_self_per_pop_month": 1.4
+    },
+    "pop": {
+      "growth_year_if_surplus": 0.02,
+      "cap_mult": 1.3,
+      "starve_loss_month": 0.05
+    },
+    "horses": {
+      "spring_growth": 0.15,
+      "overgraze_death_month": 0.05
+    },
+    "farm": {
+      "expand_cost_money": 200,
+      "expand_amount": 1000,
+      "expand_turns": 3,
+      "burn_dev_loss": 0.25,
+      "min_dev": 0.1,
+      "potential_mult": 2.0
+    },
+    "han": {
+      "annual_money": 5000,
+      "central_regen_year": {
+        "infantry": 4000,
+        "crossbow": 3000,
+        "cavalry": 3000
+      },
+      "central_cap": {
+        "infantry": 20000,
+        "crossbow": 15000,
+        "cavalry": 15000
+      },
+      "tuntian_levy_ratio": 0.1,
+      "laborer_levy_ratio": 0.1,
+      "hu_cavalry_levy_ratio": 0.03,
+      "hu_cavalry_cost_per_1000": 40
+    },
+    "xiongnu": {
+      "levy_ratio": 0.2,
+      "vassal_infantry_levy_ratio": 0.05,
+      "vassal_levy_resentment": 15
+    },
+    "combat": {
+      "rounds": 3,
+      "k_ranged": 0.08,
+      "k_melee": 0.08,
+      "anti_mobile_bonus": 1.5,
+      "flank_ratio": 1.5,
+      "break_loss_ratio": 0.25,
+      "pursuit_k": 0.1,
+      "horse_capture_ratio": 0.3,
+      "noise": 0.1,
+      "evade_speed_margin": 1.3,
+      "wall_def_per_level": 1.0,
+      "starving_combat_mult": 0.7,
+      "ambush_ranged_mult": 1.5,
+      "convoy_capture_ratio": 0.5
+    },
+    "siege": {
+      "wall_hp_per_level": 1000,
+      "siege_damage_k": 0.05,
+      "starve_attrition": 0.15,
+      "starve_surrender_chance": 0.3,
+      "default_assault_ratio": 0.5
+    },
+    "attrition": {
+      "no_food_month": 0.1,
+      "desert_month": 0.01,
+      "mountain_month": 0.01,
+      "hazard_month": 0.03
+    },
+    "diplomacy": {
+      "influence_max": 100,
+      "intimidation_decay_month": 2,
+      "resentment_decay_month": 1,
+      "gift_unit_money": 100,
+      "gift_unit_influence": 4,
+      "enfeoff_min_influence": 40,
+      "enfeoff_cost_influence": 20,
+      "enfeoff_cost_money": 200,
+      "enfeoff_influence_month": 1,
+      "vassal_min_influence": 60,
+      "vassal_margin_over_intimidation": 15,
+      "vassal_cost_influence": 30,
+      "victory_near_hops": 2,
+      "victory_influence": 10,
+      "victory_intimidation_loss": 10,
+      "xn_presence_intimidation_per_10pct": 3,
+      "xn_presence_cap_month": 10,
+      "xn_sack_intimidation": 40,
+      "xn_sack_neighbor": 10,
+      "xn_sack_resentment": 30,
+      "xn_vassal_min_intimidation": 60,
+      "tax_rates": [
+        {
+          "money": 0,
+          "res": 0
+        },
+        {
+          "money": 0.005,
+          "res": 0.5
+        },
+        {
+          "money": 0.01,
+          "res": 1.0
+        },
+        {
+          "money": 0.02,
+          "res": 2.0
+        }
+      ],
+      "han_conquest_influence_neighbor": -15,
+      "great_threshold_mult": 1.5,
+      "levy_grain_resentment": 5
+    },
+    "trade": {
+      "influence_per_state_month": 1.5,
+      "money_per_state_month": 5,
+      "ban_intimidation": 60
+    },
+    "citystate": {
+      "defect_to_han_margin": 20,
+      "rebel_xn_intimidation_below": 20,
+      "rebel_xn_resentment_above": 50,
+      "defect_to_xn_margin": 30
+    },
+    "grain_price": {
+      "vassal_money_per_100": 10,
+      "enfeoffed_money_per_100": 13
+    },
+    "victory": {
+      "han_required": 11,
+      "han_must_have": [
+        "wu_lei",
+        "cheshi_qian"
+      ],
+      "han_hold_turns": 12,
+      "xn_targets": [
+        "wu_wei",
+        "zhang_ye",
+        "jiu_quan",
+        "dun_huang"
+      ],
+      "xn_hold_turns": 6,
+      "score": {
+        "han_vassal": 10,
+        "hexi_held": 10,
+        "horses_per_1000": 1,
+        "raid_pressure_cap": 15,
+        "sacked_hexi": 4
+      }
+    },
+    "local_militia_ratio": 0.12,
+    "great_militia_ratio": 0.05,
+    "presets": {
+      "cautious": {
+        "engage": [
+          "if_favorable",
+          0.7
+        ],
+        "triggers": [
+          {
+            "cond": "enemy_near",
+            "ratio": 1.2,
+            "hops": 2,
+            "react": "retreat_origin"
+          },
+          {
+            "cond": "supply_low",
+            "months": 1.5,
+            "react": "return_supply"
+          },
+          {
+            "cond": "losses_high",
+            "pct": 0.2,
+            "react": "retreat_origin"
+          }
+        ]
+      },
+      "balanced": {
+        "engage": [
+          "if_favorable",
+          0.55
+        ],
+        "triggers": [
+          {
+            "cond": "enemy_near",
+            "ratio": 1.5,
+            "hops": 1,
+            "react": "retreat_origin"
+          },
+          {
+            "cond": "supply_low",
+            "months": 1.0,
+            "react": "return_supply"
+          },
+          {
+            "cond": "losses_high",
+            "pct": 0.3,
+            "react": "retreat_origin"
+          }
+        ]
+      },
+      "aggressive": {
+        "engage": [
+          "always",
+          0.0
+        ],
+        "triggers": [
+          {
+            "cond": "supply_low",
+            "months": 0.5,
+            "react": "return_supply"
+          },
+          {
+            "cond": "losses_high",
+            "pct": 0.45,
+            "react": "retreat_origin"
+          }
+        ]
+      },
+      "garrison": {
+        "engage": [
+          "always",
+          0.0
+        ],
+        "triggers": []
+      },
+      "raider": {
+        "engage": [
+          "if_favorable",
+          0.6
+        ],
+        "triggers": [
+          {
+            "cond": "enemy_near",
+            "ratio": 1.0,
+            "hops": 1,
+            "react": "evade_home"
+          },
+          {
+            "cond": "losses_high",
+            "pct": 0.4,
+            "react": "retreat_origin"
+          }
+        ]
+      },
+      "assault": {
+        "engage": [
+          "if_favorable",
+          0.55
+        ],
+        "triggers": [
+          {
+            "cond": "enemy_near",
+            "ratio": 2.0,
+            "hops": 1,
+            "react": "retreat_origin"
+          },
+          {
+            "cond": "losses_high",
+            "pct": 0.4,
+            "react": "retreat_origin"
+          }
+        ]
+      }
+    },
+    "raid": {
+      "grain_loot_ratio": 0.25,
+      "money_per_pop": 0.01
+    },
+    "movement": {
+      "convoy_speed_mult": 0.75
+    }
+  },
+  "sha256": {
+    "ai/ai_utils.gd": "274aafa89b510274e83ac9ee8f956e02ad1731e7ea9774e6d94067f330eff389",
+    "ai/han_ai.gd": "4111944a4f951c6b8ab460c7caeeb08c9b8168b1ebe40d80c2c116bae6cde547",
+    "ai/xiongnu_ai.gd": "091ba16933a68685f5c13ba40864508d284af5b5e3f8f01a9a96fafa855d3592",
+    "core/buff_system.gd": "8242aba5dd677d6482a22b0600babd2efa2249f0fc55677f73f3931db24ded8c",
+    "core/calendar.gd": "ef2cdb38969c8eae626dd4f649363115024f8291713dab3cdb98117db331a22b",
+    "core/citystate.gd": "1c8395159b81ebb6a8f13b868d0c4fb63f5c552b3c4c3db6c1b38fedab0b7e6c",
+    "core/combat.gd": "5a3123ceb214f96048e97a2b42fec15afa653830651a621dd0f36041d303d289",
+    "core/commands.gd": "8f31d03f8c9f75b850bcfa4c262211be381d8cd80273d5cf40dbc0a7582b6e3c",
+    "core/diplomacy.gd": "9b1e000393017a72808989a212291791e95e0a7403dbbcd8fcaa2d505950534d",
+    "core/economy.gd": "1c5804ab4aa647c839d0cacf453ce025762921d730b1545eaf28c8743b1275c3",
+    "core/game_state.gd": "da2bc1e27880772a4f1fb34dcc17ad2e9460933aa4619a5d6a557d0a33372c22",
+    "core/pathfinding.gd": "b56abce7e5e473a9e242a3058cc1ba3fed65bedf2b456347856ad8d8a148c238",
+    "core/plan_executor.gd": "b9ec47fcb7560a3045e43cbb9ad106320b2f388bfc8bedfdbed4d815c471ab8b",
+    "core/siege.gd": "63ca7c5341d2fe79bd41a0bd1366f6c627c9d7d764a20798419bbe03c643d647",
+    "core/supply.gd": "bcbd3a2c2607d3a880bfbe209990fd1d01d55dd96753fd2b5c7ffbae20b6ac00",
+    "core/trade.gd": "13dea2369e3cd75c5a6f19b8af5c3060cdfaf6921eef0e9c17b64f046600c54b",
+    "core/turn_resolver.gd": "a67e638719fc5bbb88d9e58b958d4a4794bb6a1f97655b592f0cde4a6a9377bf",
+    "core/victory.gd": "48ba375f155c22af2fb2e8b6acbd72211276b45ab1aa07128e404478f9277b28",
+    "data/ai_profiles.json": "e7fe8873c1acd0a74c2ec8e1849c34b8392b93026d91e1595600853bab3a24ab",
+    "data/balance.json": "99a234990ffecd3f376f427e7ffe3fecd080012a28133869297b6891239074da",
+    "data/buffs.json": "d6e7c40a2b7aba5942b9ef0644f5f9591bb76a7b344b603b9b965053ebc155f4",
+    "data/map_presentation.json": "610e986d7694139cc4e0a3dd17fe4971e0ba36eb9f7139bebbfba001590f41ef",
+    "data/route_calibration.json": "90f09179a6aefff1f39894dd480ab7f6e53529124fe08126011a8066af27f2b6",
+    "data/scenario_mvp.json": "a5140a8f26bae28317159210d736e09f1ea12753fc8df97ac6e2fa0a579a4f1e",
+    "data/units.json": "3f6a80538a51496559df8bd3ca280b8560c74179b27114b9bc836d4c3bbe9afc",
+    "tests/run_map_presentation.gd": "28a02f6d0ef684324701244534e92299c4cd5a445425e0d116ea2a64c19bae1e",
+    "tests/run_playtest.gd": "858cee5aa9fe3406b989a9909da3da57dfe266384e39c7cb5aa0923459435fd7",
+    "tests/run_replay_tests.gd": "26aa1b9b759a5e83a96e94568cd4111cce2266ceed0ea67807731f3cc18a4530",
+    "tests/run_tests.gd": "3ffdeda112d57ef02acdd0f5ebdc3d7df5e47901aa2a2c1ac8b17c558ca3dedf",
+    "tools/capture_ui.gd": "09d03a6a5c16682d02558bc2a7c798f6fd6e133af6be9adcf426dac4213cbcbb",
+    "tools/check_compile.gd": "da821b0621ed306540cfea2fa8988f3222def01441fdaa4de9887447d83f52d6",
+    "tools/check_route_calibration.py": "cc5294c5f8df3ed01851fa8ffaa9a8ff547fb163183be348a1026a7804f5f608",
+    "tools/idle_run.gd": "8280ba0f663a8fd7e184a7689cb71ed918e992d37d3eff659825820ed7bab2ed",
+    "tools/sim_runner.gd": "8fa4b6e008f6d5b4429d843dfb32956ff746a8a9c5c3e628b1542e1601bd95a0",
+    "tools/summarize_sims.py": "b279c0ff75022ed5a98d2423d63f42b8c41617145e64b8f149fd3ef507fac073",
+    "tools/trace_node.gd": "c5bd5efe4ab0a1862056a98aa677722cbb999c37c013d48b0911dbb4b7a99787",
+    "ui/font_provider.gd": "24ffe66767027b06a9e85c8bc5639c9bf9dfc5a7ca5258f2e9de3d63a60aafa5",
+    "ui/main.gd": "c1cadc51ecee6302cc136ff8d661eb907dfced68b491766b7d02621ba30f8359",
+    "ui/main.tscn": "0903deeb5f98a31930383cc623886ad9f469fb7477884d650a38877f47ba3658",
+    "ui/map_view.gd": "6711f30b1d1db84f2ddecec695d7c254e58a6e1d021c8cfac4de50a54d9b9544"
+  },
+  "checks": {
+    "rules_pass": 216,
+    "map_and_ai_pass": 70,
+    "ui_and_logistics_pass": 32,
+    "replay_failures": 0,
+    "historical_roads": 53
+  },
+  "scope": "AI 对 AI 全局自动对战；另有真实 UI 调用、图形截图与存档回归。不能代替完整真人试玩。"
+}

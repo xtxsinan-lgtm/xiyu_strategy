@@ -1,62 +1,320 @@
 {
-  "time": { "decision_ticks": 3, "ticks_per_month": 3, "days_per_tick": 10 },
-  "calendar": { "harvest_month": 8, "winter_months": [11, 12, 1], "spring_months": [2, 3, 4], "summer_months": [5, 6, 7], "autumn_months": [8, 9, 10] },
-  "food": {
-    "civilian_per_month": 2.0, "soldier_per_month": 3.0, "laborer_per_month": 3.0,
-    "horse_fodder_per_month_off_pasture": 1.0,
-    "farm_yield_per_worker_year": 72, "labor_ratio_city": 0.4, "labor_ratio_colony": 0.6,
-    "soldier_carry": 3, "laborer_carry": 15,
-    "milk_per_horse_month": { "spring": 0.4, "summer": 0.6, "autumn": 0.4, "winter": 0.1 },
-    "horse_slaughter_food": 50,
-    "pastoral_self_per_pop_month": 1.2
+  "time": {
+    "decision_ticks": 3,
+    "ticks_per_month": 3,
+    "days_per_tick": 10
   },
-  "pop": { "growth_year_if_surplus": 0.02, "starve_loss_month": 0.05 },
-  "horses": { "spring_growth": 0.15, "overgraze_death_month": 0.05 },
-  "farm": { "expand_cost_money": 200, "expand_amount": 1000, "expand_turns": 3, "burn_dev_loss": 0.25, "min_dev": 0.1, "potential_mult": 2.0 },
+  "calendar": {
+    "harvest_month": 8,
+    "winter_months": [
+      11,
+      12,
+      1
+    ],
+    "spring_months": [
+      2,
+      3,
+      4
+    ],
+    "summer_months": [
+      5,
+      6,
+      7
+    ],
+    "autumn_months": [
+      8,
+      9,
+      10
+    ]
+  },
+  "food": {
+    "civilian_per_month": 2.0,
+    "soldier_per_month": 3.0,
+    "laborer_per_month": 3.0,
+    "horse_fodder_per_month_off_pasture": 1.0,
+    "farm_yield_per_worker_year": 84,
+    "labor_ratio_city": 0.4,
+    "labor_ratio_colony": 0.6,
+    "soldier_carry": 3,
+    "laborer_carry": 15,
+    "milk_per_horse_month": {
+      "spring": 0.4,
+      "summer": 0.6,
+      "autumn": 0.4,
+      "winter": 0.1
+    },
+    "horse_slaughter_food": 50,
+    "pastoral_self_per_pop_month": 1.4
+  },
+  "pop": {
+    "growth_year_if_surplus": 0.02,
+    "cap_mult": 1.3,
+    "starve_loss_month": 0.05
+  },
+  "horses": {
+    "spring_growth": 0.15,
+    "overgraze_death_month": 0.05
+  },
+  "farm": {
+    "expand_cost_money": 200,
+    "expand_amount": 1000,
+    "expand_turns": 3,
+    "burn_dev_loss": 0.25,
+    "min_dev": 0.1,
+    "potential_mult": 2.0
+  },
   "han": {
     "annual_money": 5000,
-    "central_regen_year": { "infantry": 4000, "crossbow": 3000, "cavalry": 3000 },
-    "central_cap": { "infantry": 20000, "crossbow": 15000, "cavalry": 15000 },
-    "tuntian_levy_ratio": 0.10, "laborer_levy_ratio": 0.10,
-    "hu_cavalry_levy_ratio": 0.03, "hu_cavalry_cost_per_1000": 40
+    "central_regen_year": {
+      "infantry": 4000,
+      "crossbow": 3000,
+      "cavalry": 3000
+    },
+    "central_cap": {
+      "infantry": 20000,
+      "crossbow": 15000,
+      "cavalry": 15000
+    },
+    "tuntian_levy_ratio": 0.1,
+    "laborer_levy_ratio": 0.1,
+    "hu_cavalry_levy_ratio": 0.03,
+    "hu_cavalry_cost_per_1000": 40
   },
-  "xiongnu": { "levy_ratio": 0.20, "vassal_infantry_levy_ratio": 0.05, "vassal_levy_resentment": 15 },
+  "xiongnu": {
+    "levy_ratio": 0.2,
+    "vassal_infantry_levy_ratio": 0.05,
+    "vassal_levy_resentment": 15
+  },
   "combat": {
-    "rounds": 3, "k_ranged": 0.08, "k_melee": 0.08, "anti_mobile_bonus": 1.5,
-    "flank_ratio": 1.5, "break_loss_ratio": 0.25, "pursuit_k": 0.10,
-    "horse_capture_ratio": 0.3, "noise": 0.10,
-    "evade_speed_margin": 1.3, "wall_def_per_level": 0.5,
-    "starving_combat_mult": 0.7, "ambush_ranged_mult": 1.5, "convoy_capture_ratio": 0.5
+    "rounds": 3,
+    "k_ranged": 0.08,
+    "k_melee": 0.08,
+    "anti_mobile_bonus": 1.5,
+    "flank_ratio": 1.5,
+    "break_loss_ratio": 0.25,
+    "pursuit_k": 0.1,
+    "horse_capture_ratio": 0.3,
+    "noise": 0.1,
+    "evade_speed_margin": 1.3,
+    "wall_def_per_level": 1.0,
+    "starving_combat_mult": 0.7,
+    "ambush_ranged_mult": 1.5,
+    "convoy_capture_ratio": 0.5
   },
-  "siege": { "wall_hp_per_level": 1000, "siege_damage_k": 0.05, "starve_attrition": 0.15, "starve_surrender_chance": 0.3, "default_assault_ratio": 0.5 },
-  "attrition": { "no_food_month": 0.10, "desert_month": 0.01, "mountain_month": 0.01, "hazard_month": 0.03 },
+  "siege": {
+    "wall_hp_per_level": 1000,
+    "siege_damage_k": 0.05,
+    "starve_attrition": 0.15,
+    "starve_surrender_chance": 0.3,
+    "default_assault_ratio": 0.5
+  },
+  "attrition": {
+    "no_food_month": 0.1,
+    "desert_month": 0.01,
+    "mountain_month": 0.01,
+    "hazard_month": 0.03
+  },
   "diplomacy": {
-    "influence_max": 100, "intimidation_decay_month": 2, "resentment_decay_month": 1,
-    "gift_unit_money": 100, "gift_unit_influence": 8,
-    "enfeoff_min_influence": 40, "enfeoff_cost_influence": 20, "enfeoff_cost_money": 200, "enfeoff_influence_month": 1,
-    "vassal_min_influence": 60, "vassal_margin_over_intimidation": 15, "vassal_cost_influence": 30,
-    "victory_near_hops": 2, "victory_influence": 10, "victory_intimidation_loss": 10,
-    "xn_presence_intimidation_per_10pct": 3, "xn_presence_cap_month": 10,
-    "xn_sack_intimidation": 40, "xn_sack_neighbor": 10, "xn_sack_resentment": 30,
+    "influence_max": 100,
+    "intimidation_decay_month": 2,
+    "resentment_decay_month": 1,
+    "gift_unit_money": 100,
+    "gift_unit_influence": 4,
+    "enfeoff_min_influence": 40,
+    "enfeoff_cost_influence": 20,
+    "enfeoff_cost_money": 200,
+    "enfeoff_influence_month": 1,
+    "vassal_min_influence": 60,
+    "vassal_margin_over_intimidation": 15,
+    "vassal_cost_influence": 30,
+    "victory_near_hops": 2,
+    "victory_influence": 10,
+    "victory_intimidation_loss": 10,
+    "xn_presence_intimidation_per_10pct": 3,
+    "xn_presence_cap_month": 10,
+    "xn_sack_intimidation": 40,
+    "xn_sack_neighbor": 10,
+    "xn_sack_resentment": 30,
     "xn_vassal_min_intimidation": 60,
-    "tax_rates": [ {"money": 0, "res": 0}, {"money": 0.005, "res": 0.5}, {"money": 0.01, "res": 1.0}, {"money": 0.02, "res": 2.0} ],
+    "tax_rates": [
+      {
+        "money": 0,
+        "res": 0
+      },
+      {
+        "money": 0.005,
+        "res": 0.5
+      },
+      {
+        "money": 0.01,
+        "res": 1.0
+      },
+      {
+        "money": 0.02,
+        "res": 2.0
+      }
+    ],
     "han_conquest_influence_neighbor": -15,
-    "great_threshold_mult": 1.5, "levy_grain_resentment": 5
+    "great_threshold_mult": 1.5,
+    "levy_grain_resentment": 5
   },
-  "trade": { "influence_per_state_month": 1.5, "money_per_state_month": 5, "ban_intimidation": 60 },
-  "citystate": { "defect_to_han_margin": 20, "rebel_xn_intimidation_below": 20, "rebel_xn_resentment_above": 50, "defect_to_xn_margin": 30 },
-  "grain_price": { "vassal_money_per_100": 10, "enfeoffed_money_per_100": 13 },
+  "trade": {
+    "influence_per_state_month": 1.5,
+    "money_per_state_month": 5,
+    "ban_intimidation": 60
+  },
+  "citystate": {
+    "defect_to_han_margin": 20,
+    "rebel_xn_intimidation_below": 20,
+    "rebel_xn_resentment_above": 50,
+    "defect_to_xn_margin": 30
+  },
+  "grain_price": {
+    "vassal_money_per_100": 10,
+    "enfeoffed_money_per_100": 13
+  },
   "victory": {
-    "han_required": 11, "han_must_have": ["wu_lei", "cheshi_qian"], "han_hold_turns": 12,
-    "xn_targets": ["wu_wei", "zhang_ye", "jiu_quan", "dun_huang"], "xn_hold_turns": 6,
-    "score": { "han_vassal": 10, "hexi_held": 15, "horses_per_1000": 1 }
+    "han_required": 11,
+    "han_must_have": [
+      "wu_lei",
+      "cheshi_qian"
+    ],
+    "han_hold_turns": 12,
+    "xn_targets": [
+      "wu_wei",
+      "zhang_ye",
+      "jiu_quan",
+      "dun_huang"
+    ],
+    "xn_hold_turns": 6,
+    "score": {
+      "han_vassal": 10,
+      "hexi_held": 10,
+      "horses_per_1000": 1,
+      "raid_pressure_cap": 15,
+      "sacked_hexi": 4
+    }
   },
-  "local_militia_ratio": 0.12, "great_militia_ratio": 0.05,
+  "local_militia_ratio": 0.12,
+  "great_militia_ratio": 0.05,
   "presets": {
-    "cautious":   { "engage": ["if_favorable", 0.7],  "triggers": [ {"cond": "enemy_near", "ratio": 1.2, "hops": 2, "react": "retreat_origin"}, {"cond": "supply_low", "months": 1.5, "react": "return_supply"}, {"cond": "losses_high", "pct": 0.20, "react": "retreat_origin"} ] },
-    "balanced":   { "engage": ["if_favorable", 0.55], "triggers": [ {"cond": "enemy_near", "ratio": 1.5, "hops": 1, "react": "retreat_origin"}, {"cond": "supply_low", "months": 1.0, "react": "return_supply"}, {"cond": "losses_high", "pct": 0.30, "react": "retreat_origin"} ] },
-    "aggressive": { "engage": ["always", 0.0],        "triggers": [ {"cond": "supply_low", "months": 0.5, "react": "return_supply"}, {"cond": "losses_high", "pct": 0.45, "react": "retreat_origin"} ] },
-    "garrison":   { "engage": ["always", 0.0],        "triggers": [] },
-    "raider":     { "engage": ["if_favorable", 0.6],  "triggers": [ {"cond": "enemy_near", "ratio": 1.0, "hops": 1, "react": "evade_home"}, {"cond": "losses_high", "pct": 0.40, "react": "retreat_origin"} ] }
+    "cautious": {
+      "engage": [
+        "if_favorable",
+        0.7
+      ],
+      "triggers": [
+        {
+          "cond": "enemy_near",
+          "ratio": 1.2,
+          "hops": 2,
+          "react": "retreat_origin"
+        },
+        {
+          "cond": "supply_low",
+          "months": 1.5,
+          "react": "return_supply"
+        },
+        {
+          "cond": "losses_high",
+          "pct": 0.2,
+          "react": "retreat_origin"
+        }
+      ]
+    },
+    "balanced": {
+      "engage": [
+        "if_favorable",
+        0.55
+      ],
+      "triggers": [
+        {
+          "cond": "enemy_near",
+          "ratio": 1.5,
+          "hops": 1,
+          "react": "retreat_origin"
+        },
+        {
+          "cond": "supply_low",
+          "months": 1.0,
+          "react": "return_supply"
+        },
+        {
+          "cond": "losses_high",
+          "pct": 0.3,
+          "react": "retreat_origin"
+        }
+      ]
+    },
+    "aggressive": {
+      "engage": [
+        "always",
+        0.0
+      ],
+      "triggers": [
+        {
+          "cond": "supply_low",
+          "months": 0.5,
+          "react": "return_supply"
+        },
+        {
+          "cond": "losses_high",
+          "pct": 0.45,
+          "react": "retreat_origin"
+        }
+      ]
+    },
+    "garrison": {
+      "engage": [
+        "always",
+        0.0
+      ],
+      "triggers": []
+    },
+    "raider": {
+      "engage": [
+        "if_favorable",
+        0.6
+      ],
+      "triggers": [
+        {
+          "cond": "enemy_near",
+          "ratio": 1.0,
+          "hops": 1,
+          "react": "evade_home"
+        },
+        {
+          "cond": "losses_high",
+          "pct": 0.4,
+          "react": "retreat_origin"
+        }
+      ]
+    },
+    "assault": {
+      "engage": [
+        "if_favorable",
+        0.55
+      ],
+      "triggers": [
+        {
+          "cond": "enemy_near",
+          "ratio": 2.0,
+          "hops": 1,
+          "react": "retreat_origin"
+        },
+        {
+          "cond": "losses_high",
+          "pct": 0.4,
+          "react": "retreat_origin"
+        }
+      ]
+    }
+  },
+  "raid": {
+    "grain_loot_ratio": 0.25,
+    "money_per_pop": 0.01
+  },
+  "movement": {
+    "convoy_speed_mult": 0.75
   }
 }

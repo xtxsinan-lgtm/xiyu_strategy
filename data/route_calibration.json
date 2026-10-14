@@ -1,0 +1,747 @@
+{
+  "version": "historical_v1",
+  "sources": {
+    "hanshu_upper": "https://zh.wikisource.org/wiki/漢書/卷096上",
+    "hanshu_lower": "https://zh.wikisource.org/wiki/漢書/卷096下",
+    "historical_geography_notes": "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html",
+    "corridor_notes": "https://depts.washington.edu/silkroad/texts/hhshu/notes2.html",
+    "silk_roads": "https://whc.unesco.org/en/list/1442/",
+    "xiongnu": "https://zh.wikisource.org/zh/史記/卷110",
+    "shiji_dayuan": "https://zh.wikisource.org/wiki/史記/卷123"
+  },
+  "model": {
+    "han_li_km": 0.416,
+    "foot_km_per_day": {
+      "road": 20,
+      "steppe": 20,
+      "desert": 15,
+      "mountain": 12,
+      "hazard": 8
+    },
+    "mounted_speed_cap": {
+      "road": 2.0,
+      "steppe": 2.2,
+      "desert": 1.4,
+      "mountain": 1.15,
+      "hazard": 1.0
+    },
+    "convoy_speed_mult": 0.75,
+    "note": "里程来自记载或明确标注的推估；各地形日行公里和速度上限是持续行军模型参数，不是逐路历史军队实测。包含通常扎营及小休整，未模拟每次补水或休息。"
+  },
+  "routes": [
+    {
+      "a": "chang_an",
+      "b": "long_xi",
+      "distance_km": 480,
+      "method": "regional_estimate",
+      "sources": [
+        "https://whc.unesco.org/en/list/1442/"
+      ],
+      "note": "长安—陇西郡治狄道方向，按渭河谷地与陇山绕行估计；非现代陇西县，也非史书记载实测。",
+      "terrain": "road",
+      "previous_days": 20,
+      "foot_days": 24.0
+    },
+    {
+      "a": "long_xi",
+      "b": "wu_wei",
+      "distance_km": 420,
+      "method": "regional_estimate",
+      "sources": [
+        "https://whc.unesco.org/en/list/1442/"
+      ],
+      "note": "狄道—金城—武威走廊估计，中间的金城等地点未单列。",
+      "terrain": "road",
+      "previous_days": 25,
+      "foot_days": 21.0
+    },
+    {
+      "a": "wu_wei",
+      "b": "zhang_ye",
+      "distance_km": 260,
+      "method": "regional_estimate",
+      "sources": [
+        "https://whc.unesco.org/en/list/1442/"
+      ],
+      "note": "河西绿洲走廊估计；节点代表郡治区域，非精确遗址。",
+      "terrain": "road",
+      "previous_days": 11,
+      "foot_days": 13.0
+    },
+    {
+      "a": "zhang_ye",
+      "b": "jiu_quan",
+      "distance_km": 220,
+      "method": "regional_estimate",
+      "sources": [
+        "https://whc.unesco.org/en/list/1442/"
+      ],
+      "note": "河西绿洲走廊估计。",
+      "terrain": "road",
+      "previous_days": 11,
+      "foot_days": 11.0
+    },
+    {
+      "a": "jiu_quan",
+      "b": "dun_huang",
+      "distance_km": 380,
+      "method": "regional_estimate",
+      "sources": [
+        "https://whc.unesco.org/en/list/1442/"
+      ],
+      "note": "经瓜州方向的河西走廊估计，不以示意图直线计算。",
+      "terrain": "road",
+      "previous_days": 14,
+      "foot_days": 19.0
+    },
+    {
+      "a": "zhang_ye",
+      "b": "ju_yan",
+      "distance_km": 460,
+      "method": "regional_estimate",
+      "sources": [
+        "https://whc.unesco.org/en/list/1442/"
+      ],
+      "note": "沿弱水向北进入居延泽区域，路线估计。",
+      "terrain": "road",
+      "previous_days": 14,
+      "foot_days": 23.0
+    },
+    {
+      "a": "jiu_quan",
+      "b": "ju_yan",
+      "distance_km": 430,
+      "method": "regional_estimate",
+      "sources": [
+        "https://whc.unesco.org/en/list/1442/"
+      ],
+      "note": "河西—居延走廊估计，具体古道未确定。",
+      "terrain": "road",
+      "previous_days": 18,
+      "foot_days": 21.5
+    },
+    {
+      "a": "dun_huang",
+      "b": "yumen_guan",
+      "distance_km": 80,
+      "method": "identified_site",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "研究注释引用玉门关在敦煌西北约80公里；此值是区域距离，古道有偏差。",
+      "terrain": "road",
+      "previous_days": 7,
+      "foot_days": 4.0
+    },
+    {
+      "a": "dun_huang",
+      "b": "yang_guan",
+      "distance_km": 75,
+      "method": "identified_site",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "研究注释引用阳关在敦煌西南约75公里；不是按画面距离换算。",
+      "terrain": "road",
+      "previous_days": 5,
+      "foot_days": 3.75
+    },
+    {
+      "a": "cheshi_qian",
+      "b": "yan_qi",
+      "distance_km": 347.36,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "车师前国至焉耆八百三十五里。",
+      "recorded_li": 835,
+      "terrain": "road",
+      "previous_days": 10,
+      "foot_days": 17.37
+    },
+    {
+      "a": "yan_qi",
+      "b": "wei_li",
+      "distance_km": 41.6,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "焉耆南至尉犁百里。",
+      "recorded_li": 100,
+      "terrain": "road",
+      "previous_days": 6,
+      "foot_days": 2.08
+    },
+    {
+      "a": "yan_qi",
+      "b": "wu_lei",
+      "distance_km": 166.4,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "焉耆西南至都护治所四百里；用后期里程作地理参照，不提前设立都护。",
+      "recorded_li": 400,
+      "terrain": "road",
+      "previous_days": 5,
+      "foot_days": 8.32
+    },
+    {
+      "a": "wei_li",
+      "b": "wu_lei",
+      "distance_km": 124.8,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "尉犁西至都护治所三百里。",
+      "recorded_li": 300,
+      "terrain": "road",
+      "previous_days": 5,
+      "foot_days": 6.24
+    },
+    {
+      "a": "wu_lei",
+      "b": "lun_tai",
+      "distance_km": 74.88,
+      "method": "derived_itinerary",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "龟兹—乌垒总长350里，轮台作为途中节点暂分配180里；分段比例为模型假设。",
+      "recorded_li": 180,
+      "terrain": "road",
+      "previous_days": 5,
+      "foot_days": 3.74
+    },
+    {
+      "a": "lun_tai",
+      "b": "qiu_ci",
+      "distance_km": 70.72,
+      "method": "derived_itinerary",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "龟兹—乌垒350里剩余170里；与前一段合计350里，不把轮台位置当精确事实。",
+      "recorded_li": 170,
+      "terrain": "road",
+      "previous_days": 5,
+      "foot_days": 3.54
+    },
+    {
+      "a": "qiu_ci",
+      "b": "gu_mo",
+      "distance_km": 278.72,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "姑墨东通龟兹六百七十里。",
+      "recorded_li": 670,
+      "terrain": "road",
+      "previous_days": 9,
+      "foot_days": 13.94
+    },
+    {
+      "a": "gu_mo",
+      "b": "wen_su",
+      "distance_km": 112.32,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "温宿东通姑墨二百七十里。",
+      "recorded_li": 270,
+      "terrain": "road",
+      "previous_days": 7,
+      "foot_days": 5.62
+    },
+    {
+      "a": "wen_su",
+      "b": "shu_le",
+      "distance_km": 480,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "温宿—疏勒绕行绿洲及河流估计，尉头等中间国家未单列。",
+      "terrain": "road",
+      "previous_days": 15,
+      "foot_days": 24.0
+    },
+    {
+      "a": "lou_lan",
+      "b": "wei_li",
+      "distance_km": 450,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "罗布泊/鄯善国—尉犁区域路线估计。楼兰节点代表整个国家，不能将后期扜泥城和楼兰遗址视为同城。",
+      "terrain": "desert",
+      "previous_days": 15,
+      "foot_days": 30.0
+    },
+    {
+      "a": "lou_lan",
+      "b": "qie_mo",
+      "distance_km": 299.52,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "鄯善西通且末720里；借用后期鄯善的国家级行程，非前119年楼兰故城精确距离。",
+      "recorded_li": 720,
+      "terrain": "road",
+      "previous_days": 8,
+      "foot_days": 14.98
+    },
+    {
+      "a": "jing_jue",
+      "b": "yu_tian",
+      "distance_km": 353.6,
+      "method": "derived_itinerary",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "精绝—扜弥460里＋扜弥—于阗390里，中间国家在本图合并。",
+      "recorded_li": 850,
+      "terrain": "road",
+      "previous_days": 12,
+      "foot_days": 17.68
+    },
+    {
+      "a": "yu_tian",
+      "b": "sha_che",
+      "distance_km": 316.16,
+      "method": "derived_itinerary",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "于阗—皮山380里＋皮山—莎车380里，中间皮山在本图合并。",
+      "recorded_li": 760,
+      "terrain": "road",
+      "previous_days": 12,
+      "foot_days": 15.81
+    },
+    {
+      "a": "sha_che",
+      "b": "shu_le",
+      "distance_km": 232.96,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "莎车西至疏勒五百六十里。",
+      "recorded_li": 560,
+      "terrain": "road",
+      "previous_days": 7,
+      "foot_days": 11.65
+    },
+    {
+      "a": "xiu_xun",
+      "b": "yu_cheng",
+      "distance_km": 299.52,
+      "method": "derived_itinerary",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "休循至大宛920里减去郁成—大宛暂分配200里；郁成的确址有争议，不能当精确分段。",
+      "recorded_li": 720,
+      "terrain": "mountain",
+      "previous_days": 11,
+      "foot_days": 24.96
+    },
+    {
+      "a": "yu_cheng",
+      "b": "da_wan",
+      "distance_km": 83.2,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "郁成在大宛东境；暂分配200汉里，与休循—大宛总长约束一起使用，城址未定。",
+      "terrain": "road",
+      "previous_days": 8,
+      "foot_days": 4.16
+    },
+    {
+      "a": "da_wan",
+      "b": "ershi_cheng",
+      "distance_km": 50,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "大宛节点为国家中心，贰师城为争议定位的国中节点；50公里是游戏内估计，非史实。",
+      "terrain": "road",
+      "previous_days": 6,
+      "foot_days": 2.5
+    },
+    {
+      "a": "dong_qiemi",
+      "b": "cheshi_hou",
+      "distance_km": 180,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "东且弥按天山东部、车师后按吉木萨尔一带代表；北麓路径估计，谷地定位不确定。",
+      "terrain": "road",
+      "previous_days": 11,
+      "foot_days": 9.0
+    },
+    {
+      "a": "yi_wu",
+      "b": "dong_qiemi",
+      "distance_km": 380,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "伊吾按哈密绿洲代表，东且弥按天山东部代表；北侧山口走廊估计，有中间聚落省略。",
+      "terrain": "mountain",
+      "previous_days": 21,
+      "foot_days": 31.67
+    },
+    {
+      "a": "fanfuren_cheng",
+      "b": "zhaoxin_cheng",
+      "distance_km": 300,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/zh/史記/卷110"
+      ],
+      "note": "两城确址未定，此为漠北区域路径假设；史料不足以证明两城有固定直达道路。",
+      "terrain": "steppe",
+      "previous_days": 11,
+      "foot_days": 15.0
+    },
+    {
+      "a": "zhaoxin_cheng",
+      "b": "chanyu_ting",
+      "distance_km": 220,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/zh/史記/卷110"
+      ],
+      "note": "单于庭可移动，赵信城确址有争议；区域路径假设，不能视为实测。",
+      "terrain": "steppe",
+      "previous_days": 10,
+      "foot_days": 11.0
+    },
+    {
+      "a": "chanyu_ting",
+      "b": "long_cheng",
+      "distance_km": 300,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/zh/史記/卷110"
+      ],
+      "note": "龙城及单于庭不应当作现代固定城市；仅保留战略驻地间的区域估计。",
+      "terrain": "steppe",
+      "previous_days": 13,
+      "foot_days": 15.0
+    },
+    {
+      "a": "chanyu_ting",
+      "b": "youxian_wang",
+      "distance_km": 1100,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/zh/史記/卷110"
+      ],
+      "note": "右贤王部代表西部牧区、单于庭代表中部漠北；区域级估计，季节驻地不确定。",
+      "terrain": "steppe",
+      "previous_days": 42,
+      "foot_days": 55.0
+    },
+    {
+      "a": "youxian_wang",
+      "b": "hu_jie",
+      "distance_km": 600,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/zh/史記/卷110"
+      ],
+      "note": "右贤王牧区—呼揭区域路径假设；呼揭定位有争议。",
+      "terrain": "steppe",
+      "previous_days": 29,
+      "foot_days": 30.0
+    },
+    {
+      "a": "youxian_wang",
+      "b": "dong_qiemi",
+      "distance_km": 650,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "西部匈奴牧区—天山东部北麓估计，未声称有史书记载的直接里数。",
+      "terrain": "steppe",
+      "previous_days": 18,
+      "foot_days": 32.5
+    },
+    {
+      "a": "youxian_wang",
+      "b": "yi_wu",
+      "distance_km": 650,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "西部牧区—哈密绿洲区域估计，含戈壁路段。",
+      "terrain": "desert",
+      "previous_days": 18,
+      "foot_days": 43.33
+    },
+    {
+      "a": "da_wan",
+      "b": "kang_ju",
+      "distance_km": 628.16,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "大宛北至康居卑阗城1510里；康居节点按王庭目的地区域，而非任意国界。",
+      "recorded_li": 1510,
+      "terrain": "steppe",
+      "previous_days": 18,
+      "foot_days": 31.41
+    },
+    {
+      "a": "chi_gu",
+      "b": "yi_lie",
+      "distance_km": 350,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "赤谷按伊塞克湖东南区域，伊列为伊犁牧区代表；跨山走廊估计，伊列非已确定古城。",
+      "terrain": "mountain",
+      "previous_days": 12,
+      "foot_days": 29.17
+    },
+    {
+      "a": "chi_gu",
+      "b": "kang_ju",
+      "distance_km": 900,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "赤谷—康居王庭区域估计；史书至康居蕃内5000里是另一目的地，不能套给卑阗城。",
+      "terrain": "steppe",
+      "previous_days": 37,
+      "foot_days": 45.0
+    },
+    {
+      "a": "hu_jie",
+      "b": "cheshi_qian",
+      "distance_km": 650,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "呼揭按准噶尔北缘区域、车师前按交河代表；通过北麓与天山山口的合并路径，呼揭确址未定。",
+      "terrain": "mountain",
+      "previous_days": 24,
+      "foot_days": 54.17
+    },
+    {
+      "a": "cheshi_hou",
+      "b": "chi_gu",
+      "distance_km": 1300,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "车师后—天山北麓—伊犁—赤谷走廊，合并了多个小国，非直线穿越山体。",
+      "terrain": "steppe",
+      "previous_days": 46,
+      "foot_days": 65.0
+    },
+    {
+      "a": "ju_yan",
+      "b": "fanfuren_cheng",
+      "distance_km": 700,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/zh/史記/卷110"
+      ],
+      "note": "居延泽以北穿戈壁进入漠北，范夫人城定位不明；区域级估计。",
+      "terrain": "desert",
+      "previous_days": 19,
+      "foot_days": 46.67
+    },
+    {
+      "a": "dun_huang",
+      "b": "yi_wu",
+      "distance_km": 450,
+      "method": "identified_corridor",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes2.html"
+      ],
+      "note": "后汉书千余里（大于416公里）及地理注释的敦煌—哈密通道；取450公里为路线估计，借后期资料定位。",
+      "terrain": "desert",
+      "previous_days": 22,
+      "foot_days": 30.0
+    },
+    {
+      "a": "yumen_guan",
+      "b": "lou_lan",
+      "distance_km": 665.6,
+      "method": "derived_itinerary",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上",
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes2.html"
+      ],
+      "note": "玉门关经楼兰/鄯善国进入西域。阳关—鄯善记载1600里，玉门出发采用同级区域代理；不是楼兰故城的精确实测。",
+      "recorded_li": 1600,
+      "terrain": "desert",
+      "previous_days": 39,
+      "foot_days": 44.37
+    },
+    {
+      "a": "lou_lan",
+      "b": "cheshi_qian",
+      "distance_km": 786.24,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上",
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes2.html"
+      ],
+      "note": "汉书鄯善西北至车师1890里。经楼兰节点衔接，避免把公元2年新道当作前119年直达道路；两国具体时期驻地有差异。",
+      "recorded_li": 1890,
+      "terrain": "desert",
+      "previous_days": null,
+      "foot_days": 52.42
+    },
+    {
+      "a": "yang_guan",
+      "b": "lou_lan",
+      "distance_km": 665.6,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "去阳关1600里指后期鄯善扜泥城；节点是国家级代理，不能把此值解释为楼兰故城精确里数。",
+      "recorded_li": 1600,
+      "terrain": "desert",
+      "previous_days": 35,
+      "foot_days": 44.37
+    },
+    {
+      "a": "qie_mo",
+      "b": "jing_jue",
+      "distance_km": 300,
+      "method": "corrected_geography",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上",
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "史书二千里折832公里明显偏大；研究注释给实际约250公里，本模型按绿洲绕行取300公里，范围250—350公里。",
+      "terrain": "desert",
+      "previous_days": 14,
+      "foot_days": 20.0
+    },
+    {
+      "a": "cheshi_qian",
+      "b": "cheshi_hou",
+      "distance_km": 208,
+      "method": "identified_corridor",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下",
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html",
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes2.html"
+      ],
+      "note": "交河—车师后跨天山；后汉书相关通道500里约208公里，仅作后期地理参照，不能把务涂谷与金满城完全等同。",
+      "terrain": "mountain",
+      "previous_days": 15,
+      "foot_days": 17.33
+    },
+    {
+      "a": "shu_le",
+      "b": "juan_du",
+      "distance_km": 150,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "疏勒—葱岭东侧捐毒谷地估计，具体谷地定位争议。",
+      "terrain": "mountain",
+      "previous_days": 20,
+      "foot_days": 12.5
+    },
+    {
+      "a": "juan_du",
+      "b": "xiu_xun",
+      "distance_km": 108.16,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "休循至捐毒衍敦谷260里，跨葱岭。 此段与休循—大宛920里合计1180里，与捐毒—大宛1030里不完全一致，保留记载差异。",
+      "recorded_li": 260,
+      "terrain": "mountain",
+      "previous_days": 13,
+      "foot_days": 9.01
+    },
+    {
+      "a": "da_wan",
+      "b": "da_yuezhi",
+      "distance_km": 850,
+      "method": "conflicting_accounts",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上",
+        "https://zh.wikisource.org/wiki/史記/卷123"
+      ],
+      "note": "汉书大宛条690里（287公里）与史记张骞报告2000—3000里（832—1248公里）存在目的地/年代差异；前119年场景采用早期报告下限附近850公里区域代理，非确定里程。",
+      "terrain": "mountain",
+      "previous_days": 43,
+      "foot_days": 70.83
+    },
+    {
+      "a": "sha_che",
+      "b": "da_yuezhi",
+      "distance_km": 1000,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "莎车经葱岭到大月氏/大夏北部区域的合并路径；经过的中间国家在本图省略。",
+      "terrain": "mountain",
+      "previous_days": 66,
+      "foot_days": 83.33
+    },
+    {
+      "a": "wen_su",
+      "b": "chi_gu",
+      "distance_km": 253.76,
+      "method": "recorded_li",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096下"
+      ],
+      "note": "温宿北至乌孙赤谷610里，越天山山道。",
+      "recorded_li": 610,
+      "terrain": "mountain",
+      "previous_days": 24,
+      "foot_days": 21.15
+    },
+    {
+      "a": "sha_che",
+      "b": "ji_bin",
+      "distance_km": 1100,
+      "method": "regional_estimate",
+      "sources": [
+        "https://zh.wikisource.org/wiki/漢書/卷096上"
+      ],
+      "note": "合并莎车—皮山—山地诸国—悬度—罽宾路线；罽宾定位及路线争议较大。汉书说明皮山以南须经过四五国、二千余里乃到悬度，不能画面直连即视为短途。",
+      "terrain": "hazard",
+      "previous_days": 102,
+      "foot_days": 137.5
+    }
+  ]
+}

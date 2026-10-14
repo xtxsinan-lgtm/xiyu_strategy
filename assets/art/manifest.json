@@ -1,0 +1,30 @@
+{
+  "mode": "built-in image_gen",
+  "assets": [
+    {
+      "path": "assets/art/western-regions-atlas.png",
+      "prompt": "Use case: historical-scene. Asset type: production terrain background for a premium Han dynasty Western Regions strategy game, wide 3:2 map illustration. Create a refined antique cartographic painting of Central Asia and the Hexi corridor, viewed directly overhead, subdued warm parchment, ochre desert, slate and jade muted mountains, delicate hand engraved relief and mineral pigment washes, worn silk-paper grain. Composition for an interactive map overlay: Pamir mountains in the left quarter; a long Tian Shan ridge sweeping across the upper middle, Tarim desert basin in the middle-left below that ridge, Kunlun chain curving along the lower-left; greener steppe across the upper-right, arid Gobi in the middle-right; a narrow Hexi oasis corridor diagonally descends from center-right toward bottom-right, bordered by Qilian mountain ridges below it. A few pale thin natural rivers and tiny oasis washes. Keep the overall surface light and low contrast, broad quiet spaces so dark city labels and army tokens remain readable. Crisp illustrative detail in the terrain, restrained museum-quality aesthetic, the feel of a finished commercial historical strategy game. NOT a UI mockup. This is a decorative geography-inspired game backdrop, not an exact survey map. No border, no cities, no roads, no labels, no Chinese characters, no text, no compass, no grid, no symbols, no modern buildings, no logos, no watermark. Full bleed landscape composition.",
+      "role": "初版地形稿，保留作为备选",
+      "active": false
+    },
+    {
+      "path": "assets/art/frontier-caravan.png",
+      "prompt": "Use case: historical-scene. Asset type: illustrated header banner for a finished historical strategy game, panoramic 3:1 landscape. Han dynasty Western Regions frontier at sunset: a small caravan of camels led by a traveler approaches a restrained rammed-earth Han watchtower and a red silk military standard, desert dunes, distant blue-gray Tian Shan peaks, a narrow oasis. Accurate ancient materials: rammed earth, rough woven cloth, leather, wood, simple camel saddles, no medieval European armor, no modern gear. Hand-painted premium historical game illustration, rich but muted ochre, vermilion and dark jade, fine brushwork and patina, museum miniature-painting quality. Main subjects clustered on right half, left half atmospheric dark mineral landscape with quiet negative space for interface title text applied later by code. No actual lettering, no labels, no title, no logo, no watermark, no UI boxes. Full-bleed finished illustration.",
+      "role": "右侧军政面板的边塞商队插画",
+      "active": true
+    },
+    {
+      "path": "assets/art/western-regions-atlas-v2.png",
+      "role": "当前游戏底图，装饰性战略示意，非测绘依据",
+      "active": true,
+      "generation_record": "assets/art/atlas-v2-generation.json"
+    }
+  ],
+  "vector_assets": [
+    "assets/icons/standard.svg",
+    "assets/icons/convoy.svg",
+    "assets/icons/city.svg",
+    "assets/icons/nomad.svg"
+  ],
+  "vector_note": "原创SVG图形，直接绘制；原Lorc图标保留原署名"
+}

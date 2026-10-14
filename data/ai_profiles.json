@@ -1,4 +1,30 @@
 {
-  "han_default":     { "w_cost": 1.0, "w_risk": 1.2, "money_reserve": 800, "attack_win_prob": 0.65, "gift_batch": 3 },
-  "xiongnu_default": { "w_cost": 1.0, "w_risk": 0.8, "autumn_aggression": 1.5, "min_siege_ratio": 1.5, "max_resentment": 55 }
+  "han_default": {
+    "w_cost": 1.0,
+    "w_risk": 1.2,
+    "money_reserve": 800,
+    "attack_win_prob": 0.65,
+    "gift_batch": 3,
+    "defense_warning_days": 30,
+    "defense_food_months": 6.0,
+    "defense_batch": 3500,
+    "max_convoys": 10
+  },
+  "xiongnu_default": {
+    "w_cost": 1.0,
+    "w_risk": 0.8,
+    "autumn_aggression": 1.5,
+    "min_siege_ratio": 1.5,
+    "max_resentment": 55,
+    "rally_month": 4,
+    "attack_month": 8,
+    "max_field_troops": 40600,
+    "infantry_target": 4000,
+    "min_attack_probability": 0.58,
+    "siege_months": 5,
+    "raiders": 2,
+    "raid_troops": 2000,
+    "presence_troops": 2000,
+    "long_plan_reserve_per_month": 7300
+  }
 }

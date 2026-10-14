@@ -186,8 +186,8 @@
    "walls": 2,
    "farm_cap": 15000,
    "pasture_cap": 5000,
-   "farm_dev": 0.73,
-   "grain": 540000,
+   "farm_dev": 0.81,
+   "grain": 627000,
    "horses": 500,
    "counts_for_victory": false,
    "tags": [
@@ -199,16 +199,16 @@
    "name": "武威",
    "type": "city",
    "faction": "han",
-   "pop": 20000,
+   "pop": 30000,
    "pos": [
     735,
     345
    ],
    "walls": 2,
-   "farm_cap": 10000,
+   "farm_cap": 16000,
    "pasture_cap": 8000,
-   "farm_dev": 0.73,
-   "grain": 360000,
+   "farm_dev": 0.79,
+   "grain": 655500,
    "horses": 800,
    "counts_for_victory": false,
    "tags": [
@@ -220,16 +220,16 @@
    "name": "张掖",
    "type": "city",
    "faction": "han",
-   "pop": 20000,
+   "pop": 30000,
    "pos": [
     720,
     290
    ],
    "walls": 2,
-   "farm_cap": 10000,
+   "farm_cap": 16000,
    "pasture_cap": 8000,
-   "farm_dev": 0.73,
-   "grain": 360000,
+   "farm_dev": 0.79,
+   "grain": 655500,
    "horses": 800,
    "counts_for_victory": false,
    "tags": [
@@ -241,16 +241,16 @@
    "name": "酒泉",
    "type": "city",
    "faction": "han",
-   "pop": 25000,
+   "pop": 37500,
    "pos": [
     665,
     282
    ],
    "walls": 2,
-   "farm_cap": 12000,
+   "farm_cap": 19200,
    "pasture_cap": 6000,
-   "farm_dev": 0.76,
-   "grain": 450000,
+   "farm_dev": 0.8,
+   "grain": 798000,
    "horses": 600,
    "counts_for_victory": false,
    "tags": [
@@ -262,16 +262,16 @@
    "name": "居延",
    "type": "city",
    "faction": "han",
-   "pop": 5000,
+   "pop": 7500,
    "pos": [
     730,
     222
    ],
    "walls": 2,
-   "farm_cap": 3000,
+   "farm_cap": 4800,
    "pasture_cap": 3000,
-   "farm_dev": 0.61,
-   "grain": 90000,
+   "farm_dev": 0.74,
+   "grain": 185250,
    "horses": 300,
    "counts_for_victory": false,
    "tags": []
@@ -281,16 +281,16 @@
    "name": "敦煌",
    "type": "city",
    "faction": "han",
-   "pop": 10000,
+   "pop": 22000,
    "pos": [
     600,
     258
    ],
    "walls": 2,
-   "farm_cap": 6000,
+   "farm_cap": 9600,
    "pasture_cap": 2000,
-   "farm_dev": 0.61,
-   "grain": 180000,
+   "farm_dev": 0.95,
+   "grain": 560500,
    "horses": 200,
    "counts_for_victory": false,
    "tags": [
@@ -483,7 +483,7 @@
    "farm_cap": 600,
    "pasture_cap": 4000,
    "farm_dev": 0.95,
-   "grain": 23376,
+   "grain": 37012,
    "horses": 1200,
    "counts_for_victory": true,
    "tags": []
@@ -502,7 +502,7 @@
    "farm_cap": 2500,
    "pasture_cap": 6000,
    "farm_dev": 0.89,
-   "grain": 72600,
+   "grain": 114950,
    "horses": 1800,
    "counts_for_victory": true,
    "tags": []
@@ -521,7 +521,7 @@
    "farm_cap": 1500,
    "pasture_cap": 8000,
    "farm_dev": 0.95,
-   "grain": 57288,
+   "grain": 90706,
    "horses": 2400,
    "counts_for_victory": true,
    "tags": []
@@ -540,7 +540,7 @@
    "farm_cap": 14000,
    "pasture_cap": 10000,
    "farm_dev": 0.84,
-   "grain": 385200,
+   "grain": 609900,
    "horses": 3000,
    "counts_for_victory": true,
    "tags": []
@@ -559,7 +559,7 @@
    "farm_cap": 4000,
    "pasture_cap": 3000,
    "farm_dev": 0.88,
-   "grain": 115200,
+   "grain": 182400,
    "horses": 900,
    "counts_for_victory": true,
    "tags": []
@@ -578,7 +578,7 @@
    "farm_cap": 3000,
    "pasture_cap": 1000,
    "farm_dev": 0.3,
-   "grain": 14400,
+   "grain": 22800,
    "horses": 300,
    "counts_for_victory": true,
    "tags": []
@@ -597,7 +597,7 @@
    "farm_cap": 5000,
    "pasture_cap": 1000,
    "farm_dev": 0.3,
-   "grain": 18000,
+   "grain": 28500,
    "horses": 300,
    "counts_for_victory": true,
    "tags": []
@@ -616,7 +616,7 @@
    "farm_cap": 35000,
    "pasture_cap": 15000,
    "farm_dev": 0.85,
-   "grain": 975804,
+   "grain": 1545023,
    "horses": 4500,
    "counts_for_victory": true,
    "tags": []
@@ -635,7 +635,7 @@
    "farm_cap": 10000,
    "pasture_cap": 5000,
    "farm_dev": 0.9,
-   "grain": 294000,
+   "grain": 465500,
    "horses": 1500,
    "counts_for_victory": true,
    "tags": []
@@ -654,7 +654,7 @@
    "farm_cap": 3500,
    "pasture_cap": 4000,
    "farm_dev": 0.88,
-   "grain": 100800,
+   "grain": 159600,
    "horses": 1200,
    "counts_for_victory": true,
    "tags": []
@@ -673,7 +673,7 @@
    "farm_cap": 8000,
    "pasture_cap": 5000,
    "farm_dev": 0.85,
-   "grain": 223764,
+   "grain": 354293,
    "horses": 1500,
    "counts_for_victory": true,
    "tags": []
@@ -692,7 +692,7 @@
    "farm_cap": 7000,
    "pasture_cap": 3000,
    "farm_dev": 0.86,
-   "grain": 196476,
+   "grain": 311087,
    "horses": 900,
    "counts_for_victory": true,
    "tags": []
@@ -711,7 +711,7 @@
    "farm_cap": 8000,
    "pasture_cap": 3000,
    "farm_dev": 0.88,
-   "grain": 231600,
+   "grain": 366700,
    "horses": 900,
    "counts_for_victory": true,
    "tags": []
@@ -730,7 +730,7 @@
    "farm_cap": 1500,
    "pasture_cap": 500,
    "farm_dev": 0.82,
-   "grain": 40320,
+   "grain": 63840,
    "horses": 150,
    "counts_for_victory": true,
    "tags": []
@@ -749,7 +749,7 @@
    "farm_cap": 700,
    "pasture_cap": 500,
    "farm_dev": 0.84,
-   "grain": 19320,
+   "grain": 30590,
    "horses": 150,
    "counts_for_victory": true,
    "tags": []
@@ -768,7 +768,7 @@
    "farm_cap": 5000,
    "pasture_cap": 3000,
    "farm_dev": 0.95,
-   "grain": 169200,
+   "grain": 267900,
    "horses": 900,
    "counts_for_victory": true,
    "tags": []
@@ -825,7 +825,7 @@
    "farm_cap": 20000,
    "pasture_cap": 20000,
    "farm_dev": 0.92,
-   "grain": 600000,
+   "grain": 950000,
    "horses": 6000,
    "counts_for_victory": false,
    "tags": []
@@ -844,7 +844,7 @@
    "farm_cap": 80000,
    "pasture_cap": 60000,
    "farm_dev": 0.92,
-   "grain": 2400000,
+   "grain": 3800000,
    "horses": 18000,
    "counts_for_victory": false,
    "tags": []
@@ -863,7 +863,7 @@
    "farm_cap": 20000,
    "pasture_cap": 40000,
    "farm_dev": 0.92,
-   "grain": 600000,
+   "grain": 950000,
    "horses": 12000,
    "counts_for_victory": false,
    "tags": []
@@ -901,7 +901,7 @@
    "farm_cap": 100000,
    "pasture_cap": 300000,
    "farm_dev": 0.95,
-   "grain": 4800000,
+   "grain": 7600000,
    "horses": 90000,
    "counts_for_victory": false,
    "tags": []
@@ -920,7 +920,7 @@
    "farm_cap": 100000,
    "pasture_cap": 50000,
    "farm_dev": 0.95,
-   "grain": 3600000,
+   "grain": 5700000,
    "horses": 15000,
    "counts_for_victory": false,
    "tags": []
@@ -969,313 +969,478 @@
    "a": "chang_an",
    "b": "long_xi",
    "terrain": "road",
-   "days": 20
+   "days": 24.0,
+   "distance_km": 480,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "long_xi",
    "b": "wu_wei",
    "terrain": "road",
-   "days": 25
+   "days": 21.0,
+   "distance_km": 420,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "wu_wei",
    "b": "zhang_ye",
    "terrain": "road",
-   "days": 11
+   "days": 13.0,
+   "distance_km": 260,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "zhang_ye",
    "b": "jiu_quan",
    "terrain": "road",
-   "days": 11
+   "days": 11.0,
+   "distance_km": 220,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "jiu_quan",
    "b": "dun_huang",
    "terrain": "road",
-   "days": 14
+   "days": 19.0,
+   "distance_km": 380,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "zhang_ye",
    "b": "ju_yan",
    "terrain": "road",
-   "days": 14
+   "days": 23.0,
+   "distance_km": 460,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "jiu_quan",
    "b": "ju_yan",
    "terrain": "road",
-   "days": 18
+   "days": 21.5,
+   "distance_km": 430,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "dun_huang",
    "b": "yumen_guan",
    "terrain": "road",
-   "days": 7
+   "days": 4.0,
+   "distance_km": 80,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "identified_site"
   },
   {
    "a": "dun_huang",
    "b": "yang_guan",
    "terrain": "road",
-   "days": 5
+   "days": 3.75,
+   "distance_km": 75,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "identified_site"
   },
   {
    "a": "cheshi_qian",
    "b": "yan_qi",
    "terrain": "road",
-   "days": 10
+   "days": 17.37,
+   "distance_km": 347.36,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "yan_qi",
    "b": "wei_li",
    "terrain": "road",
-   "days": 6
+   "days": 2.08,
+   "distance_km": 41.6,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "yan_qi",
    "b": "wu_lei",
    "terrain": "road",
-   "days": 5
+   "days": 8.32,
+   "distance_km": 166.4,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "wei_li",
    "b": "wu_lei",
    "terrain": "road",
-   "days": 5
+   "days": 6.24,
+   "distance_km": 124.8,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "wu_lei",
    "b": "lun_tai",
    "terrain": "road",
-   "days": 5
+   "days": 3.74,
+   "distance_km": 74.88,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "derived_itinerary"
   },
   {
    "a": "lun_tai",
    "b": "qiu_ci",
    "terrain": "road",
-   "days": 5
+   "days": 3.54,
+   "distance_km": 70.72,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "derived_itinerary"
   },
   {
    "a": "qiu_ci",
    "b": "gu_mo",
    "terrain": "road",
-   "days": 9
+   "days": 13.94,
+   "distance_km": 278.72,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "gu_mo",
    "b": "wen_su",
    "terrain": "road",
-   "days": 7
+   "days": 5.62,
+   "distance_km": 112.32,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "wen_su",
    "b": "shu_le",
    "terrain": "road",
-   "days": 15
+   "days": 24.0,
+   "distance_km": 480,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "lou_lan",
    "b": "wei_li",
-   "terrain": "road",
-   "days": 15
+   "terrain": "desert",
+   "days": 30.0,
+   "distance_km": 450,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "lou_lan",
    "b": "qie_mo",
    "terrain": "road",
-   "days": 8
+   "days": 14.98,
+   "distance_km": 299.52,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "jing_jue",
    "b": "yu_tian",
    "terrain": "road",
-   "days": 12
+   "days": 17.68,
+   "distance_km": 353.6,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "derived_itinerary"
   },
   {
    "a": "yu_tian",
    "b": "sha_che",
    "terrain": "road",
-   "days": 12
+   "days": 15.81,
+   "distance_km": 316.16,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "derived_itinerary"
   },
   {
    "a": "sha_che",
    "b": "shu_le",
    "terrain": "road",
-   "days": 7
+   "days": 11.65,
+   "distance_km": 232.96,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "xiu_xun",
    "b": "yu_cheng",
-   "terrain": "road",
-   "days": 11
+   "terrain": "mountain",
+   "days": 24.96,
+   "distance_km": 299.52,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "derived_itinerary"
   },
   {
    "a": "yu_cheng",
    "b": "da_wan",
    "terrain": "road",
-   "days": 8
+   "days": 4.16,
+   "distance_km": 83.2,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "da_wan",
    "b": "ershi_cheng",
    "terrain": "road",
-   "days": 6
+   "days": 2.5,
+   "distance_km": 50,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "dong_qiemi",
    "b": "cheshi_hou",
    "terrain": "road",
-   "days": 11
+   "days": 9.0,
+   "distance_km": 180,
+   "mounted_speed_cap": 2.0,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "yi_wu",
-   "b": "cheshi_qian",
-   "terrain": "road",
-   "days": 34
+   "b": "dong_qiemi",
+   "terrain": "mountain",
+   "days": 31.67,
+   "distance_km": 380,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "fanfuren_cheng",
    "b": "zhaoxin_cheng",
    "terrain": "steppe",
-   "days": 11
+   "days": 15.0,
+   "distance_km": 300,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "zhaoxin_cheng",
    "b": "chanyu_ting",
    "terrain": "steppe",
-   "days": 10
+   "days": 11.0,
+   "distance_km": 220,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "chanyu_ting",
    "b": "long_cheng",
    "terrain": "steppe",
-   "days": 13
+   "days": 15.0,
+   "distance_km": 300,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "chanyu_ting",
    "b": "youxian_wang",
    "terrain": "steppe",
-   "days": 42
+   "days": 55.0,
+   "distance_km": 1100,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "youxian_wang",
    "b": "hu_jie",
    "terrain": "steppe",
-   "days": 29
+   "days": 30.0,
+   "distance_km": 600,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "youxian_wang",
    "b": "dong_qiemi",
    "terrain": "steppe",
-   "days": 18
+   "days": 32.5,
+   "distance_km": 650,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "youxian_wang",
    "b": "yi_wu",
-   "terrain": "steppe",
-   "days": 18
+   "terrain": "desert",
+   "days": 43.33,
+   "distance_km": 650,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "da_wan",
    "b": "kang_ju",
    "terrain": "steppe",
-   "days": 18
+   "days": 31.41,
+   "distance_km": 628.16,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "chi_gu",
    "b": "yi_lie",
-   "terrain": "steppe",
-   "days": 12
+   "terrain": "mountain",
+   "days": 29.17,
+   "distance_km": 350,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "chi_gu",
    "b": "kang_ju",
    "terrain": "steppe",
-   "days": 37
+   "days": 45.0,
+   "distance_km": 900,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "hu_jie",
-   "b": "chi_gu",
-   "terrain": "steppe",
-   "days": 46
+   "b": "cheshi_qian",
+   "terrain": "mountain",
+   "days": 54.17,
+   "distance_km": 650,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "cheshi_hou",
    "b": "chi_gu",
    "terrain": "steppe",
-   "days": 46
+   "days": 65.0,
+   "distance_km": 1300,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "ju_yan",
    "b": "fanfuren_cheng",
    "terrain": "desert",
-   "days": 19
+   "days": 46.67,
+   "distance_km": 700,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "dun_huang",
    "b": "yi_wu",
    "terrain": "desert",
-   "days": 22
+   "days": 30.0,
+   "distance_km": 450,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "identified_corridor"
   },
   {
    "a": "yumen_guan",
+   "b": "lou_lan",
+   "terrain": "desert",
+   "days": 44.37,
+   "distance_km": 665.6,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "derived_itinerary"
+  },
+  {
+   "a": "lou_lan",
    "b": "cheshi_qian",
    "terrain": "desert",
-   "days": 39
+   "days": 52.42,
+   "distance_km": 786.24,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "yang_guan",
    "b": "lou_lan",
    "terrain": "desert",
-   "days": 35
+   "days": 44.37,
+   "distance_km": 665.6,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "qie_mo",
    "b": "jing_jue",
    "terrain": "desert",
-   "days": 14
+   "days": 20.0,
+   "distance_km": 300,
+   "mounted_speed_cap": 1.4,
+   "calibration_method": "corrected_geography"
   },
   {
    "a": "cheshi_qian",
    "b": "cheshi_hou",
    "terrain": "mountain",
-   "days": 15
+   "days": 17.33,
+   "distance_km": 208,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "identified_corridor"
   },
   {
    "a": "shu_le",
    "b": "juan_du",
    "terrain": "mountain",
-   "days": 20
+   "days": 12.5,
+   "distance_km": 150,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "juan_du",
    "b": "xiu_xun",
    "terrain": "mountain",
-   "days": 13
+   "days": 9.01,
+   "distance_km": 108.16,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "da_wan",
    "b": "da_yuezhi",
    "terrain": "mountain",
-   "days": 43
+   "days": 70.83,
+   "distance_km": 850,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "conflicting_accounts"
   },
   {
    "a": "sha_che",
    "b": "da_yuezhi",
    "terrain": "mountain",
-   "days": 66
+   "days": 83.33,
+   "distance_km": 1000,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "regional_estimate"
   },
   {
    "a": "wen_su",
    "b": "chi_gu",
    "terrain": "mountain",
-   "days": 24
+   "days": 21.15,
+   "distance_km": 253.76,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "recorded_li"
   },
   {
    "a": "sha_che",
    "b": "ji_bin",
    "terrain": "hazard",
-   "days": 102
+   "days": 137.5,
+   "distance_km": 1100,
+   "mounted_speed_cap": 1.0,
+   "calibration_method": "regional_estimate"
   }
  ],
  "trade_routes": [
@@ -1285,6 +1450,7 @@
    "nodes": [
     "dun_huang",
     "yumen_guan",
+    "lou_lan",
     "cheshi_qian",
     "yan_qi",
     "wu_lei",
@@ -1529,62 +1695,21 @@
    "faction": "han",
    "at": "dun_huang",
    "units": {
-    "infantry": 5000,
-    "crossbow": 3000,
-    "cavalry": 2000
+    "infantry": 2500,
+    "crossbow": 1500,
+    "cavalry": 1000
    },
-   "horses": 2000,
+   "horses": 1000,
    "grain": 0,
    "laborers": 0,
    "preset": "garrison",
-   "garrison": true
+   "garrison": true,
+   "name": "敦煌守军"
   },
   {
    "id": "han_g_jiuquan",
    "faction": "han",
    "at": "jiu_quan",
-   "units": {
-    "infantry": 4000,
-    "crossbow": 2000
-   },
-   "horses": 0,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "garrison",
-   "garrison": true
-  },
-  {
-   "id": "han_g_zhangye",
-   "faction": "han",
-   "at": "zhang_ye",
-   "units": {
-    "infantry": 4000,
-    "crossbow": 2000
-   },
-   "horses": 0,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "garrison",
-   "garrison": true
-  },
-  {
-   "id": "han_g_wuwei",
-   "faction": "han",
-   "at": "wu_wei",
-   "units": {
-    "infantry": 4000,
-    "crossbow": 2000
-   },
-   "horses": 0,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "garrison",
-   "garrison": true
-  },
-  {
-   "id": "han_g_juyan",
-   "faction": "han",
-   "at": "ju_yan",
    "units": {
     "infantry": 2000,
     "crossbow": 1000
@@ -1593,103 +1718,72 @@
    "grain": 0,
    "laborers": 0,
    "preset": "garrison",
-   "garrison": true
+   "garrison": true,
+   "name": "酒泉守军"
+  },
+  {
+   "id": "han_g_zhangye",
+   "faction": "han",
+   "at": "zhang_ye",
+   "units": {
+    "infantry": 2000,
+    "crossbow": 1000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true,
+   "name": "张掖守军"
+  },
+  {
+   "id": "han_g_wuwei",
+   "faction": "han",
+   "at": "wu_wei",
+   "units": {
+    "infantry": 2000,
+    "crossbow": 1000
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true,
+   "name": "武威守军"
+  },
+  {
+   "id": "han_g_juyan",
+   "faction": "han",
+   "at": "ju_yan",
+   "units": {
+    "infantry": 1000,
+    "crossbow": 500
+   },
+   "horses": 0,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "garrison",
+   "garrison": true,
+   "name": "居延守军"
   },
   {
    "id": "han_g_longxi",
    "faction": "han",
    "at": "long_xi",
    "units": {
-    "infantry": 3000
+    "infantry": 2000
    },
    "horses": 0,
    "grain": 0,
    "laborers": 0,
    "preset": "garrison",
-   "garrison": true
-  },
-  {
-   "id": "han_g_yumen",
-   "faction": "han",
-   "at": "yumen_guan",
-   "units": {
-    "infantry": 1000
-   },
-   "horses": 0,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "garrison",
-   "garrison": true
-  },
-  {
-   "id": "han_g_yangguan",
-   "faction": "han",
-   "at": "yang_guan",
-   "units": {
-    "infantry": 1000
-   },
-   "horses": 0,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "garrison",
-   "garrison": true
+   "garrison": true,
+   "name": "陇西守军"
   },
   {
    "id": "xn_youxian_1",
    "faction": "xiongnu",
    "at": "youxian_wang",
-   "units": {
-    "horse_archer": 20000
-   },
-   "horses": 40000,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "raider",
-   "garrison": false
-  },
-  {
-   "id": "xn_chanyu_1",
-   "faction": "xiongnu",
-   "at": "chanyu_ting",
-   "units": {
-    "horse_archer": 25000
-   },
-   "horses": 50000,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "raider",
-   "garrison": false
-  },
-  {
-   "id": "xn_longcheng_1",
-   "faction": "xiongnu",
-   "at": "long_cheng",
-   "units": {
-    "horse_archer": 12000
-   },
-   "horses": 24000,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "raider",
-   "garrison": false
-  },
-  {
-   "id": "xn_hujie_1",
-   "faction": "xiongnu",
-   "at": "hu_jie",
-   "units": {
-    "horse_archer": 5000
-   },
-   "horses": 10000,
-   "grain": 0,
-   "laborers": 0,
-   "preset": "raider",
-   "garrison": false
-  },
-  {
-   "id": "xn_yiwu_1",
-   "faction": "xiongnu",
-   "at": "yi_wu",
    "units": {
     "horse_archer": 8000
    },
@@ -1697,12 +1791,55 @@
    "grain": 0,
    "laborers": 0,
    "preset": "raider",
-   "garrison": false
+   "garrison": false,
+   "name": "右贤王骑"
   },
   {
-   "id": "xn_zhaoxin_1",
+   "id": "xn_chanyu_1",
    "faction": "xiongnu",
-   "at": "zhaoxin_cheng",
+   "at": "chanyu_ting",
+   "units": {
+    "horse_archer": 10000
+   },
+   "horses": 20000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false,
+   "name": "单于庭骑"
+  },
+  {
+   "id": "xn_longcheng_1",
+   "faction": "xiongnu",
+   "at": "long_cheng",
+   "units": {
+    "horse_archer": 6000
+   },
+   "horses": 12000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false,
+   "name": "龙城骑"
+  },
+  {
+   "id": "xn_hujie_1",
+   "faction": "xiongnu",
+   "at": "hu_jie",
+   "units": {
+    "horse_archer": 2000
+   },
+   "horses": 4000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false,
+   "name": "呼揭骑"
+  },
+  {
+   "id": "xn_yiwu_1",
+   "faction": "xiongnu",
+   "at": "yi_wu",
    "units": {
     "horse_archer": 4000
    },
@@ -1710,25 +1847,42 @@
    "grain": 0,
    "laborers": 0,
    "preset": "raider",
-   "garrison": false
+   "garrison": false,
+   "name": "伊吾骑"
+  },
+  {
+   "id": "xn_zhaoxin_1",
+   "faction": "xiongnu",
+   "at": "zhaoxin_cheng",
+   "units": {
+    "horse_archer": 2000
+   },
+   "horses": 4000,
+   "grain": 0,
+   "laborers": 0,
+   "preset": "raider",
+   "garrison": false,
+   "name": "赵信城骑"
   },
   {
    "id": "xn_fanfuren_1",
    "faction": "xiongnu",
    "at": "fanfuren_cheng",
    "units": {
-    "horse_archer": 3000
+    "horse_archer": 2000
    },
-   "horses": 6000,
+   "horses": 4000,
    "grain": 0,
    "laborers": 0,
    "preset": "raider",
-   "garrison": false
+   "garrison": false,
+   "name": "范夫人城骑"
   }
  ],
  "han_central_pool": {
   "infantry": 10000,
   "crossbow": 8000,
   "cavalry": 8000
- }
+ },
+ "route_calibration_version": "historical_v1"
 }

@@ -1,0 +1,54 @@
+[
+  {
+    "file": "tuning/archive/historical_v1_training/candidate_validation_monthly_10001_10020.csv",
+    "games": 20,
+    "seed_range": [
+      10001,
+      10020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 4,
+      "han": 16
+    },
+    "han_win_percent": 80.0,
+    "han_95_percent_interval": [
+      58.4,
+      91.9
+    ],
+    "average_years": 19.62,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 16,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/candidate_validation_quarterly_10001_10020.csv",
+    "games": 20,
+    "seed_range": [
+      10001,
+      10020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 18.38,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 16,
+    "rejected_commands": 0,
+    "within_target": false
+  }
+]

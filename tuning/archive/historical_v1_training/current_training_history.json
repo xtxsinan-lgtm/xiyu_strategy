@@ -1,0 +1,1375 @@
+[
+  {
+    "file": "tuning/archive/historical_v1_training/current_baseline_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 8,
+      "xiongnu": 12
+    },
+    "han_win_percent": 40.0,
+    "han_95_percent_interval": [
+      21.9,
+      61.3
+    ],
+    "average_years": 14.6,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 8,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_baseline_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 18,
+      "han": 2
+    },
+    "han_win_percent": 10.0,
+    "han_95_percent_interval": [
+      2.8,
+      30.1
+    ],
+    "average_years": 14.7,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 7,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r10_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 5,
+      "xiongnu": 15
+    },
+    "han_win_percent": 25.0,
+    "han_95_percent_interval": [
+      11.2,
+      46.9
+    ],
+    "average_years": 17.45,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 6,
+    "rejected_commands": 1,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r10_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 9,
+      "xiongnu": 11
+    },
+    "han_win_percent": 45.0,
+    "han_95_percent_interval": [
+      25.8,
+      65.8
+    ],
+    "average_years": 18.81,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 17,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r11_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 15,
+      "xiongnu": 5
+    },
+    "han_win_percent": 75.0,
+    "han_95_percent_interval": [
+      53.1,
+      88.8
+    ],
+    "average_years": 19.64,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 16,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r11_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 18,
+      "han": 2
+    },
+    "han_win_percent": 10.0,
+    "han_95_percent_interval": [
+      2.8,
+      30.1
+    ],
+    "average_years": 17.67,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 15,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r12_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 5,
+      "xiongnu": 15
+    },
+    "han_win_percent": 25.0,
+    "han_95_percent_interval": [
+      11.2,
+      46.9
+    ],
+    "average_years": 16.37,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 5,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r12_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 12,
+      "xiongnu": 8
+    },
+    "han_win_percent": 60.0,
+    "han_95_percent_interval": [
+      38.7,
+      78.1
+    ],
+    "average_years": 18.82,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 17,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r13_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 19.51,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 14,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r13_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 19.26,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 18,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r14_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 13,
+      "xiongnu": 7
+    },
+    "han_win_percent": 65.0,
+    "han_95_percent_interval": [
+      43.3,
+      81.9
+    ],
+    "average_years": 19.58,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 15,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r14_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 19.25,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 18,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r15_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 6,
+      "xiongnu": 14
+    },
+    "han_win_percent": 30.0,
+    "han_95_percent_interval": [
+      14.5,
+      51.9
+    ],
+    "average_years": 17.06,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 7,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r15_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 13,
+      "xiongnu": 7
+    },
+    "han_win_percent": 65.0,
+    "han_95_percent_interval": [
+      43.3,
+      81.9
+    ],
+    "average_years": 19.25,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 18,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r16_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 19.51,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 14,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r16_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 12,
+      "xiongnu": 8
+    },
+    "han_win_percent": 60.0,
+    "han_95_percent_interval": [
+      38.7,
+      78.1
+    ],
+    "average_years": 18.82,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 17,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r17_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 19.5,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 14,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r17_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 12,
+      "xiongnu": 8
+    },
+    "han_win_percent": 60.0,
+    "han_95_percent_interval": [
+      38.7,
+      78.1
+    ],
+    "average_years": 19.25,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 18,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r18_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 6,
+      "xiongnu": 14
+    },
+    "han_win_percent": 30.0,
+    "han_95_percent_interval": [
+      14.5,
+      51.9
+    ],
+    "average_years": 16.93,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 7,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r18_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 13,
+      "xiongnu": 7
+    },
+    "han_win_percent": 65.0,
+    "han_95_percent_interval": [
+      43.3,
+      81.9
+    ],
+    "average_years": 19.25,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 18,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r19_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 16,
+      "han": 4
+    },
+    "han_win_percent": 20.0,
+    "han_95_percent_interval": [
+      8.1,
+      41.6
+    ],
+    "average_years": 14.2,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 4,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r19_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 10,
+      "xiongnu": 10
+    },
+    "han_win_percent": 50.0,
+    "han_95_percent_interval": [
+      29.9,
+      70.1
+    ],
+    "average_years": 17.93,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 15,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r1_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 5,
+      "xiongnu": 15
+    },
+    "han_win_percent": 25.0,
+    "han_95_percent_interval": [
+      11.2,
+      46.9
+    ],
+    "average_years": 13.09,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 5,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r1_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 7,
+      "xiongnu": 13
+    },
+    "han_win_percent": 35.0,
+    "han_95_percent_interval": [
+      18.1,
+      56.7
+    ],
+    "average_years": 18.54,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 16,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r20_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 4,
+      "xiongnu": 16
+    },
+    "han_win_percent": 20.0,
+    "han_95_percent_interval": [
+      8.1,
+      41.6
+    ],
+    "average_years": 17.7,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 5,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r21_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 4,
+      "xiongnu": 16
+    },
+    "han_win_percent": 20.0,
+    "han_95_percent_interval": [
+      8.1,
+      41.6
+    ],
+    "average_years": 17.89,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 4,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r22_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 18,
+      "han": 2
+    },
+    "han_win_percent": 10.0,
+    "han_95_percent_interval": [
+      2.8,
+      30.1
+    ],
+    "average_years": 17.05,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 2,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r23_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 20
+    },
+    "han_win_percent": 100.0,
+    "han_95_percent_interval": [
+      83.9,
+      100.0
+    ],
+    "average_years": 20.0,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 20,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r24_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 16,
+      "han": 4
+    },
+    "han_win_percent": 20.0,
+    "han_95_percent_interval": [
+      8.1,
+      41.6
+    ],
+    "average_years": 15.99,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 4,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r25_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 12,
+      "xiongnu": 8
+    },
+    "han_win_percent": 60.0,
+    "han_95_percent_interval": [
+      38.7,
+      78.1
+    ],
+    "average_years": 19.02,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 12,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r26_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 17,
+      "han": 3
+    },
+    "han_win_percent": 15.0,
+    "han_95_percent_interval": [
+      5.2,
+      36.0
+    ],
+    "average_years": 15.61,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 3,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r26_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 11,
+      "xiongnu": 9
+    },
+    "han_win_percent": 55.0,
+    "han_95_percent_interval": [
+      34.2,
+      74.2
+    ],
+    "average_years": 18.38,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 16,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r27_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 15,
+      "xiongnu": 5
+    },
+    "han_win_percent": 75.0,
+    "han_95_percent_interval": [
+      53.1,
+      88.8
+    ],
+    "average_years": 19.62,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 15,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r27_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 11,
+      "xiongnu": 9
+    },
+    "han_win_percent": 55.0,
+    "han_95_percent_interval": [
+      34.2,
+      74.2
+    ],
+    "average_years": 18.47,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 16,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r28_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 12,
+      "xiongnu": 8
+    },
+    "han_win_percent": 60.0,
+    "han_95_percent_interval": [
+      38.7,
+      78.1
+    ],
+    "average_years": 19.44,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 13,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r28_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 11,
+      "xiongnu": 9
+    },
+    "han_win_percent": 55.0,
+    "han_95_percent_interval": [
+      34.2,
+      74.2
+    ],
+    "average_years": 18.26,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 16,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r29_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 10,
+      "han": 10
+    },
+    "han_win_percent": 50.0,
+    "han_95_percent_interval": [
+      29.9,
+      70.1
+    ],
+    "average_years": 17.84,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 15,
+    "rejected_commands": 0,
+    "within_target": true
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r2_monthly_cap32000_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 19,
+      "han": 1
+    },
+    "han_win_percent": 5.0,
+    "han_95_percent_interval": [
+      0.9,
+      23.6
+    ],
+    "average_years": 11.78,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 2,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r2_quarterly_cap16000_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 18,
+      "han": 2
+    },
+    "han_win_percent": 10.0,
+    "han_95_percent_interval": [
+      2.8,
+      30.1
+    ],
+    "average_years": 18.38,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 13,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r3_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 20
+    },
+    "han_win_percent": 0.0,
+    "han_95_percent_interval": [
+      -0.0,
+      16.1
+    ],
+    "average_years": 12.54,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 9,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r3_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 17,
+      "han": 3
+    },
+    "han_win_percent": 15.0,
+    "han_95_percent_interval": [
+      5.2,
+      36.0
+    ],
+    "average_years": 11.43,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 3,
+    "rejected_commands": 37,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r4_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 13,
+      "han": 7
+    },
+    "han_win_percent": 35.0,
+    "han_95_percent_interval": [
+      18.1,
+      56.7
+    ],
+    "average_years": 11.77,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 7,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r4_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 20
+    },
+    "han_win_percent": 0.0,
+    "han_95_percent_interval": [
+      -0.0,
+      16.1
+    ],
+    "average_years": 9.05,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 0,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r5_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "xiongnu": 14,
+      "han": 6
+    },
+    "han_win_percent": 30.0,
+    "han_95_percent_interval": [
+      14.5,
+      51.9
+    ],
+    "average_years": 16.23,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 8,
+    "rejected_commands": 13,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r5_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 13,
+      "han": 7
+    },
+    "han_win_percent": 35.0,
+    "han_95_percent_interval": [
+      18.1,
+      56.7
+    ],
+    "average_years": 14.82,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 8,
+    "rejected_commands": 1,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r6_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 5,
+      "xiongnu": 15
+    },
+    "han_win_percent": 25.0,
+    "han_95_percent_interval": [
+      11.2,
+      46.9
+    ],
+    "average_years": 16.46,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 5,
+    "rejected_commands": 27,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r6_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 20
+    },
+    "han_win_percent": 100.0,
+    "han_95_percent_interval": [
+      83.9,
+      100.0
+    ],
+    "average_years": 20.0,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 20,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r7_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 19.41,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 14,
+    "rejected_commands": 31,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r7_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "xiongnu": 20
+    },
+    "han_win_percent": 0.0,
+    "han_95_percent_interval": [
+      -0.0,
+      16.1
+    ],
+    "average_years": 17.74,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 15,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r8_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 14,
+      "xiongnu": 6
+    },
+    "han_win_percent": 70.0,
+    "han_95_percent_interval": [
+      48.1,
+      85.5
+    ],
+    "average_years": 19.02,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 14,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r8_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 15,
+      "xiongnu": 5
+    },
+    "han_win_percent": 75.0,
+    "han_95_percent_interval": [
+      53.1,
+      88.8
+    ],
+    "average_years": 19.43,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 17,
+    "rejected_commands": 0,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r9_monthly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      3
+    ],
+    "wins": {
+      "han": 7,
+      "xiongnu": 13
+    },
+    "han_win_percent": 35.0,
+    "han_95_percent_interval": [
+      18.1,
+      56.7
+    ],
+    "average_years": 16.88,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 8,
+    "rejected_commands": 1,
+    "within_target": false
+  },
+  {
+    "file": "tuning/archive/historical_v1_training/current_r9_quarterly_9001_9020.csv",
+    "games": 20,
+    "seed_range": [
+      9001,
+      9020
+    ],
+    "decision_ticks": [
+      9
+    ],
+    "wins": {
+      "han": 18,
+      "xiongnu": 2
+    },
+    "han_win_percent": 90.0,
+    "han_95_percent_interval": [
+      69.9,
+      97.2
+    ],
+    "average_years": 20.0,
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 20,
+    "rejected_commands": 0,
+    "within_target": false
+  }
+]

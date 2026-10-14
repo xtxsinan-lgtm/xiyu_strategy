@@ -1,0 +1,6 @@
+{
+  "mode": "built-in image_gen edit",
+  "path": "assets/art/western-regions-atlas-v2.png",
+  "reference": "assets/art/western-regions-atlas.png",
+  "prompt": "Use case: precise-object-edit. Edit the referenced production game terrain painting while preserving its refined hand-painted antique cartographic style, warm parchment palette, broad regional composition, Pamir chain on the far left and open steppe across the upper-right. Reposition terrain belts to align with the game overlay: Tian Shan is a slender continuous mountain belt at 32–42 percent of image height, across 20–68 percent of image width. A broad quiet Tarim desert basin occupies 50–77 percent of image height and 22–65 percent of width. Move the large Kunlun mountain belt downward so it runs along 82–94 percent of image height, mainly from 18–65 percent of width; do not put major mountain peaks through the center of the Tarim basin. Keep the east-side Hexi corridor in the lower-right with a subtle Qilian ridge near its southwest border. Reduce noisy fine details under potential city labels, but keep beautiful painterly engraving texture and natural oasis washes. No labels, no roads, no cities, no text, no symbols, no borders. Full bleed landscape, same aspect ratio. This remains a decorative strategy atlas, not an exact survey."
+}
