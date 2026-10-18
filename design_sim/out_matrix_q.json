@@ -1,0 +1,432 @@
+{
+  "meta": {
+    "decision_ticks": 9,
+    "substep_days": 2,
+    "ruleset": "baseline",
+    "han_bot": "baseline",
+    "xn_bot": "baseline",
+    "elapsed_seconds": 3.62
+  },
+  "games": 40,
+  "seed_range": [
+    11001,
+    11040
+  ],
+  "wins": {
+    "han": 10,
+    "xiongnu": 30
+  },
+  "han_win_percent": 25.0,
+  "han_95_percent_interval": [
+    14.2,
+    40.2
+  ],
+  "win_breakdown": {
+    "han_main": 0,
+    "xn_main": 23,
+    "expiry": 17,
+    "han_expiry": 10,
+    "xn_expiry": 7
+  },
+  "l12_metrics": {
+    "han_main_win_pct": 0.0,
+    "han_main_in_20_35": false,
+    "xn_main_win_pct": 57.5,
+    "xn_main_in_20_35": false,
+    "expiry_pct": 42.5,
+    "expiry_le_50": true,
+    "reason_signature_count": 3,
+    "reason_signature_max_share_pct": 57.5,
+    "structural_signature_count": 4,
+    "structural_signature_max_share_pct": 32.5,
+    "signatures_ge_15_and_le_20pct": false,
+    "han_first10_meaningful_cmds_avg": 4.98,
+    "han_first10_cmds_ge_3": true,
+    "han_first10_legal_pool_avg": 44.22,
+    "all_passed": false
+  },
+  "endgame_signatures": {
+    "by_reason": [
+      {
+        "signature": "夺回河西四郡",
+        "count": 23,
+        "share_pct": 57.5
+      },
+      {
+        "signature": "到期计分 汉120 : 匈奴104",
+        "count": 10,
+        "share_pct": 25.0
+      },
+      {
+        "signature": "到期计分 汉110 : 匈奴114",
+        "count": 7,
+        "share_pct": 17.5
+      }
+    ],
+    "by_structure": [
+      {
+        "signature": "xn_main|H10:X8|HX0|Y14",
+        "count": 13,
+        "share_pct": 32.5
+      },
+      {
+        "signature": "expiry|H10:X8|HX2|Y20",
+        "count": 10,
+        "share_pct": 25.0
+      },
+      {
+        "signature": "xn_main|H10:X8|HX0|Y12",
+        "count": 10,
+        "share_pct": 25.0
+      },
+      {
+        "signature": "expiry|H10:X8|HX1|Y20",
+        "count": 7,
+        "share_pct": 17.5
+      }
+    ]
+  },
+  "decision_density": {
+    "han_first10_cmds_avg": 4.98,
+    "han_first10_cmds_by_turn": [
+      5,
+      9,
+      4,
+      3,
+      2.35,
+      10.35,
+      3.02,
+      4.7,
+      1.35,
+      7
+    ],
+    "han_first10_legal_pool_avg": 44.22
+  },
+  "duration": {
+    "average_years": 15.1,
+    "median_years": 12.38,
+    "min_years": 10.17,
+    "max_years": 20.0,
+    "non_expiry_months": [
+      122,
+      122,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      138,
+      147,
+      147,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      149,
+      150,
+      150
+    ]
+  },
+  "combat_and_logistics": {
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 17,
+    "rejected_commands": 0,
+    "reversal_rate_pct": 100.0,
+    "avg_battles": 19.1,
+    "avg_han_cas": 73881,
+    "avg_xn_cas": 36957.3,
+    "avg_sieges": 14.8,
+    "avg_raids": 16.0,
+    "avg_starve_losses": 54514.2,
+    "avg_terrain_losses": 4284.6,
+    "avg_hexi_lost": 9.1,
+    "avg_trade_blocked_months": 51.0,
+    "avg_han_vassals_peak": 10,
+    "avg_han_vassals_end": 10,
+    "avg_xn_vassals_end": 8,
+    "han_vassals_peak_dist": {
+      "10": 40
+    },
+    "han_vassals_end_dist": {
+      "10": 40
+    }
+  },
+  "resource_curves": {
+    "month_12": {
+      "sample_size": 40,
+      "han_money": 865,
+      "xn_money": 15067,
+      "han_vassals": 0,
+      "xn_vassals": 7,
+      "hexi_xn": 0.65,
+      "han_score": 33.5,
+      "xn_score": 77.9,
+      "dun_huang_grain": 0
+    },
+    "month_60": {
+      "sample_size": 40,
+      "han_money": 1126.9,
+      "xn_money": 28646.3,
+      "han_vassals": 7,
+      "xn_vassals": 8,
+      "hexi_xn": 1.65,
+      "han_score": 93.5,
+      "xn_score": 100.5,
+      "dun_huang_grain": 321460.0
+    },
+    "month_120": {
+      "sample_size": 40,
+      "han_money": 15264.6,
+      "xn_money": 43471.7,
+      "han_vassals": 10,
+      "xn_vassals": 8,
+      "hexi_xn": 3.02,
+      "han_score": 109.8,
+      "xn_score": 112.5,
+      "dun_huang_grain": 728822.0
+    },
+    "month_180": {
+      "sample_size": 17,
+      "han_money": 36805.2,
+      "xn_money": 57901.5,
+      "han_vassals": 10,
+      "xn_vassals": 8,
+      "hexi_xn": 2.41,
+      "han_score": 115.9,
+      "xn_score": 108.1,
+      "dun_huang_grain": 1195836.0
+    },
+    "month_240": {
+      "sample_size": 17,
+      "han_money": 61805.2,
+      "xn_money": 69310.9,
+      "han_vassals": 10,
+      "xn_vassals": 8,
+      "hexi_xn": 2.41,
+      "han_score": 115.9,
+      "xn_score": 108.1,
+      "dun_huang_grain": 1614564.0
+    }
+  },
+  "dominance_analysis": {
+    "threshold_pct": 70.0,
+    "han_dominant_bots": [],
+    "xn_dominant_bots": [
+      {
+        "bot": "aggressive",
+        "min_win_pct": 87.5,
+        "avg_win_pct": 95.0
+      }
+    ],
+    "has_dominant_strategy": true,
+    "matchups": {
+      "aggressive_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 0.0,
+        "xn_win_pct": 100.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 100.0,
+        "expiry_pct": 0.0
+      },
+      "aggressive_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 87.5
+      },
+      "aggressive_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 100.0
+      },
+      "aggressive_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 25.0,
+        "xn_main_pct": 75.0,
+        "expiry_pct": 0.0
+      },
+      "aggressive_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 100.0,
+        "xn_win_pct": 0.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 100.0
+      },
+      "baseline_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 0.0,
+        "xn_win_pct": 100.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 87.5,
+        "expiry_pct": 12.5
+      },
+      "baseline_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 62.5,
+        "expiry_pct": 37.5
+      },
+      "baseline_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 100.0
+      },
+      "baseline_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 25.0,
+        "xn_main_pct": 75.0,
+        "expiry_pct": 0.0
+      },
+      "baseline_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 100.0,
+        "xn_win_pct": 0.0,
+        "han_main_pct": 12.5,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 87.5
+      },
+      "conservative_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 0.0,
+        "xn_win_pct": 100.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 100.0,
+        "expiry_pct": 0.0
+      },
+      "conservative_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 37.5,
+        "expiry_pct": 62.5
+      },
+      "conservative_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 100.0
+      },
+      "conservative_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 12.5,
+        "xn_win_pct": 87.5,
+        "han_main_pct": 12.5,
+        "xn_main_pct": 87.5,
+        "expiry_pct": 0.0
+      },
+      "conservative_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 100.0,
+        "xn_win_pct": 0.0,
+        "han_main_pct": 12.5,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 87.5
+      },
+      "greedy_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 12.5,
+        "xn_win_pct": 87.5,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 87.5,
+        "expiry_pct": 12.5
+      },
+      "greedy_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 75.0
+      },
+      "greedy_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 75.0,
+        "xn_win_pct": 25.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 100.0
+      },
+      "greedy_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 62.5,
+        "xn_main_pct": 37.5,
+        "expiry_pct": 0.0
+      },
+      "greedy_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 100.0,
+        "xn_win_pct": 0.0,
+        "han_main_pct": 25.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 75.0
+      },
+      "random_legal_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 12.5,
+        "xn_win_pct": 87.5,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 75.0,
+        "expiry_pct": 25.0
+      },
+      "random_legal_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 0.0,
+        "xn_win_pct": 100.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 100.0,
+        "expiry_pct": 0.0
+      },
+      "random_legal_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 50.0,
+        "expiry_pct": 50.0
+      },
+      "random_legal_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 0.0,
+        "xn_win_pct": 100.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 100.0,
+        "expiry_pct": 0.0
+      },
+      "random_legal_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 100.0,
+        "xn_win_pct": 0.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 100.0
+      }
+    }
+  }
+}

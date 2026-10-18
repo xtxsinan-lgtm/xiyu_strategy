@@ -1,0 +1,87 @@
+{
+  "_comment": "S09 模拟器默认参数表。W1 基线校准直接读取 data/*.json（overrides 为空）；W2 接入 S01-S06 时在下方对应分段填入校准默认值。",
+  "data": {
+    "balance": "data/balance.json",
+    "units": "data/units.json",
+    "buffs": "data/buffs.json",
+    "ai_profiles": "data/ai_profiles.json",
+    "scenario": "data/scenario_mvp.json",
+    "route_calibration": "data/route_calibration.json"
+  },
+  "decision_ticks": 9,
+  "substep_days": 2,
+  "max_months": 240,
+  "keep_log": false,
+  "balance_overrides": {},
+  "ai_profile_overrides": {},
+  "s01_victory": {
+    "max_months": 120,
+    "han_threshold": 99.2,
+    "min_vassals_for_protectorate": 6,
+    "min_trust_for_protectorate": 28.0,
+    "han_hold_months_required": 12,
+    "hold_fail_decrement": 1,
+    "vassal_weight": 5.5,
+    "vassal_cap": 58.0,
+    "hub_wulei_bonus": 7.5,
+    "hub_cheshi_bonus": 7.5,
+    "tuntian_grain_target": 56000.0,
+    "tongpu_abolished_bonus": 6.5,
+    "perm_rizhu_surrender": 9.5,
+    "hexi_loss_penalty_per_node": 12.0,
+    "pool_max": 22.0,
+    "pool_min": -20.0,
+    "pool_quarterly_decay": 0.12,
+    "xn_threshold": 98.0,
+    "min_prestige_for_weifu": 38.0,
+    "xn_hexi_hold_months": 14,
+    "xn_weifu_hold_months": 11,
+    "hexi_occupied_weight": 18.5,
+    "xn_vassal_weight": 4.0,
+    "xn_scatter_prestige_threshold": 28.0,
+    "xn_scatter_quarters": 2,
+    "xn_instant_collapse_prestige": 14.0,
+    "horses_per_1000": 1.20,
+    "han_merit_mult": 0.50,
+    "xn_weifu_mult": 0.74,
+    "draw_margin": 2.0
+  },
+  "s02_court": {
+    "initial_bonus_money": 1500,
+    "quarterly_base_money": 1250.0,
+    "init_trust": 68.0,
+    "recall_trust_threshold": 11.0,
+    "forge_self_impeach_cost": 7.0,
+    "forge_raw_cost": 15.0
+  },
+  "s03_confederation": {
+    "init_prestige": 62.0,
+    "init_reward_pool": 1200,
+    "quarterly_loyalty_decay": 3.0,
+    "prestige_to_loyalty_mult": 0.10,
+    "defection_loyalty_threshold": 24.0,
+    "scatter_loyalty_threshold": 28.0
+  },
+  "s04_diplomacy": {
+    "loulan_init_intimidation": 55.0,
+    "ban_leak_throughput": 0.30,
+    "tongpu_intimidation_floor": 26.0,
+    "gift_max_gain": 22.0,
+    "gift_budget_scale": 520.0,
+    "recruited_embezzle_rate": 0.30,
+    "insult_diff_slope": 0.006
+  },
+  "s05_logistics": {
+    "init_horse_pool": 8000,
+    "horse_pool_yearly_regen": 1800,
+    "beacon_wall_mult": 1.15
+  },
+  "s06_events": {
+    "white_disaster_q4_prob": 0.22,
+    "chanyu_succession_prob": 0.22,
+    "rizhu_grievance_threshold": 82.0,
+    "auto_rizhu_accept_prob": 0.12,
+    "regret_luntai_threshold": 72.0,
+    "command_tier_combat_coef": 0.03
+  }
+}

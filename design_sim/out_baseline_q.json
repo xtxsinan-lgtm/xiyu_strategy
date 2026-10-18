@@ -1,0 +1,270 @@
+{
+  "meta": {
+    "decision_ticks": 9,
+    "substep_days": 2.0,
+    "ruleset": "baseline",
+    "han_bot": "baseline",
+    "xn_bot": "baseline",
+    "elapsed_seconds": 20.41
+  },
+  "games": 200,
+  "seed_range": [
+    11001,
+    11200
+  ],
+  "wins": {
+    "han": 84,
+    "xiongnu": 116
+  },
+  "han_win_percent": 42.0,
+  "han_95_percent_interval": [
+    35.4,
+    48.9
+  ],
+  "win_breakdown": {
+    "han_main": 0,
+    "xn_main": 70,
+    "expiry": 130,
+    "han_expiry": 84,
+    "xn_expiry": 46
+  },
+  "l12_metrics": {
+    "han_main_win_pct": 0.0,
+    "han_main_in_20_35": false,
+    "xn_main_win_pct": 35.0,
+    "xn_main_in_20_35": true,
+    "expiry_pct": 65.0,
+    "expiry_le_50": false,
+    "reason_signature_count": 3,
+    "reason_signature_max_share_pct": 42.0,
+    "structural_signature_count": 5,
+    "structural_signature_max_share_pct": 42.0,
+    "signatures_ge_15_and_le_20pct": false,
+    "han_first10_meaningful_cmds_avg": 4.98,
+    "han_first10_cmds_ge_3": true,
+    "han_first10_legal_pool_avg": 44.25,
+    "all_passed": false
+  },
+  "endgame_signatures": {
+    "by_reason": [
+      {
+        "signature": "到期计分 汉120 : 匈奴104",
+        "count": 84,
+        "share_pct": 42.0
+      },
+      {
+        "signature": "夺回河西四郡",
+        "count": 70,
+        "share_pct": 35.0
+      },
+      {
+        "signature": "到期计分 汉110 : 匈奴114",
+        "count": 46,
+        "share_pct": 23.0
+      }
+    ],
+    "by_structure": [
+      {
+        "signature": "expiry|H10:X8|HX2|Y20",
+        "count": 84,
+        "share_pct": 42.0
+      },
+      {
+        "signature": "expiry|H10:X8|HX1|Y20",
+        "count": 46,
+        "share_pct": 23.0
+      },
+      {
+        "signature": "xn_main|H10:X8|HX0|Y14",
+        "count": 39,
+        "share_pct": 19.5
+      },
+      {
+        "signature": "xn_main|H10:X8|HX0|Y12",
+        "count": 30,
+        "share_pct": 15.0
+      },
+      {
+        "signature": "xn_main|H10:X8|HX0|Y20",
+        "count": 1,
+        "share_pct": 0.5
+      }
+    ]
+  },
+  "decision_density": {
+    "han_first10_cmds_avg": 4.98,
+    "han_first10_cmds_by_turn": [
+      5,
+      9,
+      4,
+      3,
+      2.35,
+      10.35,
+      3.03,
+      4.7,
+      1.35,
+      7
+    ],
+    "han_first10_legal_pool_avg": 44.25
+  },
+  "duration": {
+    "average_years": 17.08,
+    "median_years": 20.0,
+    "min_years": 10.17,
+    "max_years": 20.0,
+    "non_expiry_months": [
+      122,
+      122,
+      122,
+      122,
+      122,
+      122,
+      122,
+      122,
+      122,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      123,
+      138,
+      147,
+      147,
+      147,
+      147,
+      147,
+      147,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      148,
+      149,
+      149,
+      149,
+      149,
+      150,
+      150,
+      150,
+      159,
+      159,
+      159,
+      159,
+      159,
+      159,
+      159,
+      160,
+      230
+    ]
+  },
+  "combat_and_logistics": {
+    "hexi_ever_captured_percent": 100.0,
+    "games_without_battles": 0,
+    "expiry_games": 130,
+    "rejected_commands": 0,
+    "reversal_rate_pct": 100.0,
+    "avg_battles": 19.5,
+    "avg_han_cas": 74760.8,
+    "avg_xn_cas": 39790.0,
+    "avg_sieges": 19.5,
+    "avg_raids": 17.8,
+    "avg_starve_losses": 55108.6,
+    "avg_terrain_losses": 4750.5,
+    "avg_hexi_lost": 11.2,
+    "avg_trade_blocked_months": 59.6,
+    "avg_han_vassals_peak": 10,
+    "avg_han_vassals_end": 10,
+    "avg_xn_vassals_end": 8,
+    "han_vassals_peak_dist": {
+      "10": 200
+    },
+    "han_vassals_end_dist": {
+      "10": 200
+    }
+  },
+  "resource_curves": {
+    "month_12": {
+      "sample_size": 200,
+      "han_money": 865,
+      "xn_money": 15067,
+      "han_vassals": 0,
+      "xn_vassals": 7,
+      "hexi_xn": 0.65,
+      "han_score": 33.5,
+      "xn_score": 77.9,
+      "dun_huang_grain": 0
+    },
+    "month_60": {
+      "sample_size": 200,
+      "han_money": 1125.5,
+      "xn_money": 28648.0,
+      "han_vassals": 7,
+      "xn_vassals": 8,
+      "hexi_xn": 1.65,
+      "han_score": 93.5,
+      "xn_score": 100.5,
+      "dun_huang_grain": 321507.0
+    },
+    "month_120": {
+      "sample_size": 200,
+      "han_money": 15243.3,
+      "xn_money": 43451.6,
+      "han_vassals": 10,
+      "xn_vassals": 8,
+      "hexi_xn": 2.79,
+      "han_score": 112.0,
+      "xn_score": 110.5,
+      "dun_huang_grain": 728966.0
+    },
+    "month_180": {
+      "sample_size": 131,
+      "han_money": 36604.7,
+      "xn_money": 57897.1,
+      "han_vassals": 10,
+      "xn_vassals": 8,
+      "hexi_xn": 2.35,
+      "han_score": 116.5,
+      "xn_score": 107.5,
+      "dun_huang_grain": 1183743.0
+    },
+    "month_240": {
+      "sample_size": 130,
+      "han_money": 61607.0,
+      "xn_money": 69307.9,
+      "han_vassals": 10,
+      "xn_vassals": 8,
+      "hexi_xn": 2.35,
+      "han_score": 116.5,
+      "xn_score": 107.5,
+      "dun_huang_grain": 1593378.0
+    }
+  }
+}

@@ -1,0 +1,667 @@
+{
+  "meta": {
+    "decision_ticks": 9,
+    "substep_days": 2,
+    "ruleset": "v1",
+    "han_bot": "baseline",
+    "xn_bot": "baseline",
+    "elapsed_seconds": 2.46
+  },
+  "games": 40,
+  "seed_range": [
+    11001,
+    11040
+  ],
+  "wins": {
+    "han": 20,
+    "xiongnu": 20
+  },
+  "han_win_percent": 50.0,
+  "han_95_percent_interval": [
+    35.2,
+    64.8
+  ],
+  "win_breakdown": {
+    "han_main": 10,
+    "xn_main": 14,
+    "expiry": 7,
+    "han_expiry": 4,
+    "xn_expiry": 3,
+    "political_collapse": 9,
+    "han_recall": 3,
+    "xn_scatter": 6
+  },
+  "l12_metrics": {
+    "han_main_win_pct": 25.0,
+    "han_main_in_20_35": true,
+    "xn_main_win_pct": 35.0,
+    "xn_main_in_20_35": true,
+    "expiry_pct": 17.5,
+    "expiry_le_50": true,
+    "political_collapse_pct": 22.5,
+    "han_recall_pct": 7.5,
+    "xn_scatter_pct": 15.0,
+    "reason_signature_count": 23,
+    "reason_signature_max_share_pct": 10.0,
+    "structural_signature_count": 23,
+    "structural_signature_max_share_pct": 10.0,
+    "coarse_signature_count": 8,
+    "coarse_signature_max_share_pct": 20.0,
+    "signatures_ge_15_and_le_20pct": true,
+    "han_first10_meaningful_cmds_avg": 7.29,
+    "han_first10_cmds_ge_3": true,
+    "han_first10_legal_pool_avg": 127.45,
+    "all_passed": true
+  },
+  "endgame_signatures": {
+    "by_reason": [
+      {
+        "signature": "饮马河西·夺回河西四郡 [XN_MAIN_HEXI__hexi_conquest__G5_X1__chanyu_die_wind_shift]",
+        "count": 4,
+        "share_pct": 10.0
+      },
+      {
+        "signature": "匈奴单于威望崩解·诸部离散 [XN_SCATTER__baizai_collapse__G1_X5__wind_shift_rizhu]",
+        "count": 4,
+        "share_pct": 10.0
+      },
+      {
+        "signature": "设立西域都护府 [HAN_MAIN__vassal_grand__G2_X4__wind_shift_rizhu]",
+        "count": 3,
+        "share_pct": 7.5
+      },
+      {
+        "signature": "百蛮震服·威服西域 [XN_MAIN_WEIFU__hexi_west_hybrid__G4_X1__chanyu_die_wind_shift]",
+        "count": 3,
+        "share_pct": 7.5
+      },
+      {
+        "signature": "匈奴单于威望崩解·诸部离散 [XN_SCATTER__baizai_collapse__G1_X5__chanyu_die_rizhu]",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "设立西域都护府 [HAN_MAIN__rizhu_window__G2_X4__wind_shift_rizhu]",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "设立西域都护府 [HAN_MAIN__vassal_grand__G2_X4__baizai_rizhu]",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "饮马河西·夺回河西四郡 [XN_MAIN_HEXI__hexi_conquest__G5_X1__wind_shift_chanyu_die]",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "廷尉槛车征还汉使（政治崩盘） [HAN_RECALL__trust_exhausted__G4_X1__hexi_fall_wind_shift]",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "百蛮震服·威服西域 [XN_MAIN_WEIFU__hexi_west_hybrid__G5_X1__hexi_fall_wind_shift]",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "四十季持久终局连续计分裁决 [EXPIRY_XN__tarim_standoff__G3_X2__chanyu_die_wind_shift]",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "设立西域都护府 [HAN_MAIN__rizhu_window__G2_X4__baizai_rizhu]",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "百蛮震服·威服西域 [XN_MAIN_WEIFU__hexi_west_hybrid__G5_X1__wind_shift_chanyu_die]",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "廷尉槛车征还汉使（政治崩盘） [HAN_RECALL__trust_exhausted__G4_X1__chanyu_die_hexi_fall]",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "四十季持久终局连续计分裁决 [EXPIRY_HAN__tarim_standoff__G2_X3__wind_shift_rizhu]",
+        "count": 1,
+        "share_pct": 2.5
+      }
+    ],
+    "by_structure": [
+      {
+        "signature": "XN_MAIN_HEXI__hexi_conquest__G5_X1__chanyu_die_wind_shift",
+        "count": 4,
+        "share_pct": 10.0
+      },
+      {
+        "signature": "XN_SCATTER__baizai_collapse__G1_X5__wind_shift_rizhu",
+        "count": 4,
+        "share_pct": 10.0
+      },
+      {
+        "signature": "HAN_MAIN__vassal_grand__G2_X4__wind_shift_rizhu",
+        "count": 3,
+        "share_pct": 7.5
+      },
+      {
+        "signature": "XN_MAIN_WEIFU__hexi_west_hybrid__G4_X1__chanyu_die_wind_shift",
+        "count": 3,
+        "share_pct": 7.5
+      },
+      {
+        "signature": "XN_SCATTER__baizai_collapse__G1_X5__chanyu_die_rizhu",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "HAN_MAIN__rizhu_window__G2_X4__wind_shift_rizhu",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "HAN_MAIN__vassal_grand__G2_X4__baizai_rizhu",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "XN_MAIN_HEXI__hexi_conquest__G5_X1__wind_shift_chanyu_die",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "HAN_RECALL__trust_exhausted__G4_X1__hexi_fall_wind_shift",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "XN_MAIN_WEIFU__hexi_west_hybrid__G5_X1__hexi_fall_wind_shift",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "EXPIRY_XN__tarim_standoff__G3_X2__chanyu_die_wind_shift",
+        "count": 2,
+        "share_pct": 5.0
+      },
+      {
+        "signature": "HAN_MAIN__rizhu_window__G2_X4__baizai_rizhu",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "XN_MAIN_WEIFU__hexi_west_hybrid__G5_X1__wind_shift_chanyu_die",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "HAN_RECALL__trust_exhausted__G4_X1__chanyu_die_hexi_fall",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "EXPIRY_HAN__tarim_standoff__G2_X3__wind_shift_rizhu",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "XN_MAIN_WEIFU__hexi_west_hybrid__G4_X1__king_slain_chanyu_die",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "EXPIRY_HAN__tarim_standoff__G2_X3__rizhu_wind_shift",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "EXPIRY_HAN__tarim_standoff__G2_X3__baizai_wind_shift",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "EXPIRY_XN__tarim_standoff__G3_X2__wind_shift_baizai",
+        "count": 1,
+        "share_pct": 2.5
+      },
+      {
+        "signature": "XN_MAIN_WEIFU__hexi_west_hybrid__G4_X1__hexi_fall_wind_shift",
+        "count": 1,
+        "share_pct": 2.5
+      }
+    ],
+    "by_coarse": [
+      {
+        "signature": "XN_MAIN_WEIFU__hexi_west_hybrid",
+        "count": 8,
+        "share_pct": 20.0
+      },
+      {
+        "signature": "HAN_MAIN__vassal_grand",
+        "count": 7,
+        "share_pct": 17.5
+      },
+      {
+        "signature": "XN_SCATTER__baizai_collapse",
+        "count": 6,
+        "share_pct": 15.0
+      },
+      {
+        "signature": "XN_MAIN_HEXI__hexi_conquest",
+        "count": 6,
+        "share_pct": 15.0
+      },
+      {
+        "signature": "EXPIRY_HAN__tarim_standoff",
+        "count": 4,
+        "share_pct": 10.0
+      },
+      {
+        "signature": "HAN_MAIN__rizhu_window",
+        "count": 3,
+        "share_pct": 7.5
+      },
+      {
+        "signature": "HAN_RECALL__trust_exhausted",
+        "count": 3,
+        "share_pct": 7.5
+      },
+      {
+        "signature": "EXPIRY_XN__tarim_standoff",
+        "count": 3,
+        "share_pct": 7.5
+      }
+    ]
+  },
+  "decision_density": {
+    "han_first10_cmds_avg": 7.29,
+    "han_first10_cmds_by_turn": [
+      13,
+      7,
+      6,
+      9.93,
+      5.67,
+      5.35,
+      5.28,
+      8.45,
+      5.72,
+      6.45
+    ],
+    "han_first10_legal_pool_avg": 127.45
+  },
+  "duration": {
+    "average_years": 7.29,
+    "median_years": 8.12,
+    "min_years": 3.75,
+    "max_years": 10.0,
+    "non_expiry_months": [
+      45,
+      45,
+      45,
+      45,
+      52,
+      53,
+      53,
+      54,
+      54,
+      54,
+      55,
+      57,
+      58,
+      58,
+      66,
+      84,
+      85,
+      90,
+      90,
+      96,
+      99,
+      102,
+      103,
+      104,
+      108,
+      109,
+      109,
+      109,
+      111,
+      111,
+      117,
+      117,
+      119
+    ]
+  },
+  "combat_and_logistics": {
+    "hexi_ever_captured_percent": 70.0,
+    "games_without_battles": 0,
+    "expiry_games": 7,
+    "rejected_commands": 0,
+    "reversal_rate_pct": 50.0,
+    "avg_battles": 13.1,
+    "avg_han_cas": 41810.9,
+    "avg_xn_cas": 27889.5,
+    "avg_sieges": 2.8,
+    "avg_raids": 4.8,
+    "avg_starve_losses": 5337.5,
+    "avg_terrain_losses": 7070.1,
+    "avg_hexi_lost": 0.9,
+    "avg_trade_blocked_months": 0,
+    "avg_han_vassals_peak": 6.12,
+    "avg_han_vassals_end": 5.65,
+    "avg_xn_vassals_end": 6.42,
+    "han_vassals_peak_dist": {
+      "8": 5,
+      "9": 14,
+      "3": 10,
+      "2": 4,
+      "4": 1,
+      "1": 1,
+      "5": 1,
+      "7": 3,
+      "10": 1
+    },
+    "han_vassals_end_dist": {
+      "7": 2,
+      "8": 8,
+      "3": 6,
+      "2": 8,
+      "9": 11,
+      "1": 3,
+      "6": 2
+    }
+  },
+  "resource_curves": {
+    "month_12": {
+      "sample_size": 40,
+      "han_money": 5632.5,
+      "xn_money": 10344.5,
+      "han_vassals": 0.12,
+      "xn_vassals": 6.5,
+      "hexi_xn": 0,
+      "han_score": 16.2,
+      "xn_score": 92.1,
+      "dun_huang_grain": 521796.0
+    },
+    "month_60": {
+      "sample_size": 26,
+      "han_money": 14125.2,
+      "xn_money": 39013.9,
+      "han_vassals": 3.85,
+      "xn_vassals": 6.69,
+      "hexi_xn": 0.23,
+      "han_score": 42.6,
+      "xn_score": 85.8,
+      "dun_huang_grain": 329173.0
+    },
+    "month_120": {
+      "sample_size": 7,
+      "han_money": 29234.3,
+      "xn_money": 55661.3,
+      "han_vassals": 7.86,
+      "xn_vassals": 5.71,
+      "hexi_xn": 0,
+      "han_score": 71.8,
+      "xn_score": 69.5,
+      "dun_huang_grain": 486585.0
+    }
+  },
+  "v1_summary": {
+    "avg_han_merit_end": 70.2,
+    "avg_han_merit_peak": 80.6,
+    "avg_xn_weifu_end": 69.3,
+    "avg_xn_weifu_peak": 99.0,
+    "avg_court_trust_end": 65.4,
+    "avg_chanyu_prestige_end": 61.3,
+    "rizhu_surrender_pct": 40.0,
+    "baizai_pct": 65.0,
+    "luntai_pct": 97.5,
+    "lead_change_games_pct": 62.5,
+    "end_type_dist": {
+      "XN_SCATTER": 6,
+      "HAN_MAIN": 10,
+      "XN_MAIN_WEIFU": 8,
+      "HAN_RECALL": 3,
+      "XN_MAIN_HEXI": 6,
+      "EXPIRY_HAN": 4,
+      "EXPIRY_XN": 3
+    },
+    "han_grade_dist": {
+      "G1_FENGHOU": 8,
+      "G2_CIJUE": 12,
+      "G5_ZUZHU": 9,
+      "G4_XIAYU": 8,
+      "G3_WUGONG": 3
+    },
+    "xn_grade_dist": {
+      "X5_SHENSI": 6,
+      "X4_BUHUI": 9,
+      "X1_LONGCHENG": 17,
+      "X3_GUDI": 5,
+      "X2_BINFU": 3
+    }
+  },
+  "dominance_analysis": {
+    "threshold_pct": 70.0,
+    "han_avg_win_pct_by_bot": {
+      "aggressive": 60.0,
+      "baseline": 70.0,
+      "conservative": 25.0,
+      "greedy": 52.5,
+      "random_legal": 32.5
+    },
+    "xn_avg_win_pct_by_bot": {
+      "aggressive": 42.5,
+      "baseline": 62.5,
+      "conservative": 40.0,
+      "greedy": 55.0,
+      "random_legal": 60.0
+    },
+    "han_dominant_bots": [],
+    "xn_dominant_bots": [],
+    "has_dominant_strategy": false,
+    "matchups": {
+      "aggressive_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 87.5,
+        "xn_win_pct": 12.5,
+        "han_main_pct": 62.5,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 25.0
+      },
+      "aggressive_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 37.5,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 25.0
+      },
+      "aggressive_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 50.0,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 12.5
+      },
+      "aggressive_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 12.5,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 25.0
+      },
+      "aggressive_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 25.0,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 25.0
+      },
+      "baseline_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 87.5,
+        "xn_win_pct": 12.5,
+        "han_main_pct": 50.0,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 25.0
+      },
+      "baseline_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 37.5,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 0.0
+      },
+      "baseline_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 37.5,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 25.0
+      },
+      "baseline_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 87.5,
+        "xn_win_pct": 12.5,
+        "han_main_pct": 25.0,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 37.5
+      },
+      "baseline_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 25.0,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 37.5
+      },
+      "conservative_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 50.0,
+        "expiry_pct": 25.0
+      },
+      "conservative_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 0.0,
+        "xn_win_pct": 100.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 100.0,
+        "expiry_pct": 0.0
+      },
+      "conservative_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 37.5,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 25.0
+      },
+      "conservative_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 37.5,
+        "expiry_pct": 37.5
+      },
+      "conservative_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 25.0,
+        "expiry_pct": 25.0
+      },
+      "greedy_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 12.5,
+        "xn_main_pct": 0.0,
+        "expiry_pct": 50.0
+      },
+      "greedy_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 37.5,
+        "xn_win_pct": 62.5,
+        "han_main_pct": 12.5,
+        "xn_main_pct": 37.5,
+        "expiry_pct": 37.5
+      },
+      "greedy_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 37.5,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 0.0
+      },
+      "greedy_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 12.5,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 37.5
+      },
+      "greedy_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 50.0,
+        "xn_win_pct": 50.0,
+        "han_main_pct": 37.5,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 37.5
+      },
+      "random_legal_vs_aggressive": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 37.5,
+        "expiry_pct": 25.0
+      },
+      "random_legal_vs_baseline": {
+        "games": 8,
+        "han_win_pct": 37.5,
+        "xn_win_pct": 62.5,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 37.5,
+        "expiry_pct": 12.5
+      },
+      "random_legal_vs_conservative": {
+        "games": 8,
+        "han_win_pct": 62.5,
+        "xn_win_pct": 37.5,
+        "han_main_pct": 37.5,
+        "xn_main_pct": 12.5,
+        "expiry_pct": 12.5
+      },
+      "random_legal_vs_greedy": {
+        "games": 8,
+        "han_win_pct": 12.5,
+        "xn_win_pct": 87.5,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 62.5,
+        "expiry_pct": 12.5
+      },
+      "random_legal_vs_random_legal": {
+        "games": 8,
+        "han_win_pct": 25.0,
+        "xn_win_pct": 75.0,
+        "han_main_pct": 0.0,
+        "xn_main_pct": 37.5,
+        "expiry_pct": 62.5
+      }
+    }
+  }
+}
