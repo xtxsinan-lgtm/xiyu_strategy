@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>《西域·汉匈争霸》v1.0 商业化设计 · 交互式网页验证工作台</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <!-- 顶部主导航栏 -->
+  <header class="app-header">
+    <div class="brand-wrap">
+      <div class="brand-seal">汉匈</div>
+      <div class="brand-title">
+        <h1>《西域·汉匈争霸》v1.0 商业级设计验证工作台</h1>
+        <p>Paper Prototype &amp; S09 L12 Simulation Workbench · 双引擎（0ms 极速沙盘 + 浏览器内 Python WASM 真机引擎）</p>
+      </div>
+    </div>
+
+    <nav class="nav-tabs" aria-label="工作台视图切换">
+      <button class="nav-tab active" data-tab="tab-playtest">🎮 纸面推演沙盘 (Playtest)</button>
+      <button class="nav-tab" data-tab="tab-s09">📊 S09 200局验证与 5×5 矩阵</button>
+      <button class="nav-tab" data-tab="tab-formulas">🧮 S01–S05 核心公式实验室</button>
+      <button class="nav-tab" data-tab="tab-docs">📑 S01–S10 规范与 T01–T24 工单库</button>
+    </nav>
+
+    <div class="engine-pill" id="engine-pill" title="点击可手动在「Python WASM 真机引擎」与「0ms 原生极速引擎」之间切换">
+      <span class="engine-dot" id="engine-dot"></span>
+      <span id="engine-label">⚡ 极速原生引擎就绪 (0.0ms)</span>
+    </div>
+  </header>
+
+  <!-- ==================== TAB 1: 交互式纸面推演沙盘 ==================== -->
+  <section id="tab-playtest" class="tab-view active">
+    <!-- 顶部战局配置与回合控制条 -->
+    <div class="control-bar">
+      <div class="control-group">
+        <label class="ctrl-label">执政阵营
+          <select id="sel-side">
+            <option value="han" selected>大汉 · 持节使臣 (西域都护府路线)</option>
+            <option value="xiongnu">匈奴 · 大单于庭 (河西/威服西域路线)</option>
+          </select>
+        </label>
+
+        <label class="ctrl-label">EA 剧本 (S01)
+          <select id="sel-scenario">
+            <option value="mo_bei_zhi_hou" selected>剧本②《漠北之后》(前119年 · 40季主沙盒)</option>
+            <option value="lou_lan_gu_shi">剧本①《楼兰姑师》(前108年 · 12季破门教学)</option>
+            <option value="du_hu_fu">剧本③《都护府》(前68年 · 36季郑吉破车师)</option>
+          </select>
+        </label>
+
+        <label class="ctrl-label">规则集
+          <select id="sel-ruleset">
+            <option value="v1" selected>v1 商业化进化规则 (S01–S08 全开)</option>
+            <option value="baseline">baseline 原始基线规则 (对照用)</option>
+          </select>
+        </label>
+
+        <label class="ctrl-label">对手 AI (S08)
+          <select id="sel-opp-bot">
+            <option value="balanced" selected>均衡破局型 (S08 标准效用 AI)</option>
+            <option value="aggressive">拓边/秋掠猛攻型 (Aggressive)</option>
+            <option value="diplomatic">怀柔/分赏稳健型 (Diplomatic)</option>
+            <option value="opportunist">奇谋/截击投机型 (Opportunist)</option>
+            <option value="greedy">贪心短视型 (Greedy 对照)</option>
+          </select>
+        </label>
+
+        <label class="ctrl-label">种子
+          <input id="inp-seed" type="number" value="11001" style="width: 82px;" />
+        </label>
+
+        <button id="btn-new-game" class="btn">🔄 重开新局</button>
+      </div>
+
+      <div class="control-group">
+        <button id="btn-pick-advisor" class="btn btn-gold">⭐ 采纳幕僚推荐</button>
+        <button id="btn-clear-cmds" class="btn">清空已选</button>
+        <button id="btn-step-turn" class="btn btn-primary">▶ 推进一季 (9旬 WEGO 结算)</button>
+        <button id="btn-auto-3" class="btn btn-blue">⏩ 幕僚代管连推 3 季</button>
+        <button id="btn-undo" class="btn">↩ 悔棋</button>
+        <button id="btn-export-log" class="btn">📥 导出试玩报告 (.md)</button>
+      </div>
+    </div>
+
+    <!-- 阵营非对称顶栏 HUD (S01-S06 核心指标面板) -->
+    <div id="hud-banner" class="hud-banner"></div>
+
+    <!-- 终局史官五档评定与《汉书》列传横幅 (游戏结束时自动展开) -->
+    <div id="ending-banner-box"></div>
+
+    <!-- 中部双栏：左栏 42 节点战略图与节点检视器，右栏本季纪事与合法命令下达台 -->
+    <div class="playtest-grid">
+      <!-- 左栏：西域 42 节点战略态势 SVG 图 + 选中节点检视面板 -->
+      <div>
+        <div class="panel-box">
+          <div class="panel-header">
+            <span>🗺️ 西域·河西·漠南 42 节点战略态势图（点击任意城邦/军镇检视详情并筛选命令）</span>
+            <span class="badge badge-gold">S04 外交层级 · S05 粮道与迷雾</span>
+          </div>
+          <div class="map-container">
+            <svg id="map-svg" class="map-svg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet"></svg>
+            <div class="map-legend">
+              <span class="legend-item"><i class="legend-dot" style="background:#dc2626"></i>大汉直辖/驻军</span>
+              <span class="legend-item"><i class="legend-dot" style="background:#f59e0b"></i>汉内属国 (+6G)</span>
+              <span class="legend-item"><i class="legend-dot" style="background:#fbbf24"></i>汉册封国 (+2G)</span>
+              <span class="legend-item"><i class="legend-dot" style="background:#64748b"></i>独立摇摆城邦</span>
+              <span class="legend-item"><i class="legend-dot" style="background:#38bdf8"></i>匈奴属国 (+7.5W)</span>
+              <span class="legend-item"><i class="legend-dot" style="background:#0284c7"></i>匈奴王庭/牧场</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="node-inspector-body" class="node-inspector"></div>
+          </div>
+        </div>
+
+        <!-- 试玩体验遥测打分与回合结算战报流 -->
+        <div class="panel-box">
+          <div class="panel-header">
+            <span>📜 季度 WEGO 结算战报流 &amp; S09 纸面试玩体验打分</span>
+            <div class="control-group">
+              <label class="ctrl-label">无聊度(1-5)
+                <select id="sel-boredom">
+                  <option value="1" selected>1 - 抉择紧凑刺激</option>
+                  <option value="2">2 - 良好</option>
+                  <option value="3">3 - 一般</option>
+                  <option value="4">4 - 略显重复</option>
+                  <option value="5">5 - 空转无事可做</option>
+                </select>
+              </label>
+              <label class="ctrl-label">困惑度(1-5)
+                <select id="sel-confusion">
+                  <option value="1" selected>1 - 因果完全清晰</option>
+                  <option value="2">2 - 清楚</option>
+                  <option value="3">3 - 需看公式提示</option>
+                  <option value="4">4 - 部分结算不解</option>
+                  <option value="5">5 - 困惑</option>
+                </select>
+              </label>
+              <input id="inp-turn-note" type="text" placeholder="记录本季决策思考或调参建议..." style="width:180px;" />
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="turn-log-stream" class="log-stream"></div>
+            <details style="margin-top:10px;">
+              <summary style="cursor:pointer; font-size:12px; color:var(--text-muted);">展开 CLI 原始文字态势摘要 (`design_sim/play.py` 对照输出)</summary>
+              <pre id="raw-observation-text" class="pre-briefing" style="margin-top:6px;"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右栏：竹简本季纪事 + 3 件待办要务 + 合法命令选择器 -->
+      <div>
+        <div class="panel-box">
+          <div class="panel-header">
+            <span>🎋 《本季纪事》与季初待办三要务 (S06 / S07-R03)</span>
+            <button id="btn-toggle-chronicle-style" class="btn">切换白话纪事</button>
+          </div>
+          <div class="panel-body">
+            <div class="chronicle-box">
+              <div id="chronicle-text" class="chronicle-text"></div>
+            </div>
+            <div id="todo-list" class="todo-list"></div>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-header">
+            <span>⚔️ 本季合法命令下达台（勾选多条指令后点击「推进一季」同步执行）</span>
+            <span id="cmd-selected-count" class="badge badge-gold">已勾选 0 条指令</span>
+          </div>
+          <div class="panel-body">
+            <div class="cmd-filter-tabs">
+              <button class="cmd-tab active" data-cat="all">全部合法命令</button>
+              <button class="cmd-tab" data-cat="advisor">⭐ 幕僚推荐</button>
+              <button class="cmd-tab" data-cat="politics">🏛️ 朝廷/王庭</button>
+              <button class="cmd-tab" data-cat="diplomacy">🕊️ 外交/使团</button>
+              <button class="cmd-tab" data-cat="logistics">🌾 粮道/屯田/经济</button>
+              <button class="cmd-tab" data-cat="military">⚔️ 军事/行军/围城</button>
+              <label class="ctrl-label" style="margin-left:auto; cursor:pointer;">
+                <input type="checkbox" id="chk-filter-node" /> 只看当前选中节点相关
+              </label>
+            </div>
+            <div id="cmd-list" class="cmd-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TAB 2: S09 200局验证与 5×5 策略矩阵 ==================== -->
+  <section id="tab-s09" class="tab-view">
+    <div class="panel-box">
+      <div class="panel-header">
+        <span>🏆 圣经第 6 节 L12 量化验收大门（`v1` 商业化规则集 200 局蒙特卡洛模拟实测）</span>
+        <span class="badge badge-green">ALL 7 GATES PASSED ✅</span>
+      </div>
+      <div class="panel-body">
+        <div id="s09-l12-cards" class="grid-4"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- 左：baseline vs v1 200局全维度对比表 -->
+      <div class="panel-box">
+        <div class="panel-header">
+          <span>📈 W1 原始基线 (`baseline`) vs W2 商业化新规则 (`v1`) 200 局对比总表</span>
+          <span class="badge badge-gold">Seed 11001 · 季制 40 回合</span>
+        </div>
+        <div class="panel-body" style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>核心验证指标</th>
+                <th>W1 原始基线 (`baseline`)</th>
+                <th>W2 新规则集 (`v1`)</th>
+                <th>L12 商业化目标范围</th>
+                <th>验收状态</th>
+              </tr>
+            </thead>
+            <tbody id="s09-compare-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 右：5×5 策略对抗矩阵与支配策略检验 -->
+      <div class="panel-box">
+        <div class="panel-header">
+          <span>♟️ 5×5 策略对抗矩阵（破除无脑支配策略验证）</span>
+          <div class="control-group">
+            <button id="btn-matrix-v1" class="btn btn-gold">查看 v1 商业化规则矩阵</button>
+            <button id="btn-matrix-base" class="btn">查看 baseline 旧规则矩阵 (对照)</button>
+          </div>
+        </div>
+        <div class="panel-body" style="overflow-x:auto;">
+          <div id="s09-matrix-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- 左：四段式终局签名分布 -->
+      <div class="panel-box">
+        <div class="panel-header">
+          <span>🧬 四段式终局签名分布 (`{END_TYPE}__{PATH_TAG}__{GRADE_PAIR}__{TOP2_EVENTS}`)</span>
+          <span class="badge badge-blue">共 109 种独特历史结局（L12 要求 ≥15 种）</span>
+        </div>
+        <div class="panel-body" style="max-height:320px; overflow-y:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>四段式终局签名</th>
+                <th>出现局数 (200局)</th>
+                <th>占比 (上限 ≤20%)</th>
+              </tr>
+            </thead>
+            <tbody id="s09-signatures-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 右：浏览器内实时跑批验证器 -->
+      <div class="panel-box">
+        <div class="panel-header">
+          <span>🚀 浏览器内实时蒙特卡洛跑批验证器 (Live Batch Runner)</span>
+          <span class="badge badge-gold">支持自定义 AI 对局测试</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">
+            直接在浏览器中调用模拟引擎实时跑批，验证不同汉使/单于 AI 性格组合下的胜率、都护府达成率、日逐王来降率与唯一结局签名数：
+          </p>
+          <div class="control-bar" style="margin-bottom:12px;">
+            <div class="control-group">
+              <label class="ctrl-label">模拟局数
+                <select id="live-batch-games">
+                  <option value="5">5 局 (极速预览)</option>
+                  <option value="10" selected>10 局 (标准抽样)</option>
+                  <option value="20">20 局 (深度检验)</option>
+                </select>
+              </label>
+              <label class="ctrl-label">汉方 AI
+                <select id="live-han-bot">
+                  <option value="balanced" selected>三阶段功业均衡 (balanced)</option>
+                  <option value="aggressive">北道远征猛攻 (aggressive)</option>
+                  <option value="diplomatic">精使怀柔营田 (diplomatic)</option>
+                  <option value="opportunist">奇谋迎降截击 (opportunist)</option>
+                  <option value="greedy">短视贪心 (greedy)</option>
+                </select>
+              </label>
+              <label class="ctrl-label">匈奴 AI
+                <select id="live-xn-bot">
+                  <option value="balanced" selected>分赏防叛均衡 (balanced)</option>
+                  <option value="aggressive">河西秋掠猛攻 (aggressive)</option>
+                  <option value="diplomatic">怀柔固盟守成 (diplomatic)</option>
+                  <option value="opportunist">白灾/断粮投机 (opportunist)</option>
+                  <option value="greedy">短视独吞赏赐 (greedy)</option>
+                </select>
+              </label>
+              <button id="btn-run-live-batch" class="btn btn-primary">▶ 立即在浏览器内运行模拟</button>
+            </div>
+          </div>
+          <div id="live-batch-result" class="panel-box" style="padding:12px;">
+            点击上方「立即在浏览器内运行模拟」即可实时生成多局统计报告。
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TAB 3: S01–S05 核心数学公式交互实验室 ==================== -->
+  <section id="tab-formulas" class="tab-view">
+    <div class="grid-2">
+      <!-- 公式 1: S01 都护府功业值 G -->
+      <div class="panel-box">
+        <div class="panel-header">
+          <span>🏛️ S01-R01 汉廷「西域都护府功业值 G」交互验算器</span>
+          <span class="badge badge-gold">阈值 G ≥ 100 维持 4 季</span>
+        </div>
+        <div class="panel-body">
+          <div class="slider-row">
+            <div class="slider-head"><span>西域内属国数量 (+6/国，上限 72)</span><strong id="val-vassals">8</strong></div>
+            <input id="calc-vassals" type="range" class="calc-input" min="0" max="18" value="8" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>册封印绶国数量 (+2/国，上限 20)</span><strong id="val-enfeoff">5</strong></div>
+            <input id="calc-enfeoff" type="range" class="calc-input" min="0" max="18" value="5" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>关键枢纽控制（乌垒/车师前/渠犁，+10/处）</span><strong id="val-hubs">2</strong></div>
+            <input id="calc-hubs" type="range" class="calc-input" min="0" max="3" value="2" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>西域屯田点数量 (+4.5/处，上限 15)</span><strong id="val-tuntian">2</strong></div>
+            <input id="calc-tuntian" type="range" class="calc-input" min="0" max="4" value="2" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head">
+              <label style="cursor:pointer;"><input id="calc-rizhu" type="checkbox" class="calc-input" checked /> 已触发「日逐王先贤掸来降 &amp; 省罢僮仆都尉」(+25 永久勋 +10 罢都尉)</label>
+            </div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>河西四郡失守数 (-12/郡)</span><strong id="val-hexi-lost">0</strong></div>
+            <input id="calc-hexi-lost" type="range" class="calc-input" min="0" max="4" value="0" />
+          </div>
+          <div id="calc-g-result" class="panel-box" style="padding:12px; margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <!-- 公式 2: S03 匈奴四部分赏与不患寡而患不均 -->
+      <div class="panel-box">
+        <div class="panel-header">
+          <span>🐎 S03-R04 匈奴四部分赏「不患寡而患不均」嫉妒惩罚验算器</span>
+          <span class="badge badge-blue">结构性赤字与日逐王离心模型</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+            调节单于对四部的分赏权重（自动归一化为 100%），实时观察各部相对于期望份额的嫉妒惩罚与忠诚度变化：
+          </p>
+          <div class="slider-row">
+            <div class="slider-head"><span>左贤王部权重（期望份额 35%）</span></div>
+            <input id="calc-r-zuo" type="range" class="calc-input" min="0" max="100" value="40" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>右贤王部权重（期望份额 30%）</span></div>
+            <input id="calc-r-you" type="range" class="calc-input" min="0" max="100" value="30" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>日逐王部权重（掌西域僮仆都尉，期望份额 20%）</span></div>
+            <input id="calc-r-rizhu" type="range" class="calc-input" min="0" max="100" value="10" />
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span>犁汗王部权重（期望份额 15%）</span></div>
+            <input id="calc-r-lihu" type="range" class="calc-input" min="0" max="100" value="20" />
+          </div>
+          <div id="calc-envy-result" class="panel-box" style="padding:12px; margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 公式 3: S04/S05 万里远征逐旬余粮曲线与城邦供粮意愿 -->
+    <div class="panel-box">
+      <div class="panel-header">
+        <span>🌾 S04-R08 &amp; S05-R08 万里远征逐旬余粮曲线与「不归点 T_max」预演器</span>
+        <span class="badge badge-gold">复刻贰师将军一征 vs 二征大宛</span>
+      </div>
+      <div class="panel-body">
+        <div class="grid-2">
+          <div>
+            <div class="slider-row">
+              <div class="slider-head"><span>远征战兵人数</span><strong id="val-soldiers">6000</strong></div>
+              <input id="calc-soldiers" type="range" class="calc-input" min="1000" max="20000" step="500" value="6000" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-head"><span>随军运粮民夫配额（既是背夫也吃口粮）</span><strong id="val-laborers">4000</strong></div>
+              <input id="calc-laborers" type="range" class="calc-input" min="0" max="15000" step="500" value="4000" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-head"><span>目标城邦单程距离旬数</span><strong id="val-dist-ticks">6</strong></div>
+              <input id="calc-dist-ticks" type="range" class="calc-input" min="2" max="14" value="6" />
+            </div>
+            <div class="slider-row">
+              <div class="slider-head"><span>沿途城邦汉影响力（决定「迎军给食 / 闭籴拒守」四档）</span><strong id="val-city-inf">45</strong></div>
+              <input id="calc-city-inf" type="range" class="calc-input" min="0" max="100" value="45" />
+            </div>
+          </div>
+          <div>
+            <svg id="calc-food-svg" viewBox="0 0 560 175" style="width:100%; height:175px; background:#090d14; border:1px solid var(--border); border-radius:6px;"></svg>
+            <div id="calc-food-summary" style="margin-top:8px; font-size:12.5px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== TAB 4: S01–S10 设计规范与 T01–T24 工单库阅读器 ==================== -->
+  <section id="tab-docs" class="tab-view">
+    <div class="docs-layout">
+      <aside id="docs-sidebar-nav" class="panel-box" style="padding:10px; max-height:82vh; overflow-y:auto;"></aside>
+      <article class="doc-viewer">
+        <div id="doc-viewer-header" style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border);"></div>
+        <div id="doc-viewer-body"></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 静态数据包与双引擎脚本 -->
+  <script src="assets/bundle_data.js"></script>
+  <script src="assets/docs_bundle.js"></script>
+  <script src="assets/js_engine.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
