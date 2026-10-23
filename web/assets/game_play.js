@@ -282,189 +282,434 @@
     });
   }
 
-  // ==================== 4. 西域42节点6层动态战略舆图 (S07-R07) ====================
+  // ==================== 4. 西域42节点舆图渲染器（1:1 严格对齐 Godot `ui/map_view.gd`） ====================
+  const GODOT_C_HAN = "#c0392b";
+  const GODOT_C_XN = "#5d4037";
+  const GODOT_C_HAN_V = "#e08a80";
+  const GODOT_C_XN_V = "#a1887f";
+  const GODOT_C_PASS = "#b8b8b8";
+  const GODOT_STATE_COLORS = {
+    dong_qiemi: "#d99032",
+    cheshi_qian: "#287c8e",
+    cheshi_hou: "#835cad",
+    yan_qi: "#559b48",
+    wei_li: "#c45c91",
+    wu_lei: "#4668b5",
+    lun_tai: "#9a9d30",
+    qiu_ci: "#25977a",
+    gu_mo: "#ba7037",
+    wen_su: "#bd4770",
+    shu_le: "#5a479b",
+    sha_che: "#a47cba",
+    yu_tian: "#e0b13e",
+    jing_jue: "#679baa",
+    qie_mo: "#a9b75c",
+    lou_lan: "#d46b43",
+    juan_du: "#4b7440",
+    xiu_xun: "#8d5d78",
+    dawan: "#3566cf",
+    da_wan: "#3566cf",
+    kangju: "#6d8a24",
+    kang_ju: "#6d8a24",
+    dayuezhi: "#a343b5",
+    da_yuezhi: "#a343b5",
+    jibin: "#367064",
+    ji_bin: "#367064",
+    wusun: "#26aaa3",
+    wu_sun: "#26aaa3",
+  };
+
+  const MVP_NODE_META = {};
+  if (BUNDLE.scenario_mvp && Array.isArray(BUNDLE.scenario_mvp.nodes)) {
+    for (const mn of BUNDLE.scenario_mvp.nodes) {
+      MVP_NODE_META[mn.id] = mn;
+    }
+  }
+
+  function buildGodotRoutePoints(r, posMap, waypoints) {
+    const pA = posMap[r.a || r.from];
+    const pB = posMap[r.b || r.to];
+    if (!pA || !pB) return [];
+    const a = r.a || r.from;
+    const b = r.b || r.to;
+    const k1 = `${a}|${b}`;
+    const k2 = `${b}|${a}`;
+    let pts = [pA];
+    if (waypoints[k1]) {
+      pts = pts.concat(waypoints[k1]);
+    } else if (waypoints[k2]) {
+      pts = pts.concat([...waypoints[k2]].reverse());
+    }
+    pts.push(pB);
+    return pts;
+  }
+
+  // 完全对齐 Godot `ui/map_view.gd` 的 `route_curve`: tangent = (pts[i+1] - pts[i-1]) * 0.15
+  function buildGodotBezierPath(pts) {
+    if (!pts || pts.length < 2) return "";
+    const n = pts.length;
+    const tangents = pts.map((_, i) => {
+      if (i <= 0 || i >= n - 1) return [0, 0];
+      return [(pts[i + 1][0] - pts[i - 1][0]) * 0.15, (pts[i + 1][1] - pts[i - 1][1]) * 0.15];
+    });
+    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < n - 1; i++) {
+      const c1x = pts[i][0] + tangents[i][0];
+      const c1y = pts[i][1] + tangents[i][1];
+      const c2x = pts[i + 1][0] - tangents[i + 1][0];
+      const c2y = pts[i + 1][1] - tangents[i + 1][1];
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${pts[i + 1][0].toFixed(1)} ${pts[i + 1][1].toFixed(1)}`;
+    }
+    return d;
+  }
+
+  function sampleGodotRoutePoint(pts, t) {
+    if (!pts || pts.length === 0) return [500, 310];
+    if (pts.length === 1) return pts[0];
+    const segCount = pts.length - 1;
+    const scaled = clamp(t, 0, 1) * segCount;
+    const idx = Math.min(Math.floor(scaled), segCount - 1);
+    const localT = scaled - idx;
+    return [
+      pts[idx][0] + (pts[idx + 1][0] - pts[idx][0]) * localT,
+      pts[idx][1] + (pts[idx + 1][1] - pts[idx][1]) * localT,
+    ];
+  }
+
+  function getGodotNodeColor(nid, n) {
+    const meta = MVP_NODE_META[nid] || {};
+    const origFaction = meta.faction || n.faction || nid;
+    const nodeType = meta.type || n.type || "city";
+    const ctl = n.relation && n.relation.overlord ? n.relation.overlord : n.controller;
+
+    if (origFaction === "han" && ctl === "han") return GODOT_C_HAN;
+    if (origFaction === "xiongnu" && ctl === "xiongnu") return GODOT_C_XN;
+    if (nodeType === "pass") return GODOT_C_PASS;
+    if (ctl === "han") return GODOT_C_HAN_V;
+    if (ctl === "xiongnu") return GODOT_C_XN_V;
+    if (GODOT_STATE_COLORS[origFaction]) return GODOT_STATE_COLORS[origFaction];
+    if (GODOT_STATE_COLORS[nid]) return GODOT_STATE_COLORS[nid];
+    return "#b89658";
+  }
+
+  function isTradeNodeOpen(st, nid) {
+    const n = st.nodes[nid];
+    if (!n) return false;
+    const meta = MVP_NODE_META[nid] || {};
+    if ((meta.faction === "xiongnu" || n.controller === "xiongnu") && !n.relation) return false;
+    if (n.relation) {
+      if (n.relation.embargo_han) return false;
+      if (n.relation.overlord === "xiongnu" && (n.relation.xn_intimidation || 0) >= 60) return false;
+    }
+    return true;
+  }
+
   function renderStrategicMap() {
     const st = GAME.state;
     const svg = document.getElementById("game-map-svg");
-    const mapPres = BUNDLE.map_presentation || { nodes: {} };
-    const routes = BUNDLE.scenario_mvp.routes || [];
+    const mapPres = BUNDLE.map_presentation || {};
+    const posMap = mapPres.positions || {};
+    const waypoints = mapPres.waypoints || {};
+    const regions = mapPres.regions || [];
+    const routes = (BUNDLE.scenario_mvp && BUNDLE.scenario_mvp.routes) || [];
+    const tradeRoutes = (BUNDLE.scenario_mvp && BUNDLE.scenario_mvp.trade_routes) || [];
 
     svg.setAttribute("viewBox", `${GAME.mapCam.x} ${GAME.mapCam.y} ${GAME.mapCam.w} ${GAME.mapCam.h}`);
 
     const coords = {};
     const nodeIds = Object.keys(st.nodes);
-    nodeIds.forEach((nid, idx) => {
-      const mp = mapPres.nodes && mapPres.nodes[nid];
-      if (mp && mp.pos && mp.pos.length === 2) {
-        coords[nid] = { x: mp.pos[0] * 0.62 + 30, y: mp.pos[1] * 0.62 + 25 };
-      } else {
-        coords[nid] = { x: 120 + (idx % 8) * 105, y: 90 + Math.floor(idx / 8) * 90 };
-      }
+    nodeIds.forEach((nid) => {
+      const p = posMap[nid] || (MVP_NODE_META[nid] && MVP_NODE_META[nid].pos) || [500, 310];
+      coords[nid] = { x: p[0], y: p[1] };
+    });
+
+    // 构建双向路线索引：`a|b` -> routeIndex
+    const routeByPair = {};
+    const routeCurveD = [];
+    const routePtsList = [];
+    routes.forEach((r, idx) => {
+      const a = r.a || r.from;
+      const b = r.b || r.to;
+      routeByPair[`${a}|${b}`] = idx;
+      routeByPair[`${b}|${a}`] = idx;
+      const pts = buildGodotRoutePoints(r, posMap, waypoints);
+      routePtsList.push(pts);
+      routeCurveD.push(buildGodotBezierPath(pts));
     });
 
     let parts = [];
 
-    // 地理分区古舆图底纹标题
+    // 1. Godot 原版西域舆图底图 (`res://assets/art/western-regions-atlas-v2.png`) + 羊皮纸宣纸柔光遮罩 (`Color(0.95, 0.89, 0.73, 0.38)`)
     parts.push(`
-      <g opacity="0.24" pointer-events="none" font-family="serif" font-weight="bold">
-        <text x="720" y="485" fill="#f87171" font-size="22" letter-spacing="6">河 西 四 郡 · 玉 门 阳 关</text>
-        <text x="310" y="340" fill="#fbbf24" font-size="24" letter-spacing="8">塔 里 木 · 西 域 南 北 道</text>
-        <text x="580" y="105" fill="#38bdf8" font-size="24" letter-spacing="8">漠 南 单 于 庭 · 阴 山 瀚 海</text>
-        <text x="70" y="210" fill="#a78bfa" font-size="20" letter-spacing="5">葱 岭 · 乌 孙 大 宛</text>
-      </g>
+      <rect x="0" y="0" width="1000" height="620" fill="#e9dcc0"/>
+      <image href="assets/art/western-regions-atlas-v2.png" x="0" y="0" width="1000" height="620" preserveAspectRatio="none"/>
+      <rect x="0" y="0" width="1000" height="620" fill="rgba(242, 227, 186, 0.38)"/>
     `);
 
-    // Z5: 疆域底纹与秋季白灾预警环
+    // 2. Godot `_draw_region_labels`: 地理大区水印 (`layout["regions"]`)
+    parts.push(`<g pointer-events="none">`);
+    for (const reg of regions) {
+      const rName = reg[0];
+      const rx = reg[1][0];
+      const ry = reg[1][1];
+      parts.push(`
+        <text x="${rx}" y="${ry}" font-size="21" font-weight="700" fill="rgba(77, 71, 56, 0.72)" stroke="rgba(245, 235, 204, 0.65)" stroke-width="3" paint-order="stroke">${rName}</text>
+      `);
+    }
+    parts.push(`</g>`);
+
+    // Z5: 疆域光晕与秋季白灾预警环（可选叠加层）
     if (GAME.layers.zone) {
       for (const nid of nodeIds) {
         const n = st.nodes[nid];
         const c = coords[nid];
-        const ov = n.relation ? n.relation.overlord : n.controller;
+        const ov = n.relation && n.relation.overlord ? n.relation.overlord : n.controller;
         const haloColor =
-          ov === "han" ? "rgba(220,38,38,0.13)" : ov === "xiongnu" ? "rgba(14,165,233,0.13)" : "rgba(148,163,184,0.06)";
-        parts.push(`<circle cx="${c.x}" cy="${c.y}" r="28" fill="${haloColor}" pointer-events="none"/>`);
+          ov === "han" ? "rgba(192, 57, 43, 0.16)" : ov === "xiongnu" ? "rgba(93, 64, 55, 0.18)" : "rgba(184, 137, 60, 0.08)";
+        parts.push(`<circle cx="${c.x}" cy="${c.y}" r="24" fill="${haloColor}" pointer-events="none"/>`);
         if (n.controller === "xiongnu" && (st.meta.season === "autumn" || st.meta.season === "winter")) {
           parts.push(
-            `<circle cx="${c.x}" cy="${c.y}" r="31" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3,3" class="pulse-ring" pointer-events="none"/>`
+            `<circle cx="${c.x}" cy="${c.y}" r="27" fill="none" stroke="#5d4037" stroke-width="1.2" stroke-dasharray="3,3" class="pulse-ring" pointer-events="none"/>`
           );
         }
       }
     }
 
-    // Z4: 丝路商道与僮仆税道 + 基础路网
-    for (const r of routes) {
-      const a = coords[r.from] || coords[r.a];
-      const b = coords[r.to] || coords[r.b];
-      if (!a || !b) continue;
-      const isTrade = GAME.layers.trade && (r.terrain === "oasis" || r.terrain === "corridor" || r.from === "dun_huang" || r.to === "lou_lan");
-      const stroke = isTrade ? "rgba(251, 191, 36, 0.42)" : "rgba(100, 116, 139, 0.32)";
-      const dash = isTrade ? 'stroke-dasharray="5,4"' : "";
-      parts.push(`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${stroke}" stroke-width="${isTrade ? 2.2 : 1.3}" ${dash} pointer-events="none"/>`);
+    // 3. Godot 商路金色高亮 (`Trade.open_prefix` -> `Color(0.91, 0.70, 0.25, 0.85)`, width `6.0`)
+    if (GAME.layers.trade) {
+      for (const tr of tradeRoutes) {
+        const pathNodes = tr.nodes || [];
+        const openPrefix = [];
+        for (const nid of pathNodes) {
+          if (isTradeNodeOpen(st, nid)) {
+            openPrefix.push(nid);
+          } else {
+            break;
+          }
+        }
+        for (let i = 1; i < openPrefix.length; i++) {
+          const rIdx = routeByPair[`${openPrefix[i - 1]}|${openPrefix[i]}`];
+          if (rIdx !== undefined && routeCurveD[rIdx]) {
+            parts.push(
+              `<path d="${routeCurveD[rIdx]}" fill="none" stroke="rgba(232, 179, 64, 0.85)" stroke-width="6.0" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`
+            );
+          }
+        }
+      }
     }
 
-    // 匈奴焉耆僮仆都尉税道
-    if (GAME.layers.trade && st.v1 && st.v1.tribes.tongpu_active && coords.yan_qi && coords.cheshi_qian) {
-      const yq = coords.yan_qi;
-      const cs = coords.cheshi_qian;
+    // 4. Godot 全地形曲线路网 (`_road`: road `#6b4f2a`, steppe `#5f8f4a`, desert `#b8893c` dashed, mountain `#7a7a7a` dashed, hazard `#a33a2a` dashed)
+    const isWinter = st.meta.season === "winter";
+    routes.forEach((r, idx) => {
+      const d = routeCurveD[idx];
+      if (!d) return;
+      let col = "#6b4f2a";
+      let dashed = false;
+      if (r.terrain === "steppe") {
+        col = "#5f8f4a";
+      } else if (r.terrain === "desert") {
+        col = "#b8893c";
+        dashed = true;
+      } else if (r.terrain === "mountain") {
+        col = "#7a7a7a";
+        dashed = true;
+      } else if (r.terrain === "hazard") {
+        col = "#a33a2a";
+        dashed = true;
+      }
+      if (r.closed_in_winter && isWinter) {
+        col = "#b5b0a6";
+      }
+      if (r.raided_by) {
+        col = "#d02020";
+      }
+
+      if (dashed) {
+        parts.push(
+          `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" stroke-dasharray="7.5, 4.5" stroke-linecap="round" pointer-events="none"/>`
+        );
+      } else {
+        parts.push(
+          `<path d="${d}" fill="none" stroke="rgba(250, 240, 209, 0.82)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`
+        );
+        parts.push(
+          `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`
+        );
+      }
+
+      // 透明宽热区用于复刻 Godot 悬停高亮与 `_get_tooltip` 里程提示
       parts.push(
-        `<line x1="${yq.x}" y1="${yq.y}" x2="${cs.x}" y2="${cs.y}" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="4,4" pointer-events="none"/>`
+        `<path d="${d}" class="godot-route-hit" data-ridx="${idx}" fill="none" stroke="transparent" stroke-width="14" style="cursor:help;"/>`
       );
-    }
+    });
 
-    // Z1: 万里自动补给线流光带 (S05-R01 / S07-R07)
+    // 悬停高亮路径层 (预留 `<path id="godot-route-hover-outer">` 与 `<path id="godot-route-hover-inner">`)
+    parts.push(
+      `<path id="godot-route-hover-outer" d="" fill="none" stroke="#f5e7aa" stroke-width="5.5" stroke-linecap="round" pointer-events="none" style="display:none;"/>`,
+      `<path id="godot-route-hover-inner" d="" fill="none" stroke="#704921" stroke-width="2.5" stroke-linecap="round" pointer-events="none" style="display:none;"/>`
+    );
+
+    // Z1: 万里自动补给线流光带 (沿实际古道绘制)
     if (GAME.layers.supply && st.v1 && st.v1.logistics.supply_lines) {
       for (const sl of st.v1.logistics.supply_lines) {
         const a = coords[sl.from];
         const b = coords[sl.to];
         if (!a || !b) continue;
-        const col = sl.status === "active" ? "#10b981" : sl.status === "throttled" ? "#f59e0b" : "#ef4444";
-        const width = clamp(2.5 + Math.log10(Math.max(100, sl.delivered_30d || 15000)), 3, 7);
+        const col = sl.status === "active" ? "#2e7d32" : sl.status === "throttled" ? "#b8893c" : "#c0392b";
+        const rIdx = routeByPair[`${sl.from}|${sl.to}`];
+        const pathStr = rIdx !== undefined && routeCurveD[rIdx] ? routeCurveD[rIdx] : `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
         parts.push(`
-          <line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${col}" stroke-width="${width}" class="supply-line-anim" pointer-events="none"/>
-          <text x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2 - 6}" fill="#6ee7b7" font-size="9.5" text-anchor="middle" font-weight="bold" pointer-events="none">
-            🚚 粮道 ${((sl.delivered_30d || 15000) / 1000).toFixed(0)}k斛
+          <path d="${pathStr}" fill="none" stroke="${col}" stroke-width="3.8" class="supply-line-anim" pointer-events="none"/>
+          <rect x="${(a.x + b.x) / 2 - 42}" y="${(a.y + b.y) / 2 - 17}" width="84" height="15" rx="3" fill="rgba(245, 232, 199, 0.92)" stroke="#6b4f2a" stroke-width="1" pointer-events="none"/>
+          <text x="${(a.x + b.x) / 2}" y="${(a.y + b.y) / 2 - 6}" fill="#251c13" font-size="9.5" text-anchor="middle" font-weight="bold" pointer-events="none">
+            粮道 ${((sl.delivered_30d || 15000) / 1000).toFixed(0)}k石
           </text>
         `);
       }
     }
 
-    // Z3: 敌军 30/60/90 日同心威胁圈 (S05-R08 / S07-R07)
+    // Z3: 敌军 30/60/90 日同心威胁圈
     if (GAME.layers.threat) {
       const oppFaction = st.meta.side === "han" ? "xiongnu" : "han";
       for (const nid of nodeIds) {
         const n = st.nodes[nid];
-        const hasOppArmy = (n.armies && n.armies.some((a) => a.faction === oppFaction && a.soldiers >= 1500)) || nid === "chanyu_ting" || nid === "cheshi_qian";
+        const hasOppArmy =
+          (n.armies && n.armies.some((a) => a.faction === oppFaction && a.soldiers >= 1500)) ||
+          nid === "chanyu_ting" ||
+          nid === "cheshi_qian";
         if (hasOppArmy && n.controller === oppFaction) {
           const c = coords[nid];
           parts.push(`
-            <circle cx="${c.x}" cy="${c.y}" r="48" fill="rgba(239,68,68,0.12)" stroke="#ef4444" stroke-width="1.2" pointer-events="none"/>
-            <circle cx="${c.x}" cy="${c.y}" r="85" fill="none" stroke="#f59e0b" stroke-width="1" stroke-dasharray="5,4" pointer-events="none"/>
-            <circle cx="${c.x}" cy="${c.y}" r="120" fill="none" stroke="#fde047" stroke-width="0.8" stroke-dasharray="2,4" pointer-events="none"/>
+            <circle cx="${c.x}" cy="${c.y}" r="45" fill="rgba(192, 57, 43, 0.10)" stroke="#c0392b" stroke-width="1.2" pointer-events="none"/>
+            <circle cx="${c.x}" cy="${c.y}" r="80" fill="none" stroke="#b8893c" stroke-width="1" stroke-dasharray="5,4" pointer-events="none"/>
+            <circle cx="${c.x}" cy="${c.y}" r="115" fill="none" stroke="#6b4f2a" stroke-width="0.8" stroke-dasharray="2,4" pointer-events="none"/>
           `);
         }
       }
     }
 
-    // 节点圆盘与名称、驻军、烽燧、屯田角标
+    // 5. Godot 42 节点圆盘 + 图标 (`city.svg`/`nomad.svg`) + 羊皮纸铭牌 (`_label_box`)
     for (const nid of nodeIds) {
       const n = st.nodes[nid];
+      const meta = MVP_NODE_META[nid] || {};
       const c = coords[nid];
       const isSel = nid === GAME.selectedNodeId;
-      const rel = n.relation;
+      const nodeType = meta.type || n.type || "city";
+      let rad = 9.0;
+      if (nodeType === "source") rad = 12.0;
+      else if (nodeType === "pass") rad = 6.0;
+      else if (nodeType === "nomad") rad = 10.0;
 
-      let fill = "#64748b";
-      let stroke = "#cbd5e1";
-      if (n.controller === "han" && !rel) {
-        fill = "#dc2626";
-        stroke = "#fca5a5";
-      } else if (n.controller === "xiongnu" && !rel) {
-        fill = "#0284c7";
-        stroke = "#7dd3fc";
-      } else if (rel) {
-        if (rel.overlord === "han") {
-          fill = "#f59e0b";
-          stroke = "#fef08a";
-        } else if (rel.overlord === "xiongnu") {
-          fill = "#0ea5e9";
-          stroke = "#bae6fd";
-        } else if (rel.han_enfeoffed) {
-          fill = "#fbbf24";
-          stroke = "#fef3c7";
-        }
-      }
+      const fillCol = getGodotNodeColor(nid, n);
+      const iconHref = nodeType === "nomad" ? "assets/icons/nomad.svg" : "assets/icons/city.svg";
+      const label = n.name || meta.name || nid;
+      const fs = 13;
+      const tw = Math.max(28, label.length * 13.5);
+      const boxW = tw + 10;
+      const boxH = fs + 7;
+      const boxX = c.x - boxW * 0.5;
+      const boxY = c.y + rad + 3;
+      const labelBoxFill = isSel ? "rgba(245, 232, 199, 0.96)" : "rgba(245, 232, 199, 0.85)";
+      const labelBoxStroke = isSel ? `stroke="#9b742f" stroke-width="1.4"` : `stroke="rgba(120, 100, 62, 0.35)" stroke-width="0.8"`;
 
-      const rSize = isSel ? 12.5 : n.type === "city" ? 9 : 7;
       parts.push(`
         <g class="map-node-g" data-nid="${nid}" style="cursor:pointer;">
-          ${isSel ? `<circle cx="${c.x}" cy="${c.y}" r="19" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="4,2"/>` : ""}
-          <circle cx="${c.x}" cy="${c.y}" r="${rSize}" fill="${fill}" stroke="${stroke}" stroke-width="${isSel ? 2.5 : 1.5}"/>
-          <text x="${c.x}" y="${c.y + rSize + 11}" fill="${isSel ? "#fef08a" : "#e2e8f0"}" font-size="${isSel ? 11.5 : 10}" font-weight="${isSel ? "800" : "600"}" text-anchor="middle">${n.name}</text>
-          ${n.has_beacon && GAME.layers.fog ? `<text x="${c.x - 13}" y="${c.y - 8}" font-size="10">🔥</text>` : ""}
-          ${n.tuntian_lv > 0 ? `<text x="${c.x + 11}" y="${c.y - 8}" font-size="10">🌾</text>` : ""}
-          ${rel && rel.crimes > 0 ? `<text x="${c.x + 12}" y="${c.y + 4}" font-size="10" title="有合法讨伐罪状">⚖️</text>` : ""}
+          ${n.under_siege_by ? `<circle cx="${c.x}" cy="${c.y}" r="${rad + 6}" fill="none" stroke="#d02020" stroke-width="3.0"/>` : ""}
+          ${isSel ? `<circle cx="${c.x}" cy="${c.y}" r="${rad + 4}" fill="none" stroke="#ffffff" stroke-width="3.0"/>` : ""}
+          <circle cx="${c.x}" cy="${c.y + 2}" r="${rad + 2}" fill="rgba(38, 28, 20, 0.25)"/>
+          <circle cx="${c.x}" cy="${c.y}" r="${rad + 1.5}" fill="#eed4a0"/>
+          <circle cx="${c.x}" cy="${c.y}" r="${rad}" fill="${fillCol}" stroke="#2a1d10" stroke-width="1.5"/>
+          ${
+            nodeType !== "pass"
+              ? `<image href="${iconHref}" x="${c.x - 6}" y="${c.y - 6}" width="12" height="12" pointer-events="none"/>`
+              : ""
+          }
+          <rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH}" rx="3" fill="${labelBoxFill}" ${labelBoxStroke}/>
+          <text x="${c.x}" y="${(boxY + fs + 1.5).toFixed(1)}" fill="#251c13" font-size="${fs}" font-weight="${isSel ? "700" : "600"}" text-anchor="middle">${label}</text>
+          ${n.has_beacon && GAME.layers.fog ? `<text x="${c.x - rad - 8}" y="${c.y - 4}" font-size="10" title="烽燧火候">🔥</text>` : ""}
+          ${n.tuntian_lv > 0 ? `<text x="${c.x + rad + 2}" y="${c.y - 4}" font-size="10" title="军屯">🌾</text>` : ""}
         </g>
       `);
-
-      // Z6: 驻军算筹标签
-      if (GAME.layers.tokens && n.armies && n.armies.length > 0) {
-        const totalTroops = n.armies.reduce((s, a) => s + (a.soldiers || 0), 0);
-        if (totalTroops > 0) {
-          const isHanArmy = n.armies[0].faction === "han";
-          const tagBg = isHanArmy ? "#991b1b" : "#075985";
-          parts.push(`
-            <g pointer-events="none">
-              <rect x="${c.x - 24}" y="${c.y - rSize - 17}" width="48" height="13" rx="3" fill="${tagBg}" stroke="#fbbf24" stroke-width="0.8"/>
-              <text x="${c.x}" y="${c.y - rSize - 7.5}" fill="#fef3c7" font-size="8.8" font-weight="bold" text-anchor="middle">
-                ${isHanArmy ? "汉" : "匈"} ${(totalTroops / 1000).toFixed(1)}k
-              </text>
-            </g>
-          `);
-        }
-      }
     }
 
-    // Z6: 行军中大军算筹与在途使团/驿骑
+    // 6. Godot 军队旌旗标牌 (`_draw_army`: 32×40 旗牌 + `standard.svg` / `convoy.svg` + 锚点连线)
     if (GAME.layers.tokens) {
-      for (const ma of st.moving_armies || []) {
-        const a = coords[ma.from];
-        const b = coords[ma.to];
-        if (a && b) {
-          const mx = (a.x + b.x) / 2;
-          const my = (a.y + b.y) / 2;
+      for (const nid of nodeIds) {
+        const n = st.nodes[nid];
+        if (!n.armies || n.armies.length === 0) continue;
+        const p = coords[nid];
+        n.armies.forEach((a, k) => {
+          const cnt = (a.soldiers || 0) + (a.is_convoy ? a.laborers || 0 : 0);
+          if (cnt <= 0) return;
+          const anchorX = p.x + 19 + (k % 3) * 42;
+          const anchorY = p.y - Math.floor(k / 3) * 45;
+          const posX = anchorX;
+          const posY = anchorY - 24;
+          const baseCol = a.faction === "han" ? GODOT_C_HAN : GODOT_C_XN;
+          const boxCol = a.is_convoy ? (a.faction === "han" ? "#cd854c" : "#9f8853") : baseCol;
+          const txt = cnt >= 10000 ? `${(cnt / 10000).toFixed(1)}万` : `${cnt}`;
+          const iconPath = a.is_convoy ? "assets/icons/convoy.svg" : "assets/icons/standard.svg";
           parts.push(`
-            <g pointer-events="none">
-              <line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="6,3"/>
-              <rect x="${mx - 34}" y="${my - 10}" width="68" height="16" rx="4" fill="#b91c1c" stroke="#fef08a" stroke-width="1.2"/>
-              <text x="${mx}" y="${my + 1}" fill="#fff" font-size="9.5" font-weight="bold" text-anchor="middle">⚔️ ${(ma.soldiers / 1000).toFixed(1)}k 进军</text>
+            <g class="godot-army-marker" data-nid="${nid}" style="cursor:pointer;">
+              <line x1="${anchorX}" y1="${anchorY}" x2="${posX}" y2="${posY + 16}" stroke="#6b4f2a" stroke-width="1.2"/>
+              <circle cx="${anchorX}" cy="${anchorY}" r="3.0" fill="${baseCol}"/>
+              <rect x="${posX - 16}" y="${posY - 20}" width="32" height="40" rx="3" fill="${boxCol}" stroke="#fff3d0" stroke-width="1"/>
+              <image href="${iconPath}" x="${posX - 13}" y="${posY - 18}" width="26" height="26" pointer-events="none"/>
+              <text x="${posX}" y="${posY + 17}" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">${txt}</text>
+              ${a.is_convoy ? `<text x="${posX + 20}" y="${posY}" fill="${boxCol}" font-size="11" font-weight="700">粮</text>` : ""}
             </g>
           `);
+        });
+      }
+
+      // 行军途中的部队旌旗 (沿实际古道 Bezier 采样锚点)
+      for (const ma of st.moving_armies || []) {
+        const rIdx = routeByPair[`${ma.from}|${ma.to}`];
+        let anchorX = 500;
+        let anchorY = 310;
+        if (rIdx !== undefined && routePtsList[rIdx]) {
+          const r = routes[rIdx];
+          const prog = (r.a || r.from) === ma.from ? ma.progress || 0.5 : 1.0 - (ma.progress || 0.5);
+          const pt = sampleGodotRoutePoint(routePtsList[rIdx], prog);
+          anchorX = pt[0];
+          anchorY = pt[1];
+        } else if (coords[ma.from] && coords[ma.to]) {
+          anchorX = (coords[ma.from].x + coords[ma.to].x) * 0.5;
+          anchorY = (coords[ma.from].y + coords[ma.to].y) * 0.5;
         }
+        const posX = anchorX;
+        const posY = anchorY - 24;
+        const baseCol = ma.faction === "han" ? GODOT_C_HAN : GODOT_C_XN;
+        const cnt = ma.soldiers || 0;
+        const txt = cnt >= 10000 ? `${(cnt / 10000).toFixed(1)}万` : `${cnt}`;
+        parts.push(`
+          <g pointer-events="none">
+            <line x1="${anchorX}" y1="${anchorY}" x2="${posX}" y2="${posY + 16}" stroke="#6b4f2a" stroke-width="1.2"/>
+            <circle cx="${anchorX}" cy="${anchorY}" r="3.0" fill="${baseCol}"/>
+            <rect x="${posX - 16}" y="${posY - 20}" width="32" height="40" rx="3" fill="${baseCol}" stroke="#ffee33" stroke-width="1.5"/>
+            <image href="assets/icons/standard.svg" x="${posX - 13}" y="${posY - 18}" width="26" height="26"/>
+            <text x="${posX}" y="${posY + 17}" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">${txt}</text>
+          </g>
+        `);
       }
     }
+
+    // 7. Godot 左上角与左下角古舆图题签 (`_draw_region_labels` lines 336-340)
+    parts.push(`
+      <g pointer-events="none">
+        <rect x="14" y="14" width="300" height="54" rx="3" fill="rgba(245, 232, 199, 0.88)" stroke="rgba(155, 116, 47, 0.45)" stroke-width="1"/>
+        <text x="26" y="36" fill="#37291a" font-size="15" font-weight="700">西域舆图  /  前119年战略示意</text>
+        <text x="26" y="55" fill="#66523a" font-size="12">滚轮缩放 · 拖动平移 · 悬停查看里程</text>
+
+        <rect x="14" y="570" width="337" height="36" rx="3" fill="rgba(245, 232, 199, 0.88)" stroke="rgba(155, 116, 47, 0.45)" stroke-width="1"/>
+        <text x="26" y="593" fill="#493820" font-size="12" font-weight="600">金色：商路  虚线：险道  交叉处不可换路</text>
+      </g>
+    `);
 
     svg.innerHTML = parts.join("");
 
-    svg.querySelectorAll(".map-node-g").forEach((g) => {
+    // 绑定节点与部队旗牌点击事件
+    svg.querySelectorAll(".map-node-g, .godot-army-marker").forEach((g) => {
       g.addEventListener("click", (e) => {
         e.stopPropagation();
         const nid = g.getAttribute("data-nid");
@@ -473,6 +718,57 @@
         renderStrategicMap();
         renderFoodCurveDrawer();
         renderActiveDockPanel();
+      });
+    });
+
+    // 绑定道路悬停高亮与 Godot `_get_tooltip` 里程提示
+    const tooltipEl = document.getElementById("godot-route-tooltip");
+    const hoverOuter = document.getElementById("godot-route-hover-outer");
+    const hoverInner = document.getElementById("godot-route-hover-inner");
+    const terrainNames = {
+      road: "官道/绿洲道",
+      steppe: "草原道",
+      desert: "流沙大碛",
+      mountain: "葱岭天山险道",
+      hazard: "白龙堆盐泽绝地",
+    };
+
+    svg.querySelectorAll(".godot-route-hit").forEach((hitPath) => {
+      hitPath.addEventListener("mouseenter", () => {
+        const rIdx = parseInt(hitPath.getAttribute("data-ridx"), 10);
+        const r = routes[rIdx];
+        const d = routeCurveD[rIdx];
+        if (!r || !d) return;
+        if (hoverOuter && hoverInner) {
+          hoverOuter.setAttribute("d", d);
+          hoverInner.setAttribute("d", d);
+          hoverOuter.style.display = "";
+          hoverInner.style.display = "";
+        }
+        if (tooltipEl) {
+          const aId = r.a || r.from;
+          const bId = r.b || r.to;
+          const aName = (st.nodes[aId] && st.nodes[aId].name) || (MVP_NODE_META[aId] && MVP_NODE_META[aId].name) || aId;
+          const bName = (st.nodes[bId] && st.nodes[bId].name) || (MVP_NODE_META[bId] && MVP_NODE_META[bId].name) || bId;
+          const tName = terrainNames[r.terrain] || r.terrain;
+          const winterNote = r.closed_in_winter ? "\n冬季大雪封山" : "";
+          const raidNote = r.raided_by ? "\n已被劫掠（商路中断）" : "";
+          tooltipEl.textContent = `${aName} ↔ ${bName}\n地形：${tName}  步程：约 ${r.days} 天\n耗时倍率：×${(r.time_mult || 1.0).toFixed(1)}  损耗倍率：×${(r.attrition_mult || 1.0).toFixed(1)}${winterNote}${raidNote}`;
+          tooltipEl.style.display = "block";
+        }
+      });
+      hitPath.addEventListener("mousemove", (ev) => {
+        if (!tooltipEl) return;
+        const rect = svg.getBoundingClientRect();
+        tooltipEl.style.left = `${ev.clientX - rect.left + 14}px`;
+        tooltipEl.style.top = `${ev.clientY - rect.top + 14}px`;
+      });
+      hitPath.addEventListener("mouseleave", () => {
+        if (hoverOuter && hoverInner) {
+          hoverOuter.style.display = "none";
+          hoverInner.style.display = "none";
+        }
+        if (tooltipEl) tooltipEl.style.display = "none";
       });
     });
   }

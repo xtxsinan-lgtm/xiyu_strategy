@@ -321,139 +321,273 @@ from design_sim import web_bridge as wb
     }
   }
 
-  // ==================== 3. 42 节点战略地图 SVG 渲染 ====================
+  // ==================== 3. 42 节点战略地图 SVG 渲染（1:1 严格对齐 Godot `ui/map_view.gd`） ====================
+  const GODOT_C_HAN = "#c0392b";
+  const GODOT_C_XN = "#5d4037";
+  const GODOT_C_HAN_V = "#e08a80";
+  const GODOT_C_XN_V = "#a1887f";
+  const GODOT_C_PASS = "#b8b8b8";
+  const GODOT_STATE_COLORS = {
+    dong_qiemi: "#d99032",
+    cheshi_qian: "#287c8e",
+    cheshi_hou: "#835cad",
+    yan_qi: "#559b48",
+    wei_li: "#c45c91",
+    wu_lei: "#4668b5",
+    lun_tai: "#9a9d30",
+    qiu_ci: "#25977a",
+    gu_mo: "#ba7037",
+    wen_su: "#bd4770",
+    shu_le: "#5a479b",
+    sha_che: "#a47cba",
+    yu_tian: "#e0b13e",
+    jing_jue: "#679baa",
+    qie_mo: "#a9b75c",
+    lou_lan: "#d46b43",
+    juan_du: "#4b7440",
+    xiu_xun: "#8d5d78",
+    dawan: "#3566cf",
+    da_wan: "#3566cf",
+    kangju: "#6d8a24",
+    kang_ju: "#6d8a24",
+    dayuezhi: "#a343b5",
+    da_yuezhi: "#a343b5",
+    jibin: "#367064",
+    ji_bin: "#367064",
+    wusun: "#26aaa3",
+    wu_sun: "#26aaa3",
+  };
+
+  const MVP_NODE_META = {};
+  if (BUNDLE.scenario_mvp && Array.isArray(BUNDLE.scenario_mvp.nodes)) {
+    for (const mn of BUNDLE.scenario_mvp.nodes) {
+      MVP_NODE_META[mn.id] = mn;
+    }
+  }
+
+  function buildGodotRoutePoints(r, posMap, waypoints) {
+    const pA = posMap[r.a || r.from];
+    const pB = posMap[r.b || r.to];
+    if (!pA || !pB) return [];
+    const a = r.a || r.from;
+    const b = r.b || r.to;
+    const k1 = `${a}|${b}`;
+    const k2 = `${b}|${a}`;
+    let pts = [pA];
+    if (waypoints[k1]) {
+      pts = pts.concat(waypoints[k1]);
+    } else if (waypoints[k2]) {
+      pts = pts.concat([...waypoints[k2]].reverse());
+    }
+    pts.push(pB);
+    return pts;
+  }
+
+  function buildGodotBezierPath(pts) {
+    if (!pts || pts.length < 2) return "";
+    const n = pts.length;
+    const tangents = pts.map((_, i) => {
+      if (i <= 0 || i >= n - 1) return [0, 0];
+      return [(pts[i + 1][0] - pts[i - 1][0]) * 0.15, (pts[i + 1][1] - pts[i - 1][1]) * 0.15];
+    });
+    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < n - 1; i++) {
+      const c1x = pts[i][0] + tangents[i][0];
+      const c1y = pts[i][1] + tangents[i][1];
+      const c2x = pts[i + 1][0] - tangents[i + 1][0];
+      const c2y = pts[i + 1][1] - tangents[i + 1][1];
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${pts[i + 1][0].toFixed(1)} ${pts[i + 1][1].toFixed(1)}`;
+    }
+    return d;
+  }
+
+  function getGodotNodeColor(nid, n) {
+    const meta = MVP_NODE_META[nid] || {};
+    const origFaction = meta.faction || n.faction || nid;
+    const nodeType = meta.type || n.type || "city";
+    const ctl = n.relation && n.relation.overlord ? n.relation.overlord : n.controller;
+
+    if (origFaction === "han" && ctl === "han") return GODOT_C_HAN;
+    if (origFaction === "xiongnu" && ctl === "xiongnu") return GODOT_C_XN;
+    if (nodeType === "pass") return GODOT_C_PASS;
+    if (ctl === "han") return GODOT_C_HAN_V;
+    if (ctl === "xiongnu") return GODOT_C_XN_V;
+    if (GODOT_STATE_COLORS[origFaction]) return GODOT_STATE_COLORS[origFaction];
+    if (GODOT_STATE_COLORS[nid]) return GODOT_STATE_COLORS[nid];
+    return "#b89658";
+  }
+
+  function isTradeNodeOpen(st, nid) {
+    const n = st.nodes[nid];
+    if (!n) return false;
+    const meta = MVP_NODE_META[nid] || {};
+    if ((meta.faction === "xiongnu" || n.controller === "xiongnu") && !n.relation) return false;
+    if (n.relation) {
+      if (n.relation.embargo_han) return false;
+      if (n.relation.overlord === "xiongnu" && (n.relation.xn_intimidation || 0) >= 60) return false;
+    }
+    return true;
+  }
+
   function renderStrategicMap(st) {
     const svg = document.getElementById("map-svg");
     const pos = BUNDLE.map_presentation.positions;
     const waypoints = BUNDLE.map_presentation.waypoints || {};
-    const routes = BUNDLE.scenario_mvp.routes;
+    const regions = BUNDLE.map_presentation.regions || [];
+    const routes = BUNDLE.scenario_mvp.routes || [];
+    const tradeRoutes = BUNDLE.scenario_mvp.trade_routes || [];
     const edTarget = st.v1 && st.v1.court.active_edict ? st.v1.court.active_edict.target : "";
 
+    const routeByPair = {};
+    const routeCurveD = [];
+    routes.forEach((r, idx) => {
+      const a = r.a || r.from;
+      const b = r.b || r.to;
+      routeByPair[`${a}|${b}`] = idx;
+      routeByPair[`${b}|${a}`] = idx;
+      const pts = buildGodotRoutePoints(r, pos, waypoints);
+      routeCurveD.push(buildGodotBezierPath(pts));
+    });
+
     let html = `
-      <defs>
-        <radialGradient id="hanGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#ef4444" stop-opacity="0.45"/>
-          <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
-        </radialGradient>
-        <radialGradient id="xnGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.45"/>
-          <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <!-- 地理分区底纹标注 -->
-      <text x="840" y="555" fill="rgba(239,68,68,0.22)" font-size="22" font-weight="800" font-family="serif">关中·河西四郡</text>
-      <text x="720" y="60" fill="rgba(14,165,233,0.22)" font-size="22" font-weight="800" font-family="serif">漠北·匈奴单于庭</text>
-      <text x="450" y="245" fill="rgba(245,158,11,0.18)" font-size="20" font-weight="800" font-family="serif">天山北道 · 塔里木盆地</text>
-      <text x="410" y="520" fill="rgba(245,158,11,0.18)" font-size="18" font-weight="800" font-family="serif">西域南道</text>
-      <text x="75" y="130" fill="rgba(168,85,247,0.22)" font-size="18" font-weight="800" font-family="serif">葱岭外大国</text>
+      <!-- Godot 西域舆图底图与宣纸柔光遮罩 -->
+      <rect x="0" y="0" width="1000" height="620" fill="#e9dcc0"/>
+      <image href="assets/art/western-regions-atlas-v2.png" x="0" y="0" width="1000" height="620" preserveAspectRatio="none"/>
+      <rect x="0" y="0" width="1000" height="620" fill="rgba(242, 227, 186, 0.38)"/>
     `;
 
-    // 1. 绘制道路网
-    const terrainColor = {
-      plain: "#475569",
-      oasis: "#10b981",
-      steppe: "#0284c7",
-      desert: "#d97706",
-      mountain: "#94a3b8",
-      hazard: "#ef4444",
-    };
+    // 地理大区底纹标注 (`layout["regions"]`)
+    html += `<g pointer-events="none">`;
+    for (const reg of regions) {
+      html += `<text x="${reg[1][0]}" y="${reg[1][1]}" font-size="21" font-weight="700" fill="rgba(77, 71, 56, 0.72)" stroke="rgba(245, 235, 204, 0.65)" stroke-width="3" paint-order="stroke">${reg[0]}</text>`;
+    }
+    html += `</g>`;
 
-    for (const r of routes) {
-      const pA = pos[r.a];
-      const pB = pos[r.b];
-      if (!pA || !pB) continue;
-      const wpKey1 = `${r.a}|${r.b}`;
-      const wpKey2 = `${r.b}|${r.a}`;
-      let pts = [pA];
-      if (waypoints[wpKey1]) pts = pts.concat(waypoints[wpKey1]);
-      else if (waypoints[wpKey2]) pts = pts.concat([...waypoints[wpKey2]].reverse());
-      pts.push(pB);
-
-      const dAttr = pts.map((pt, i) => `${i === 0 ? "M" : "L"}${pt[0]},${pt[1]}`).join(" ");
-      const col = terrainColor[r.terrain] || "#475569";
-      const dash = r.terrain === "desert" || r.terrain === "hazard" ? 'stroke-dasharray="5,4"' : "";
-      html += `<path d="${dAttr}" fill="none" stroke="${col}" stroke-width="1.8" stroke-opacity="0.55" ${dash}/>`;
+    // 1. 商路高亮 (`Trade.open_prefix`)
+    for (const tr of tradeRoutes) {
+      const pathNodes = tr.nodes || [];
+      const openPrefix = [];
+      for (const nid of pathNodes) {
+        if (isTradeNodeOpen(st, nid)) openPrefix.push(nid);
+        else break;
+      }
+      for (let i = 1; i < openPrefix.length; i++) {
+        const rIdx = routeByPair[`${openPrefix[i - 1]}|${openPrefix[i]}`];
+        if (rIdx !== undefined && routeCurveD[rIdx]) {
+          html += `<path d="${routeCurveD[rIdx]}" fill="none" stroke="rgba(232, 179, 64, 0.85)" stroke-width="6.0" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`;
+        }
+      }
     }
 
-    // 2. 绘制在途移动部队
-    for (const ma of st.moving_armies || []) {
-      const pA = pos[ma.from];
-      const pB = pos[ma.to];
-      if (!pA || !pB) continue;
-      const mx = pA[0] + (pB[0] - pA[0]) * (ma.progress || 0.5);
-      const my = pA[1] + (pB[1] - pA[1]) * (ma.progress || 0.5);
-      const col = ma.faction === "han" ? "#ef4444" : "#38bdf8";
-      html += `
-        <g transform="translate(${mx},${my})">
-          <circle r="7" fill="${col}" stroke="#fff" stroke-width="1.2"/>
-          <text y="-10" text-anchor="middle" fill="#fef08a" font-size="10" font-weight="700">${ma.is_convoy ? "📦粮队" : "⚔️" + Math.round(ma.soldiers / 1000) + "k"}</text>
-        </g>
-      `;
-    }
+    // 2. 绘制全地形 Bezier 道路网
+    const isWinter = st.meta && st.meta.season === "winter";
+    routes.forEach((r, idx) => {
+      const d = routeCurveD[idx];
+      if (!d) return;
+      let col = "#6b4f2a";
+      let dashed = false;
+      if (r.terrain === "steppe") {
+        col = "#5f8f4a";
+      } else if (r.terrain === "desert") {
+        col = "#b8893c";
+        dashed = true;
+      } else if (r.terrain === "mountain") {
+        col = "#7a7a7a";
+        dashed = true;
+      } else if (r.terrain === "hazard") {
+        col = "#a33a2a";
+        dashed = true;
+      }
+      if (r.closed_in_winter && isWinter) col = "#b5b0a6";
+      if (r.raided_by) col = "#d02020";
 
-    // 3. 绘制 42 个节点
+      if (dashed) {
+        html += `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" stroke-dasharray="7.5, 4.5" stroke-linecap="round" pointer-events="none"/>`;
+      } else {
+        html += `<path d="${d}" fill="none" stroke="rgba(250, 240, 209, 0.82)" stroke-width="3.6" stroke-linecap="round" pointer-events="none"/>`;
+        html += `<path d="${d}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round" pointer-events="none"/>`;
+      }
+    });
+
+    // 3. 绘制 42 个节点 + 图标 + 羊皮纸铭牌
     for (const [nid, n] of Object.entries(st.nodes)) {
       const pt = pos[nid];
       if (!pt) continue;
       const [x, y] = pt;
+      const meta = MVP_NODE_META[nid] || {};
+      const nodeType = meta.type || n.type || "city";
+      let rad = 9.0;
+      if (nodeType === "source") rad = 12.0;
+      else if (nodeType === "pass") rad = 6.0;
+      else if (nodeType === "nomad") rad = 10.0;
 
-      let owner = n.controller;
-      if (n.relation && n.relation.overlord) owner = n.relation.overlord;
-
-      let fill = "#f59e0b"; // 中立城邦
-      let stroke = "#fde68a";
-      let glow = "";
-      if (owner === "han") {
-        fill = "#dc2626";
-        stroke = "#fca5a5";
-        glow = `<circle cx="${x}" cy="${y}" r="18" fill="url(#hanGlow)"/>`;
-      } else if (owner === "xiongnu") {
-        fill = "#0284c7";
-        stroke = "#7dd3fc";
-        glow = `<circle cx="${x}" cy="${y}" r="18" fill="url(#xnGlow)"/>`;
-      }
-
+      const fillCol = getGodotNodeColor(nid, n);
       const isSelected = nid === APP.selectedNodeId;
       const isEdictTarget = nid === edTarget;
-      const radius =
-        nid === "chang_an" || nid === "chanyu_ting"
-          ? 9.5
-          : ["dun_huang", "lou_lan", "wu_lei", "cheshi_qian", "wu_sun", "da_wan"].includes(nid)
-          ? 7.8
-          : 6.2;
-
-      const totalTroops = (n.armies || [])
-        .filter((a) => !a.is_convoy)
-        .reduce((acc, a) => acc + a.soldiers, 0);
+      const iconHref = nodeType === "nomad" ? "assets/icons/nomad.svg" : "assets/icons/city.svg";
+      const label = n.name || meta.name || nid;
+      const fs = 13;
+      const tw = Math.max(28, label.length * 13.5);
+      const boxW = tw + 10;
+      const boxH = fs + 7;
+      const boxX = x - boxW * 0.5;
+      const boxY = y + rad + 3;
+      const labelBoxFill = isSelected ? "rgba(245, 232, 199, 0.96)" : "rgba(245, 232, 199, 0.85)";
+      const labelBoxStroke = isSelected ? `stroke="#9b742f" stroke-width="1.4"` : `stroke="rgba(120, 100, 62, 0.35)" stroke-width="0.8"`;
 
       html += `<g class="map-node" data-node="${nid}" style="cursor:pointer">`;
-      html += glow;
-      if (isSelected) {
-        html += `<circle cx="${x}" cy="${y}" r="${radius + 6}" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="3,2"/>`;
-      }
       if (isEdictTarget) {
-        html += `<circle cx="${x}" cy="${y}" r="${radius + 9}" fill="none" stroke="#f43f5e" stroke-width="1.8"/>`;
+        html += `<circle cx="${x}" cy="${y}" r="${rad + 7}" fill="none" stroke="#d02020" stroke-width="2.5"/>`;
       }
-      html += `<circle cx="${x}" cy="${y}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="1.6"/>`;
-
-      // 烽燧与军屯角标
-      let badges = "";
-      if (n.has_beacon) badges += "🔥";
-      if (n.tuntian_lv > 0) badges += `🌾${n.tuntian_lv}`;
-      if (badges) {
-        html += `<text x="${x + radius + 2}" y="${y - 4}" font-size="10">${badges}</text>`;
+      if (isSelected) {
+        html += `<circle cx="${x}" cy="${y}" r="${rad + 4}" fill="none" stroke="#ffffff" stroke-width="3.0"/>`;
       }
-
-      // 驻军兵力标签
-      if (totalTroops > 0) {
-        const armyCol = n.armies[0].faction === "han" ? "#fecaca" : "#bae6fd";
-        html += `<text x="${x}" y="${y - radius - 4}" text-anchor="middle" fill="${armyCol}" font-size="10" font-weight="700">⚔️${(totalTroops / 1000).toFixed(1)}k</text>`;
+      html += `<circle cx="${x}" cy="${y + 2}" r="${rad + 2}" fill="rgba(38, 28, 20, 0.25)"/>`;
+      html += `<circle cx="${x}" cy="${y}" r="${rad + 1.5}" fill="#eed4a0"/>`;
+      html += `<circle cx="${x}" cy="${y}" r="${rad}" fill="${fillCol}" stroke="#2a1d10" stroke-width="1.5"/>`;
+      if (nodeType !== "pass") {
+        html += `<image href="${iconHref}" x="${x - 6}" y="${y - 6}" width="12" height="12" pointer-events="none"/>`;
       }
-
-      // 节点名称
-      html += `<text x="${x}" y="${y + radius + 12}" text-anchor="middle" fill="${isSelected ? "#fde68a" : "#e2e8f0"}" font-size="11" font-weight="${isSelected ? "800" : "600"}">${n.name}</text>`;
+      html += `<rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH}" rx="3" fill="${labelBoxFill}" ${labelBoxStroke}/>`;
+      html += `<text x="${x}" y="${(boxY + fs + 1.5).toFixed(1)}" text-anchor="middle" fill="#251c13" font-size="${fs}" font-weight="${isSelected ? "700" : "600"}">${label}</text>`;
       html += `</g>`;
     }
+
+    // 4. 绘制军队旌旗标牌 (`_draw_army`)
+    for (const [nid, n] of Object.entries(st.nodes)) {
+      const pt = pos[nid];
+      if (!pt || !n.armies || n.armies.length === 0) continue;
+      n.armies.forEach((a, k) => {
+        const cnt = (a.soldiers || 0) + (a.is_convoy ? a.laborers || 0 : 0);
+        if (cnt <= 0) return;
+        const anchorX = pt[0] + 19 + (k % 3) * 42;
+        const anchorY = pt[1] - Math.floor(k / 3) * 45;
+        const posX = anchorX;
+        const posY = anchorY - 24;
+        const baseCol = a.faction === "han" ? GODOT_C_HAN : GODOT_C_XN;
+        const boxCol = a.is_convoy ? (a.faction === "han" ? "#cd854c" : "#9f8853") : baseCol;
+        const txt = cnt >= 10000 ? `${(cnt / 10000).toFixed(1)}万` : `${cnt}`;
+        const iconPath = a.is_convoy ? "assets/icons/convoy.svg" : "assets/icons/standard.svg";
+        html += `
+          <g class="map-node" data-node="${nid}" style="cursor:pointer;">
+            <line x1="${anchorX}" y1="${anchorY}" x2="${posX}" y2="${posY + 16}" stroke="#6b4f2a" stroke-width="1.2"/>
+            <circle cx="${anchorX}" cy="${anchorY}" r="3.0" fill="${baseCol}"/>
+            <rect x="${posX - 16}" y="${posY - 20}" width="32" height="40" rx="3" fill="${boxCol}" stroke="#fff3d0" stroke-width="1"/>
+            <image href="${iconPath}" x="${posX - 13}" y="${posY - 18}" width="26" height="26" pointer-events="none"/>
+            <text x="${posX}" y="${posY + 17}" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">${txt}</text>
+          </g>
+        `;
+      });
+    }
+
+    // 5. 左上角题签
+    html += `
+      <g pointer-events="none">
+        <rect x="14" y="14" width="290" height="50" rx="3" fill="rgba(245, 232, 199, 0.88)" stroke="rgba(155, 116, 47, 0.45)" stroke-width="1"/>
+        <text x="26" y="35" fill="#37291a" font-size="14.5" font-weight="700">西域舆图  /  前119年战略示意</text>
+        <text x="26" y="53" fill="#66523a" font-size="11.5">点击城邦检视 · 金色：商路 · 虚线：险道</text>
+      </g>
+    `;
 
     svg.innerHTML = html;
     svg.querySelectorAll(".map-node").forEach((el) => {

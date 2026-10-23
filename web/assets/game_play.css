@@ -1,21 +1,20 @@
 :root {
-  --bg-deep: #0b0d13;
-  --bg-panel: #131722;
-  --bg-card: #1a2030;
-  --bg-bamboo: #211c14;
-  --bg-hover: #252e42;
-  --border: #2c364f;
-  --border-gold: rgba(212, 175, 55, 0.55);
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --han-red: #dc2626;
-  --han-gold: #f59e0b;
-  --xn-blue: #0ea5e9;
-  --emerald: #10b981;
-  --amber: #f59e0b;
-  --crimson: #ef4444;
-  --purple: #a855f7;
-  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --bg-deep: #111917;
+  --bg-panel: #1c2824;
+  --bg-card: #22312c;
+  --bg-bamboo: #262218;
+  --bg-hover: #3b5140;
+  --border: #78643e;
+  --border-gold: #c8aa6a;
+  --text-main: #e8debf;
+  --text-muted: #b5aa8e;
+  --han-red: #c0392b;
+  --han-gold: #c8aa6a;
+  --xn-blue: #5d4037;
+  --emerald: #4d9b6a;
+  --amber: #d99032;
+  --crimson: #df967c;
+  --font-sans: "PingFang SC", "Noto Serif SC", "Songti SC", "Microsoft YaHei", sans-serif;
   --font-serif: "Songti SC", "Noto Serif SC", "STSong", Georgia, serif;
   --font-mono: "SFMono-Regular", Consolas, Menlo, monospace;
 }
@@ -39,23 +38,11 @@ body {
   flex-direction: column;
 }
 
-body.faction-han {
-  --accent-primary: #dc2626;
-  --accent-border: rgba(220, 38, 38, 0.55);
-  --header-grad: linear-gradient(180deg, #1f1214 0%, #12151f 100%);
-}
-
-body.faction-xiongnu {
-  --accent-primary: #0ea5e9;
-  --accent-border: rgba(14, 165, 233, 0.55);
-  --header-grad: linear-gradient(180deg, #0f1e2e 0%, #101622 100%);
-}
-
-/* ==================== 1. 汉/匈非对称双行顶栏 (S07-R02) ==================== */
+/* ==================== 1. 顶栏 (对齐 Godot ui/main.gd 风格 + S07 双行顶栏) ==================== */
 .top-hud {
-  background: var(--header-grad);
-  border-bottom: 1.5px solid var(--border-gold);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  background: var(--bg-panel);
+  border-bottom: 1.5px solid var(--border);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.55);
   z-index: 50;
   flex-shrink: 0;
 }
@@ -66,7 +53,7 @@ body.faction-xiongnu {
   justify-content: space-between;
   padding: 6px 14px;
   gap: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(120, 100, 62, 0.35);
   flex-wrap: wrap;
 }
 
@@ -76,7 +63,7 @@ body.faction-xiongnu {
   justify-content: space-between;
   padding: 5px 14px;
   gap: 10px;
-  background: rgba(9, 12, 18, 0.75);
+  background: #151f1c;
   font-size: 12px;
   flex-wrap: wrap;
 }
@@ -91,23 +78,21 @@ body.faction-xiongnu {
 .faction-seal {
   width: 34px;
   height: 34px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #991b1b, #dc2626);
-  border: 1.5px solid #fbbf24;
-  color: #fef3c7;
+  border-radius: 5px;
+  background: #c0392b;
+  border: 1.5px solid #eed4a0;
+  color: #fff3d0;
   font-family: var(--font-serif);
   font-weight: 800;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 10px rgba(220, 38, 38, 0.45);
 }
 
 body.faction-xiongnu .faction-seal {
-  background: linear-gradient(135deg, #0369a1, #0ea5e9);
-  border-color: #7dd3fc;
-  box-shadow: 0 0 10px rgba(14, 165, 233, 0.45);
+  background: #5d4037;
+  border-color: #eed4a0;
 }
 
 .hud-metrics {
@@ -119,9 +104,9 @@ body.faction-xiongnu .faction-seal {
 }
 
 .hud-pill {
-  background: rgba(19, 23, 34, 0.9);
+  background: #141f1b;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 4px 10px;
   display: flex;
   align-items: center;
@@ -132,22 +117,22 @@ body.faction-xiongnu .faction-seal {
 }
 
 .hud-pill:hover {
-  border-color: var(--han-gold);
-  background: var(--bg-hover);
+  border-color: var(--border-gold);
+  background: #2b3b32;
 }
 
 .hud-pill strong {
-  color: #fef08a;
+  color: #f5e7aa;
   font-weight: 700;
 }
 
 .mini-bar {
   width: 68px;
   height: 7px;
-  background: #090c12;
+  background: #0c1210;
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(200, 170, 106, 0.3);
 }
 
 .mini-bar-fill {
@@ -158,7 +143,7 @@ body.faction-xiongnu .faction-seal {
 .layer-toggles {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   flex-wrap: wrap;
 }
 
@@ -166,28 +151,26 @@ body.faction-xiongnu .faction-seal {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--text-muted);
+  color: var(--text-main);
   cursor: pointer;
   user-select: none;
   padding: 2px 6px;
   border-radius: 4px;
-  transition: color 0.12s;
 }
 
 .layer-chk:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(200, 170, 106, 0.15);
 }
 
 .layer-chk input {
-  accent-color: var(--han-gold);
+  accent-color: var(--border-gold);
 }
 
-/* ==================== 2. 主分栏工作区 (左舆图 + 右六面板停靠坞) ==================== */
+/* ==================== 2. 主分栏工作区 (左 Godot 舆图 + 右侧栏) ==================== */
 .game-workspace {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 480px;
+  grid-template-columns: 1fr 470px;
   min-height: 0;
   overflow: hidden;
 }
@@ -203,10 +186,10 @@ body.faction-xiongnu .faction-seal {
   }
 }
 
-/* 左/中：西域绢本战略舆图区 */
+/* 左/中：严格对齐 Godot ui/map_view.gd 的绢本西域舆图区 (BG = #e9dcc0) */
 .map-stage {
   position: relative;
-  background: radial-gradient(circle at 52% 48%, #211d17 0%, #12151e 68%, #090c12 100%);
+  background: #e9dcc0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -217,6 +200,7 @@ body.faction-xiongnu .faction-seal {
   flex: 1;
   position: relative;
   overflow: hidden;
+  background: #e9dcc0;
   cursor: grab;
 }
 
@@ -228,6 +212,25 @@ body.faction-xiongnu .faction-seal {
   width: 100%;
   height: 100%;
   display: block;
+  background: #e9dcc0;
+}
+
+/* 道路悬停里程 Tooltip (完全对齐 Godot _get_tooltip) */
+.godot-route-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(28, 40, 36, 0.95);
+  border: 1.5px solid #78643e;
+  border-radius: 5px;
+  padding: 7px 11px;
+  color: #e8debf;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-line;
+  z-index: 40;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  display: none;
+  max-width: 340px;
 }
 
 @keyframes supplyFlow {
@@ -244,86 +247,58 @@ body.faction-xiongnu .faction-seal {
   animation: supplyFlow 1.2s linear infinite;
 }
 
-@keyframes pulseRing {
-  0% {
-    opacity: 0.85;
-  }
-  50% {
-    opacity: 0.35;
-  }
-  100% {
-    opacity: 0.85;
-  }
-}
-
-.pulse-ring {
-  animation: pulseRing 2s ease-in-out infinite;
-}
-
-/* 地图左上角：新手5课非阻塞式教学引导横幅 (S07-R11) */
+/* 地图左上角：新手5课非阻塞式教学引导横幅 */
 .tutorial-floating-card {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  max-width: 460px;
-  background: linear-gradient(135deg, rgba(35, 27, 16, 0.95), rgba(20, 26, 38, 0.96));
-  border: 1.5px solid #fbbf24;
-  border-radius: 8px;
-  padding: 10px 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+  top: 82px;
+  left: 14px;
+  max-width: 410px;
+  background: rgba(28, 40, 36, 0.94);
+  border: 1.5px solid #c8aa6a;
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: #e8debf;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
   z-index: 25;
 }
 
-/* 地图正上方：90日 WEGO 推演回放进度条 (S07-R01) */
+/* 地图正上方：90日 WEGO 推演回放进度条 */
 .wego-replay-overlay {
   position: absolute;
-  top: 12px;
+  top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  min-width: 420px;
-  background: rgba(15, 20, 30, 0.95);
-  border: 1.5px solid var(--han-gold);
-  border-radius: 8px;
+  min-width: 410px;
+  background: rgba(28, 40, 36, 0.96);
+  border: 1.5px solid #c8aa6a;
+  border-radius: 6px;
   padding: 8px 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
   z-index: 30;
   display: none;
 }
 
-/* 地图右下角缩放控制与图例 */
+/* 地图右上角缩放控制按钮 */
 .map-hud-controls {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   z-index: 20;
 }
 
 .map-Bottom-legend {
-  position: absolute;
-  bottom: 10px;
-  left: 12px;
-  background: rgba(11, 14, 20, 0.88);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 5px 10px;
-  font-size: 11px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  z-index: 15;
-  pointer-events: none;
+  display: none; /* 已由 SVG 内置 Godot 原生左下角图例框替代 */
 }
 
-/* 地图底部折叠抽屉：0–18旬逐旬粮食曲线与不归点预演器 (S07-R08) */
+/* 地图底部折叠抽屉：0–18旬逐旬粮食曲线与不归点预演器 */
 .plan-curve-drawer {
-  background: linear-gradient(180deg, #141a26 0%, #0e121b 100%);
-  border-top: 1.5px solid var(--border-gold);
+  background: #1c2824;
+  border-top: 1.5px solid var(--border);
   padding: 8px 14px;
   z-index: 22;
-  transition: all 0.2s ease;
 }
 
 .plan-curve-drawer.collapsed .drawer-body {
@@ -337,7 +312,7 @@ body.faction-xiongnu .faction-seal {
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 700;
-  color: #fde68a;
+  color: #f5e7aa;
 }
 
 .drawer-body {
@@ -348,10 +323,10 @@ body.faction-xiongnu .faction-seal {
   align-items: center;
 }
 
-/* ==================== 3. 右侧六大独立子面板停靠坞 (S07-R01) ==================== */
+/* ==================== 3. 右侧六大独立子面板停靠坞 (对齐 Godot PANEL = #1c2824) ==================== */
 .side-dock {
   background: var(--bg-panel);
-  border-left: 1px solid var(--border);
+  border-left: 1.5px solid var(--border);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -361,15 +336,15 @@ body.faction-xiongnu .faction-seal {
 .dock-tabs {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  background: #0d1119;
+  background: #141f1b;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .dock-tab {
-  background: transparent;
+  background: #22312c;
   border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(120, 100, 62, 0.35);
   border-bottom: 2.5px solid transparent;
   color: var(--text-muted);
   padding: 8px 4px;
@@ -380,18 +355,18 @@ body.faction-xiongnu .faction-seal {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  transition: all 0.15s;
+  transition: all 0.14s;
 }
 
 .dock-tab:hover {
-  background: var(--bg-hover);
+  background: #3b5140;
   color: #fff;
 }
 
 .dock-tab.active {
-  background: rgba(245, 158, 11, 0.14);
-  color: #fde68a;
-  border-bottom-color: var(--han-gold);
+  background: #2b3b32;
+  color: #f5e7aa;
+  border-bottom-color: #c8aa6a;
 }
 
 .dock-content {
@@ -404,23 +379,23 @@ body.faction-xiongnu .faction-seal {
 }
 
 .dock-footer-queue {
-  background: #0e131d;
-  border-top: 1px solid var(--border-gold);
+  background: #141f1b;
+  border-top: 1px solid var(--border);
   padding: 8px 12px;
   flex-shrink: 0;
 }
 
-/* ==================== 4. 通用卡片、竹简与按钮组件 ==================== */
+/* ==================== 4. 通用卡片与 Godot 按钮风格 (#2b3b32 / #78643e) ==================== */
 .game-card {
-  background: var(--bg-card);
+  background: #16221e;
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: 5px;
   padding: 10px 12px;
 }
 
 .game-card.bamboo {
-  background: linear-gradient(135deg, rgba(48, 37, 20, 0.65), rgba(26, 32, 46, 0.92));
-  border-color: var(--border-gold);
+  background: linear-gradient(135deg, #242117, #192622);
+  border-color: #c8aa6a;
 }
 
 .card-head {
@@ -429,10 +404,10 @@ body.faction-xiongnu .faction-seal {
   justify-content: space-between;
   font-weight: 700;
   font-size: 13px;
-  color: #fef08a;
+  color: #f5e7aa;
   margin-bottom: 7px;
   padding-bottom: 5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(120, 100, 62, 0.4);
 }
 
 .action-grid {
@@ -443,11 +418,11 @@ body.faction-xiongnu .faction-seal {
 }
 
 .btn {
-  background: #222b3d;
-  border: 1px solid #3b4966;
+  background: #2b3b32;
+  border: 1px solid #78643e;
   color: var(--text-main);
-  padding: 6px 11px;
-  border-radius: 5px;
+  padding: 6px 10px;
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -460,62 +435,65 @@ body.faction-xiongnu .faction-seal {
 }
 
 .btn:hover:not(:disabled) {
-  background: #2d3952;
-  border-color: #94a3b8;
+  background: #3b5140;
+  border-color: #c8aa6a;
+}
+
+.btn:active:not(:disabled) {
+  background: #4b6148;
 }
 
 .btn:disabled {
-  opacity: 0.42;
+  background: #252e27;
+  color: #827d6d;
   cursor: not-allowed;
 }
 
 .btn-han {
-  background: linear-gradient(135deg, #991b1b, #dc2626);
-  border-color: #f87171;
-  color: #fff;
+  background: #9e2f23;
+  border-color: #df967c;
+  color: #fff3d0;
 }
 
 .btn-han:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b91c1c, #ef4444);
+  background: #b8372a;
 }
 
 .btn-gold {
-  background: linear-gradient(135deg, #92400e, #d97706);
-  border-color: #fbbf24;
-  color: #fffbeb;
+  background: #6b5327;
+  border-color: #c8aa6a;
+  color: #fff8dc;
 }
 
 .btn-gold:hover:not(:disabled) {
-  background: linear-gradient(135deg, #b45309, #f59e0b);
+  background: #856731;
 }
 
 .btn-blue {
-  background: linear-gradient(135deg, #075985, #0284c7);
-  border-color: #38bdf8;
-  color: #f0f9ff;
+  background: #4a352f;
+  border-color: #a1887f;
+  color: #f5e7aa;
 }
 
 .btn-emerald {
-  background: linear-gradient(135deg, #065f46, #059669);
-  border-color: #34d399;
+  background: #2f543e;
+  border-color: #7ab893;
   color: #ecfdf5;
 }
 
 .badge {
   display: inline-block;
   padding: 1px 6px;
-  border-radius: 4px;
+  border-radius: 3px;
   font-size: 11px;
   font-weight: 600;
 }
 
-.badge-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
-.badge-gold { background: rgba(245, 158, 11, 0.2); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.4); }
-.badge-red { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
-.badge-blue { background: rgba(14, 165, 233, 0.2); color: #7dd3fc; border: 1px solid rgba(14, 165, 233, 0.4); }
-.badge-purple { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+.badge-green { background: rgba(77, 155, 106, 0.25); color: #9de0b4; border: 1px solid rgba(77, 155, 106, 0.5); }
+.badge-gold { background: rgba(200, 170, 106, 0.22); color: #f5e7aa; border: 1px solid rgba(200, 170, 106, 0.5); }
+.badge-red { background: rgba(192, 57, 43, 0.28); color: #f5b7b1; border: 1px solid rgba(223, 150, 124, 0.5); }
+.badge-blue { background: rgba(93, 64, 55, 0.45); color: #d7ccc8; border: 1px solid #a1887f; }
 
-/* 外交18国紧凑表格 */
 .diplo-table {
   width: 100%;
   border-collapse: collapse;
@@ -523,14 +501,14 @@ body.faction-xiongnu .faction-seal {
 }
 
 .diplo-table th, .diplo-table td {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(120, 100, 62, 0.35);
   padding: 6px 5px;
   text-align: left;
 }
 
 .diplo-table th {
-  color: #cbd5e1;
-  background: #121722;
+  color: #f5e7aa;
+  background: #141f1b;
   cursor: pointer;
   user-select: none;
   position: sticky;
@@ -538,16 +516,16 @@ body.faction-xiongnu .faction-seal {
 }
 
 .diplo-table tr:hover {
-  background: rgba(245, 158, 11, 0.08);
+  background: rgba(200, 170, 106, 0.14);
   cursor: pointer;
 }
 
-/* ==================== 5. 模态卷轴弹窗层 (季初纪事 / 剧本新局 / 战报详单 / 草原盛会) ==================== */
+/* ==================== 5. 模态卷轴弹窗层 ==================== */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(5, 8, 14, 0.78);
-  backdrop-filter: blur(3px);
+  background: rgba(10, 15, 13, 0.78);
+  backdrop-filter: blur(2px);
   display: none;
   align-items: center;
   justify-content: center;
@@ -560,9 +538,9 @@ body.faction-xiongnu .faction-seal {
 }
 
 .modal-scroll {
-  background: linear-gradient(160deg, #1e1912 0%, #141926 100%);
-  border: 2px solid #d4af37;
-  border-radius: 10px;
+  background: #1c2824;
+  border: 2px solid #c8aa6a;
+  border-radius: 8px;
   max-width: 820px;
   width: 100%;
   max-height: 88vh;
@@ -575,35 +553,34 @@ body.faction-xiongnu .faction-seal {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-gold);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
   margin-bottom: 14px;
 }
 
 .modal-title-bar h2 {
   font-family: var(--font-serif);
-  color: #fef08a;
+  color: #f5e7aa;
   font-size: 19px;
-  letter-spacing: 1px;
 }
 
 .chronicle-quote {
   font-family: var(--font-serif);
   font-size: 15px;
   line-height: 1.7;
-  color: #fef3c7;
-  background: rgba(12, 10, 8, 0.55);
-  border-left: 3.5px solid #f59e0b;
+  color: #f5e7aa;
+  background: #141f1b;
+  border-left: 3.5px solid #c8aa6a;
   padding: 10px 14px;
-  border-radius: 5px;
+  border-radius: 4px;
   margin-bottom: 12px;
 }
 
 .todo-card {
-  background: rgba(20, 27, 41, 0.9);
+  background: #16221e;
   border: 1px solid var(--border);
-  border-left: 4px solid #f59e0b;
-  border-radius: 6px;
+  border-left: 4px solid #c8aa6a;
+  border-radius: 5px;
   padding: 9px 12px;
   margin-bottom: 8px;
   display: flex;
@@ -613,18 +590,18 @@ body.faction-xiongnu .faction-seal {
 }
 
 .todo-card.urgent {
-  border-left-color: #ef4444;
-  background: rgba(69, 18, 24, 0.38);
+  border-left-color: #c0392b;
+  background: rgba(192, 57, 43, 0.14);
 }
 
 input[type="range"] {
   width: 100%;
-  accent-color: var(--han-gold);
+  accent-color: #c8aa6a;
 }
 
 select, input[type="number"] {
-  background: #0d121b;
-  border: 1px solid var(--border);
+  background: #141f1b;
+  border: 1px solid #78643e;
   color: var(--text-main);
   padding: 4px 8px;
   border-radius: 4px;

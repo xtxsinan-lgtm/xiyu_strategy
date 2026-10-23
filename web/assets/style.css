@@ -365,7 +365,7 @@ select, input[type="number"], input[type="text"] {
 /* Map Canvas */
 .map-container {
   position: relative;
-  background: radial-gradient(circle at 50% 55%, #1a2232 0%, #0d121c 100%);
+  background: #e9dcc0;
   width: 100%;
   aspect-ratio: 1000 / 620;
   overflow: hidden;
@@ -383,11 +383,13 @@ select, input[type="number"], input[type="text"] {
   position: absolute;
   bottom: 8px;
   left: 10px;
-  background: rgba(11, 14, 20, 0.86);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: rgba(245, 232, 199, 0.92);
+  color: #37291a;
+  border: 1px solid #9b742f;
+  border-radius: 4px;
   padding: 5px 10px;
   font-size: 11px;
+  font-weight: 600;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
