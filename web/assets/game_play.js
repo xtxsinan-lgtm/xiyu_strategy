@@ -17,18 +17,48 @@
   }
 
   const DRAWERS = {
-    inspector: { seal: "城", title: "图籍 · 城塞与驻军", sub: "所选城邑户口、仓廪、古道邻接与守军编制", key: "F1" },
+    inspector: {
+      seal: "城",
+      title: "图籍 · 城塞与驻军",
+      sub: "所选城邑户口、仓廪、古道邻接与守军编制",
+      key: "F1",
+      xn: { seal: "城", title: "图籍 · 绿洲与游牧营地", sub: "所选绿洲/王庭户口、牧草存粮、古道邻接与控弦骑编制" },
+    },
     court: {
       seal: "诏",
       title: "诏书 · 朝廷与因果网",
       sub: "天子诏令 · 国策方略杠杆 · 持节矫诏 · 朝局因果网",
       key: "F2",
-      xn: { seal: "庭", title: "王庭 · 四部与因果网", sub: "单于庭四部分赏 · 龙城大会 · 僮仆赋敛 · 威服因果网" },
+      xn: { seal: "庭", title: "王庭 · 四部与草原盛会", sub: "单于庭四部分赏 · 龙城/蹛林大会 · 迷雾忠诚 · 威服因果网" },
     },
-    diplomacy: { seal: "节", title: "符节 · 西域诸国总览", sub: "都护四阶宏图 · 功业拆解 · 诸国向背矩阵", key: "F3" },
-    logistics: { seal: "仓", title: "仓廪 · 粮道与军屯", sub: "粟米瀑布流账本 · 万里自动补给线 · 塞外军屯烽燧矩阵", key: "F4" },
-    military: { seal: "符", title: "虎符 · 军令与远征", sub: "在编野战军团 · 分步远征拟令 · 0—18旬口粮不归点推演", key: "F5" },
-    chronicle: { seal: "史", title: "史册 · 战报与编年纪事", sub: "战死与断粮饿死分列详单 · 太史公季度实录", key: "F6" },
+    diplomacy: {
+      seal: "节",
+      title: "符节 · 西域诸国总览",
+      sub: "都护四阶宏图 · 功业拆解 · 诸国向背矩阵",
+      key: "F3",
+      xn: { seal: "藩", title: "藩属 · 西域威服与索贡", sub: "单于威服 W 六维拆解 · 铁骑威压与禁商封锁 · 诸国向背矩阵" },
+    },
+    logistics: {
+      seal: "仓",
+      title: "仓廪 · 粮道与军屯",
+      sub: "粟米瀑布流账本 · 万里自动补给线 · 塞外军屯烽燧矩阵",
+      key: "F4",
+      xn: { seal: "牧", title: "牧场 · 草场载畜与僮仆岁币", sub: "五大王庭草场 · 战马繁育与从马配比 · 冬窝子御白灾与粮道劫掠" },
+    },
+    military: {
+      seal: "符",
+      title: "虎符 · 军令与远征",
+      sub: "在编野战军团 · 分步远征拟令 · 0—18旬口粮不归点推演",
+      key: "F5",
+      xn: { seal: "弦", title: "控弦 · 四部点将与秋掠推演", sub: "四部王旗点将与听调状态 · 从马配比 · 0—18旬战马肥瘠与乳肉就食曲线" },
+    },
+    chronicle: {
+      seal: "史",
+      title: "史册 · 战报与编年纪事",
+      sub: "战死与断粮饿死分列详单 · 太史公季度实录",
+      key: "F6",
+      xn: { seal: "史", title: "史册 · 战报与大漠纪事", sub: "控弦战损与掳获马匹详单 · 草原与西域季度实录" },
+    },
   };
 
   const SPEED_STEPS = [
@@ -149,6 +179,9 @@
     activePanel: "inspector",
     drawerOpen: false,
     inspectorCardClosed: false,
+    contextMenuOpen: false,
+    contextMenuNodeId: null,
+    pickMode: null, // null | { kind: 'march'|'supply'|'envoy', fromId, title, hoverTargetId }
     stageScale: 1,
     queuedOrders: [],
     mapMode: "political", // political | influence | supply | intel | military
@@ -170,8 +203,14 @@
     tutorialOpen: true,
     tutorialIdx: 0,
     replaying: false,
+    wegoPaused: false,
+    wegoSkipRequested: false,
+    wegoSubTick: 0,
+    wegoActiveMovers: [],
     forgedTarget: "cheshi_qian",
     forgedSelfImpeach: true,
+    assemblyTarget: "dun_huang",
+    assemblyCard: "诈败诱敌",
     lastStatusMsg: "",
     // 国策档位状态（F2 杠杆行）
     policies: {
@@ -187,12 +226,90 @@
       soldiers: 5000,
       laborers: 2000,
       standingOrder: "cautious",
+      commanderId: "zhao_ponu",
+      kingKey: "youxian",
+      remountMode: 2,
     },
     // 可锁定因果提示栈（最多锁定 3 张 + 1 张临时）
     lockedTooltips: [],
     transientTooltip: null,
     metricHistory: {}, // metricKey -> [number]
   };
+
+  // ==================== 0b. 真实古道 Dijkstra 最短路与地形损耗推演器 ====================
+  function computeRoutePlan(fromId, toId) {
+    const routes = (BUNDLE && BUNDLE.scenario_mvp && BUNDLE.scenario_mvp.routes) || [];
+    if (!fromId || !toId || fromId === toId) {
+      return {
+        path: [fromId || toId],
+        segments: [],
+        totalDays: 0,
+        totalKm: 0,
+        arrivalTick: 1,
+        hasDesert: false,
+        hasMountain: false,
+      };
+    }
+    const adj = {};
+    for (const r of routes) {
+      if (!adj[r.a]) adj[r.a] = [];
+      if (!adj[r.b]) adj[r.b] = [];
+      const d = Number(r.days || r.travel_days || 8);
+      const km = Number(r.distance_km || Math.round(d * 22));
+      const ter = r.terrain || "oasis";
+      adj[r.a].push({ to: r.b, days: d, km, terrain: ter, raw: r });
+      adj[r.b].push({ to: r.a, days: d, km, terrain: ter, raw: r });
+    }
+    const dist = { [fromId]: 0 };
+    const prev = {};
+    const prevEdge = {};
+    const visited = new Set();
+    const queue = [fromId];
+    while (queue.length > 0) {
+      queue.sort((a, b) => (dist[a] ?? 99999) - (dist[b] ?? 99999));
+      const u = queue.shift();
+      if (u === toId) break;
+      if (visited.has(u)) continue;
+      visited.add(u);
+      for (const edge of adj[u] || []) {
+        const alt = (dist[u] ?? 0) + edge.days;
+        if (alt < (dist[edge.to] ?? 99999)) {
+          dist[edge.to] = alt;
+          prev[edge.to] = u;
+          prevEdge[edge.to] = edge;
+          queue.push(edge.to);
+        }
+      }
+    }
+    if (!prev[toId]) {
+      return {
+        path: [fromId, toId],
+        segments: [{ a: fromId, b: toId, days: 22, km: 460, terrain: "desert" }],
+        totalDays: 22,
+        totalKm: 460,
+        arrivalTick: 3,
+        hasDesert: true,
+        hasMountain: false,
+      };
+    }
+    const path = [];
+    const segments = [];
+    let cur = toId;
+    while (cur) {
+      path.unshift(cur);
+      const pe = prevEdge[cur];
+      if (pe) {
+        segments.unshift({ a: prev[cur], b: cur, days: pe.days, km: pe.km, terrain: pe.terrain });
+      }
+      cur = prev[cur];
+    }
+    const totalDays = Math.round((dist[toId] || 15) * 10) / 10;
+    const totalKm = segments.reduce((s, seg) => s + seg.km, 0);
+    const arrivalTick = clamp(Math.ceil(totalDays / 10), 1, 9);
+    const hasDesert = segments.some((s) => s.terrain === "desert" || s.terrain === "gobi");
+    const hasMountain = segments.some((s) => s.terrain === "mountain");
+    return { path, segments, totalDays, totalKm, arrivalTick, hasDesert, hasMountain };
+  }
 
   // ==================== 1. 初始化与历史序列记录 ====================
   function startNewCampaign(opts) {
@@ -214,8 +331,14 @@
     GAME.queuedOrders = [];
     GAME.selectedNodeId = side === "han" ? "lou_lan" : "dun_huang";
     GAME.inspectorCardClosed = false;
-    GAME.planDraft.origin = side === "han" ? "dun_huang" : "chanyu_ting";
+    GAME.contextMenuOpen = false;
+    GAME.contextMenuNodeId = null;
+    GAME.pickMode = null;
+    GAME.planDraft.origin = side === "han" ? "dun_huang" : "cheshi_qian";
     GAME.planDraft.target = GAME.selectedNodeId;
+    GAME.planDraft.commanderId = side === "han" ? "zhao_ponu" : "youxian_king";
+    GAME.planDraft.kingKey = "youxian";
+    GAME.planDraft.remountMode = 2;
     GAME.lockedTooltips = [];
     GAME.transientTooltip = null;
     GAME.metricHistory = {};
@@ -248,20 +371,38 @@
     push("xn_money", Number(st.scores.xn_money || 1000));
     push("xn_weifu", Number(v1.victory.xn_weifu || 45));
     push("rizhu_loyalty", Number((v1.tribes.tribes.rizhu && v1.tribes.tribes.rizhu.loyalty) || 58));
+    push("steppe_horses", Number(((v1.steppe && v1.steppe.total_horses) || 18500) / 100));
     const totalGrain = Object.values(st.nodes).reduce((s, n) => s + (n.grain || 0), 0) / 1000;
     push("total_grain", Math.round(totalGrain));
   }
 
   function applyFactionChrome(side) {
     document.body.className = side === "han" ? "faction-han" : "faction-xiongnu";
-    const nm = document.getElementById("prop-court-name");
-    const act = document.getElementById("prop-court-act");
+    const isHan = side === "han";
+    const setTxt = (id, txt) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    };
+    setTxt("prop-court-name", isHan ? "诏书" : "王庭");
+    setTxt("prop-court-act", isHan ? "朝廷与因果 · F2" : "四部与盛会 · F2");
     const icon = document.getElementById("prop-court-icon");
-    const dtab = document.getElementById("dtab-court");
-    if (nm) nm.textContent = side === "han" ? "诏书" : "王庭";
-    if (act) act.textContent = side === "han" ? "朝廷与因果 · F2" : "王庭与四部 · F2";
-    if (icon) icon.className = `prop-icon ${side === "han" ? "i-zhaoshu" : "i-wangting"}`;
-    if (dtab) dtab.textContent = side === "han" ? "F2 诏书 · 朝廷因果" : "F2 王庭 · 四部因果";
+    if (icon) icon.className = `prop-icon ${isHan ? "i-zhaoshu" : "i-wangting"}`;
+    setTxt("dtab-court", isHan ? "F2 诏书 · 朝廷因果" : "F2 王庭 · 四部盛会");
+
+    setTxt("prop-diplomacy-name", isHan ? "符节" : "藩属");
+    setTxt("prop-diplomacy-act", isHan ? "西域诸国 · F3" : "威服与索贡 · F3");
+    setTxt("dtab-diplomacy", isHan ? "F3 符节 · 西域诸国" : "F3 藩属 · 西域威服");
+
+    setTxt("prop-logistics-name", isHan ? "仓廪" : "牧场");
+    setTxt("prop-logistics-act", isHan ? "粮道与屯田 · F4" : "草场与岁币 · F4");
+    setTxt("dtab-logistics", isHan ? "F4 仓廪 · 粮道军屯" : "F4 牧场 · 草场岁币");
+
+    setTxt("prop-military-name", isHan ? "虎符" : "控弦");
+    setTxt("prop-military-act", isHan ? "军令与远征 · F5" : "诸王与秋掠 · F5");
+    setTxt("dtab-military", isHan ? "F5 虎符 · 军令远征" : "F5 控弦 · 四部秋掠");
+
+    const cartTitle = document.querySelector("#map-cartouche .cartouche-title");
+    if (cartTitle) cartTitle.textContent = isHan ? "西域都护舆图" : "大漠西域控弦图";
   }
 
   function refreshAllUI() {
@@ -270,6 +411,8 @@
     renderTutorialCard();
     renderStrategicMap();
     renderMapInspectorCard();
+    renderMapContextMenu();
+    renderMapPickBanner();
     renderCausalTooltips();
     renderFoodCurveDrawer();
     if (GAME.drawerOpen) renderActiveDockPanel();
@@ -384,15 +527,30 @@
         band: v1.victory.xn_weifu >= 75 ? "霸有西域" : "汉匈南北对峙",
         warnAt: 30,
         contribs: [
-          { src: `西域服属国铁骑威压 (${xnV}国)`, delta: +(xnV * 6.5).toFixed(1) },
-          { src: v1.tribes.tongpu_active ? "焉耆僮仆都尉驻节统辖" : "僮仆都尉已失", delta: v1.tribes.tongpu_active ? +12.0 : -10.0 },
-          { src: "日逐王先贤掸部控弦巡行", delta: +4.5 },
-          { src: "汉使持节赐印与军屯渗透", delta: -(hanV * 2.2).toFixed(1) },
+          { src: `西域服属国铁骑威压 (${xnV}国 × 5.2)`, delta: +(xnV * 5.2).toFixed(1) },
+          { src: v1.tribes.tongpu_active ? "焉耆僮仆都尉驻节统辖" : "僮仆都尉已失", delta: v1.tribes.tongpu_active ? +10.0 : -10.0 },
+          { src: "单于威望折算加成", delta: +(v1.tribes.chanyu_prestige * 0.34).toFixed(1) },
+          { src: v1.steppe && v1.steppe.embargo_active ? "北道禁绝汉商封锁生效" : "北道商路尚未封锁", delta: v1.steppe && v1.steppe.embargo_active ? +4.5 : 0 },
+          { src: "历次秋掠与断粮道威名", delta: +(v1.victory.xn_perm_weifu || 0).toFixed(1) },
+        ],
+      },
+      steppe_horses: {
+        title: "大漠五大牧场总战马群",
+        val: `${((v1.steppe && v1.steppe.total_horses) || 18500).toLocaleString()} / ${((v1.steppe && v1.steppe.max_cap) || 28000).toLocaleString()} 匹`,
+        band: v1.steppe && v1.steppe.winter_prep ? "冬窝子已备·马群肥壮" : `白灾风险 ${(v1.steppe && v1.steppe.dzud_risk) || 18}%`,
+        warnAt: 120,
+        contribs: [
+          { src: "龙城与呼伦春水自然繁育 (+12 百匹/季)", delta: +12.0 },
+          { src: v1.steppe && v1.steppe.remount_mode === 3 ? "1骑3马远征配比额外消耗" : "1骑2马常备配比", delta: v1.steppe && v1.steppe.remount_mode === 3 ? -4.5 : -1.5 },
+          { src: v1.steppe && v1.steppe.winter_prep ? "呼揭冬窝子与干草御寒" : "越冬暴雪冻毙摩耗", delta: v1.steppe && v1.steppe.winter_prep ? +4.0 : -6.0 },
         ],
       },
       rizhu_loyalty: {
         title: "日逐王先贤掸忠诚度",
-        val: `${((v1.tribes.tribes.rizhu && v1.tribes.tribes.rizhu.loyalty) || 58).toFixed(0)} / 100`,
+        val:
+          v1.tribes.tribes.rizhu && v1.tribes.tribes.rizhu.loyalty < 50
+            ? `🌫️ 约 ${v1.tribes.tribes.rizhu.loyalty_fog ? v1.tribes.tribes.rizhu.loyalty_fog[0] : 30}~${v1.tribes.tribes.rizhu.loyalty_fog ? v1.tribes.tribes.rizhu.loyalty_fog[1] : 52} (缺席大会)`
+            : `${((v1.tribes.tribes.rizhu && v1.tribes.tribes.rizhu.loyalty) || 58).toFixed(0)} / 100`,
         band: ((v1.tribes.tribes.rizhu && v1.tribes.tribes.rizhu.loyalty) || 58) >= 55 ? "奉命守西域" : "密谋率众降汉",
         warnAt: 48,
         contribs: [
@@ -636,8 +794,13 @@
       const weifu = v1.victory.xn_weifu;
       const tr = v1.tribes.tribes;
       const availMoney = Math.max(0, st.scores.xn_money - queuedCost);
+      const totalHorses = (v1.steppe && v1.steppe.total_horses) || 18500;
       const lamp = (tObj) => (tObj.loyalty >= 65 ? "dot-green" : tObj.loyalty >= 48 ? "dot-amber" : "dot-red");
-      const tribe = (label, tObj) => `<span><i class="dot ${lamp(tObj)}"></i>${label} <strong>${tObj.loyalty.toFixed(0)}</strong></span>`;
+      const tribe = (label, tObj) => {
+        const isMisty = tObj.loyalty < 50 || tObj.attended === false;
+        const valTxt = isMisty && tObj.loyalty_fog ? `🌫️${tObj.loyalty_fog[0]}~${tObj.loyalty_fog[1]}` : `${tObj.loyalty.toFixed(0)}`;
+        return `<span><i class="dot ${lamp(tObj)}"></i>${label} <strong>${valTxt}</strong></span>`;
+      };
 
       pillsEl.innerHTML = `
         <div class="metric" data-causal-metric="xn_prestige" data-jump-panel="court" title="点击查看「单于威望」因果拆解与趋势">
@@ -645,12 +808,12 @@
           <div class="metric-value">${prest.toFixed(0)}<small>/ 100</small></div>
           ${bar(prest, "#a07a5e")}
         </div>
-        <div class="metric" data-causal-metric="xn_money" data-jump-panel="court" title="点击查看「王庭赏赐池」收支因果拆解">
-          <div class="metric-label">赏赐池</div>
-          <div class="metric-value">${availMoney.toLocaleString()}<small>钱</small></div>
+        <div class="metric" data-causal-metric="steppe_horses" data-jump-panel="logistics" title="点击查看「王庭赏赐池与大漠牧场马群」因果拆解；双击打开 F4 牧场">
+          <div class="metric-label">赏赐池 · 牧场马群</div>
+          <div class="metric-value">${availMoney.toLocaleString()}<small>钱</small>&nbsp;${totalHorses.toLocaleString()}<small>匹</small></div>
         </div>
-        <div class="metric" data-causal-metric="rizhu_loyalty" data-jump-panel="court" title="点击查看「四部忠诚与日逐王向背」因果拆解">
-          <div class="metric-label">四部忠诚</div>
+        <div class="metric" data-causal-metric="rizhu_loyalty" data-jump-panel="court" title="点击查看「四部忠诚与日逐王迷雾向背」因果拆解">
+          <div class="metric-label">四部忠诚 <span class="tag tag-gold">低忠缺席呈迷雾</span></div>
           <div class="metric-value tribe-row">${tribe("左贤", tr.zuoxian)}${tribe("右贤", tr.youxian)}${tribe("日逐", tr.rizhu)}${tribe("犁汗", tr.lihu)}</div>
         </div>
         <div class="metric" data-causal-metric="xn_weifu" data-jump-panel="diplomacy" title="点击查看「匈奴威服 W」因果拆解">
@@ -726,7 +889,302 @@
     spot.classList.add("show");
   }
 
-  // ==================== 3b. 舆图城塞速览卡 (On-Map RegionInspectorCard) ====================
+  // ==================== 3b. 舆图城塞速览卡 + 就地竹简指令菜单 + 交互选点模式 ====================
+  function startMapPickMode(opts) {
+    const o = opts || {};
+    const st = GAME.state;
+    const fromId = o.fromId || GAME.selectedNodeId || (st.meta.side === "han" ? "dun_huang" : "cheshi_qian");
+    GAME.pickMode = {
+      kind: o.kind || "march", // march | supply
+      fromId,
+      hoverTargetId: null,
+    };
+    GAME.drawerOpen = false;
+    GAME.contextMenuOpen = false;
+    syncDrawerUI();
+    renderMapContextMenu();
+    renderMapPickBanner();
+    renderStrategicMap();
+  }
+
+  function cancelMapPickMode() {
+    if (!GAME.pickMode) return;
+    GAME.pickMode = null;
+    renderMapPickBanner();
+    renderStrategicMap();
+  }
+
+  function renderMapPickBanner() {
+    const banner = document.getElementById("map-pick-banner");
+    if (!banner || !GAME.state) return;
+    if (!GAME.pickMode) {
+      banner.classList.remove("open");
+      banner.setAttribute("aria-hidden", "true");
+      banner.innerHTML = "";
+      return;
+    }
+    const st = GAME.state;
+    const fromNode = st.nodes[GAME.pickMode.fromId];
+    const fromName = fromNode ? fromNode.name : GAME.pickMode.fromId;
+    const hoverNode = GAME.pickMode.hoverTargetId ? st.nodes[GAME.pickMode.hoverTargetId] : null;
+    let routeNote = "请在舆图上移动鼠标预览古道行程与粮秣不归点，点击目标城邑即可下令";
+    if (hoverNode && GAME.pickMode.hoverTargetId !== GAME.pickMode.fromId) {
+      const rp = computeRoutePlan(GAME.pickMode.fromId, GAME.pickMode.hoverTargetId);
+      const viaNames = rp.path.map((id) => (st.nodes[id] ? st.nodes[id].name : id)).join(" → ");
+      routeNote = `预览路线：<b>${viaNames}</b>（${rp.totalKm}km · 约 <b>${rp.totalDays}日</b> · 预计第 <b>${rp.arrivalTick}旬</b> 抵达）`;
+    }
+    banner.classList.add("open");
+    banner.setAttribute("aria-hidden", "false");
+    banner.innerHTML = `
+      <span class="pick-badge">${GAME.pickMode.kind === "supply" ? "粮道选点" : "出征选点"}</span>
+      <span class="pick-text">自【<b>${fromName}</b>】${GAME.pickMode.kind === "supply" ? "拉通自动补给线" : "发兵远征"} — ${routeNote}</span>
+      <button type="button" class="btn btn-xs" id="btn-cancel-pick-mode">取消 (Esc)</button>
+    `;
+    const cBtn = document.getElementById("btn-cancel-pick-mode");
+    if (cBtn) {
+      cBtn.onclick = (e) => {
+        e.stopPropagation();
+        cancelMapPickMode();
+      };
+    }
+  }
+
+  function renderMapContextMenu() {
+    const menu = document.getElementById("map-context-menu");
+    if (!menu || !GAME.state) return;
+    if (!GAME.contextMenuOpen || GAME.drawerOpen || GAME.pickMode || !GAME.selectedNodeId) {
+      menu.classList.remove("open");
+      menu.setAttribute("aria-hidden", "true");
+      return;
+    }
+    const st = GAME.state;
+    const side = st.meta.side;
+    const nid = GAME.contextMenuNodeId || GAME.selectedNodeId;
+    const n = st.nodes[nid];
+    if (!n) {
+      menu.classList.remove("open");
+      return;
+    }
+    const posMap = (BUNDLE.map_presentation && BUNDLE.map_presentation.positions) || {};
+    const p = posMap[nid] || (MVP_NODE_META[nid] && MVP_NODE_META[nid].pos) || [500, 310];
+    const [vx, vy, , W, H] = worldToViewport(p[0], p[1]);
+    const menuW = 252;
+    const menuH = 265;
+    let left = vx + 22;
+    let top = vy - 45;
+    if (left + menuW > W - 14) left = Math.max(14, vx - menuW - 22);
+    if (top + menuH > H - 14) top = Math.max(14, H - menuH - 14);
+    if (top < 14) top = 14;
+    menu.style.left = `${left.toFixed(1)}px`;
+    menu.style.top = `${top.toFixed(1)}px`;
+    menu.classList.add("open");
+    menu.setAttribute("aria-hidden", "false");
+
+    const rel = n.relation;
+    const charsHere = Object.values(st.characters || {}).filter((c) => c.loc === nid && c.faction === side);
+    const charBadges = charsHere.length
+      ? charsHere.map((c) => `<span class="badge badge-gold" title="${c.trait}">[${c.seal}] ${c.name.split("·").pop()}</span>`).join("")
+      : "";
+    const defaultOrigin = side === "han" ? "dun_huang" : "cheshi_qian";
+    const rp = computeRoutePlan(defaultOrigin, nid);
+
+    menu.innerHTML = `
+      <div class="ctx-head">
+        <span class="ctx-title">【${n.name}】${side === "han" ? "竹简捷令" : "王庭控弦令"}</span>
+        <button type="button" class="ctx-close" id="btn-ctx-close" title="关闭快捷令单">×</button>
+      </div>
+      <div class="ctx-meta">
+        <span class="badge ${n.controller === "han" ? "badge-red" : n.controller === "xiongnu" ? "badge-blue" : "badge-gold"}">${ownerLabel(n)}</span>
+        <span class="badge badge-green">🌾 储粮 ${((n.grain || 0) / 1000).toFixed(0)}k</span>
+        ${rp.totalDays > 0 ? `<span class="badge">距帅帐 ${rp.totalDays}日</span>` : `<span class="badge badge-gold">本方枢纽</span>`}
+        ${charBadges}
+      </div>
+      <div class="ctx-group-label">舆图直操 · 行军与粮道</div>
+      <div class="ctx-actions">
+        <button type="button" class="ctx-btn ctx-primary" id="ctx-act-pick-march">
+          <span>🎯 自【${n.name}】出征 (舆图选点)…</span><small>路径预演</small>
+        </button>
+        ${
+          nid !== defaultOrigin
+            ? `<button type="button" class="ctx-btn ctx-primary" id="ctx-act-attack-here">
+                <span>⚔️ ${side === "han" ? `讨伐【${n.name}】` : `控弦攻掠【${n.name}】`}</span><small>180钱 · ${rp.totalDays}日</small>
+              </button>`
+            : ""
+        }
+        ${
+          side === "han"
+            ? `<button type="button" class="ctx-btn" id="ctx-act-supply-here">
+                <span>📦 拉通粮道至【${n.name}】</span><small>220钱 · +22.5k石</small>
+              </button>`
+            : `<button type="button" class="ctx-btn" id="ctx-act-raid-supply">
+                <span>🔥 遣犁汗游骑袭断汉粮道</span><small>+280钱 · 威服+4</small>
+              </button>`
+        }
+      </div>
+      <div class="ctx-group-label">${side === "han" ? "符节邦交 · 屯戍营造" : "铁骑威压 · 牧场繁育"}</div>
+      <div class="ctx-actions">
+        ${
+          side === "han"
+            ? `
+              ${rel ? `<button type="button" class="ctx-btn" id="ctx-act-envoy"><span>🚩 遣博望侯精使抚谕</span><small>300钱 · 亲汉+18</small></button>` : ""}
+              ${rel && rel.han_influence >= 32 ? `<button type="button" class="ctx-btn" id="ctx-act-enfeoff"><span>💮 赐金印册封内属</span><small>200钱 · 功业+6</small></button>` : ""}
+              <button type="button" class="ctx-btn" id="ctx-act-tuntian"><span>🌾 开置塞外戊己军屯</span><small>220钱 · 功业+4.5</small></button>
+              <button type="button" class="ctx-btn" id="ctx-act-beacon"><span>🗼 修筑汉塞烽燧亭障</span><small>150钱 · 视野L4</small></button>
+            `
+            : `
+              ${rel ? `<button type="button" class="ctx-btn" id="ctx-act-intimidate"><span>🐺 控弦铁骑巡行威压</span><small>50钱 · 威吓+15</small></button>` : ""}
+              ${rel ? `<button type="button" class="ctx-btn" id="ctx-act-vassal"><span>👑 索取质子强征岁币</span><small>120钱 · 威服+5.2</small></button>` : ""}
+              <button type="button" class="ctx-btn" id="ctx-act-breed"><span>🐎 轮牧春水繁育战马</span><small>80钱 · +2,400匹</small></button>
+            `
+        }
+        <button type="button" class="ctx-btn" id="ctx-act-open-drawer">
+          <span>📖 展开【${n.name}】完整案卷</span><small>F1 图籍</small>
+        </button>
+      </div>
+    `;
+
+    const bind = (id, fn) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.onclick = (e) => {
+          e.stopPropagation();
+          fn();
+        };
+      }
+    };
+    bind("btn-ctx-close", () => {
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-pick-march", () => {
+      GAME.planDraft.origin = nid;
+      startMapPickMode({ kind: "march", fromId: nid });
+    });
+    bind("ctx-act-attack-here", () => {
+      GAME.planDraft.origin = defaultOrigin;
+      GAME.planDraft.target = nid;
+      queueCustomOrder({
+        type: "set_plan",
+        desc: `${side === "han" ? "【远征讨伐】" : "【控弦南下】"}自【${st.nodes[defaultOrigin] ? st.nodes[defaultOrigin].name : defaultOrigin}】发兵 5,000 进击【${n.name}】(行程 ${rp.totalDays} 日)`,
+        cost_money: 180,
+        target_node: nid,
+        raw: {
+          origin: defaultOrigin,
+          target: nid,
+          soldiers: 5000,
+          standing_order: GAME.planDraft.standingOrder || "cautious",
+          commander_id: side === "han" ? "zhao_ponu" : "youxian_king",
+          king_key: "youxian",
+        },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-supply-here", () => {
+      queueCustomOrder({
+        type: "set_supply_line",
+        desc: `【万里粮道】拉通「敦煌 → ${n.name}」自动补给线 (配民夫 2,500 人)`,
+        cost_money: 220,
+        target_node: nid,
+        raw: { from: "dun_huang", to: nid, laborers: 2500, escort: true },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-raid-supply", () => {
+      queueCustomOrder({
+        type: "raid_supply_line",
+        desc: `【游骑断粮】遣犁汗王轻骑袭掠【${n.name}】外围汉军粮道 (赏赐池+280，威服+4.0)`,
+        cost_money: 60,
+        target_node: nid,
+        raw: { target: nid, commander_id: "lihu_king" },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-envoy", () => {
+      queueCustomOrder({
+        type: "dispatch_elite_envoy",
+        desc: `【持节精使】遣博望侯·张骞率精使团赴【${n.name}】颁赐缯帛 (影响力+18)`,
+        cost_money: 300,
+        target_node: nid,
+        raw: { state: nid, commander_id: "zhang_qian" },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-enfeoff", () => {
+      queueCustomOrder({
+        type: "enfeoff",
+        desc: `【赐印册封】向【${n.name}】颁赐大汉金印紫绶册为内属国 (功业+6)`,
+        cost_money: 200,
+        target_node: nid,
+        raw: { state: nid },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-tuntian", () => {
+      queueCustomOrder({
+        type: "build_tuntian",
+        desc: `【塞外军屯】在【${n.name}】开置戊己校尉屯田 (储粮+36k，功业+4.5)`,
+        cost_money: 220,
+        target_node: nid,
+        raw: { node: nid, commander_id: "zheng_ji" },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-beacon", () => {
+      queueCustomOrder({
+        type: "build_beacon",
+        desc: `【修筑烽燧】在【${n.name}】修筑汉代烽燧亭障 (城防+8%，点亮L4视野)`,
+        cost_money: 150,
+        target_node: nid,
+        raw: { node: nid },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-intimidate", () => {
+      queueCustomOrder({
+        type: "intimidate_city",
+        desc: `【控弦威压】遣游骑巡行威压【${n.name}】(匈奴威吓+15)`,
+        cost_money: 50,
+        target_node: nid,
+        raw: { state: nid, commander_id: "youxian_king" },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-vassal", () => {
+      queueCustomOrder({
+        type: "demand_vassal",
+        desc: `【索取质子】强令【${n.name}】遣王子入侍单于庭 (威服+5.2)`,
+        cost_money: 120,
+        target_node: nid,
+        raw: { state: nid },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-breed", () => {
+      queueCustomOrder({
+        type: "breed_steppe_horses",
+        desc: `【春水繁育】在【${n.name}】草场轮牧繁育战马 (+2,400匹，威服+2.5)`,
+        cost_money: 80,
+        target_node: nid,
+        raw: { node: nid },
+      });
+      GAME.contextMenuOpen = false;
+      renderMapContextMenu();
+    });
+    bind("ctx-act-open-drawer", () => {
+      GAME.contextMenuOpen = false;
+      openDrawer("inspector");
+    });
+  }
+
   function renderMapInspectorCard() {
     const card = document.getElementById("map-inspector-card");
     if (!card || !GAME.state) return;
@@ -762,6 +1220,7 @@
         <div>
           <span class="mic-title">${n.name}</span>
           <span class="mic-sub"> · ${ownerLabel(n)}</span>
+          ${troops > 0 ? `<span class="badge badge-green" style="margin-left:4px;font-size:10px;padding:1px 5px;" title="驻军就食本城官仓，不耗野战随军口粮">就食城仓</span>` : ""}
         </div>
         <button type="button" class="mic-close" id="btn-mic-close" title="关闭速览卡">×</button>
       </div>
@@ -791,7 +1250,8 @@
             : `<button type="button" class="mic-btn" id="mic-act-1">铁骑威压</button>
                <button type="button" class="mic-btn" id="mic-act-2">索取质子</button>`
         }
-        <button type="button" class="mic-btn primary" id="mic-act-open">展开图籍 F1</button>
+        <button type="button" class="mic-btn" id="mic-act-pick" title="在舆图上直接选点出征">🎯 选点出征</button>
+        <button type="button" class="mic-btn primary" id="mic-act-open">图籍 F1</button>
       </div>
     `;
 
@@ -807,15 +1267,22 @@
         explainMetric(`node_${n.id}`);
       };
     }
+    const pBtn = document.getElementById("mic-act-pick");
+    if (pBtn) {
+      pBtn.onclick = (e) => {
+        e.stopPropagation();
+        startMapPickMode({ kind: "march", fromId: n.id });
+      };
+    }
     document.getElementById("mic-act-open").onclick = () => openDrawer("inspector");
     const b1 = document.getElementById("mic-act-1");
     const b2 = document.getElementById("mic-act-2");
     if (side === "han") {
-      if (b1) b1.onclick = () => queueCustomOrder({ type: "dispatch_elite_envoy", desc: `【精使出塞】遣持节精使团赴【${n.name}】颁赐缯帛 (影响力+18)`, cost_money: 300, target_node: n.id, raw: { state: n.id } });
-      if (b2) b2.onclick = () => queueCustomOrder({ type: "build_tuntian", desc: `【塞外军屯】在【${n.name}】开置戊己校尉屯田 (储粮+42k，功业+4.5)`, cost_money: 220, target_node: n.id, raw: { node: n.id } });
+      if (b1) b1.onclick = () => queueCustomOrder({ type: "dispatch_elite_envoy", desc: `【精使出塞】遣持节精使团赴【${n.name}】颁赐缯帛 (影响力+18)`, cost_money: 300, target_node: n.id, raw: { state: n.id, commander_id: "zhang_qian" } });
+      if (b2) b2.onclick = () => queueCustomOrder({ type: "build_tuntian", desc: `【塞外军屯】在【${n.name}】开置戊己校尉屯田 (储粮+36k，功业+4.5)`, cost_money: 220, target_node: n.id, raw: { node: n.id, commander_id: "zheng_ji" } });
     } else {
-      if (b1) b1.onclick = () => queueCustomOrder({ type: "intimidate_city", desc: `【控弦威压】遣游骑巡行威压【${n.name}】(匈奴威吓+16)`, cost_money: 0, target_node: n.id, raw: { state: n.id } });
-      if (b2) b2.onclick = () => queueCustomOrder({ type: "demand_vassal", desc: `【索取质子】强令【${n.name}】遣质子入侍单于庭 (威服+7.5)`, cost_money: 120, target_node: n.id, raw: { state: n.id } });
+      if (b1) b1.onclick = () => queueCustomOrder({ type: "intimidate_city", desc: `【控弦威压】遣游骑巡行威压【${n.name}】(匈奴威吓+15)`, cost_money: 50, target_node: n.id, raw: { state: n.id, commander_id: "youxian_king" } });
+      if (b2) b2.onclick = () => queueCustomOrder({ type: "demand_vassal", desc: `【索取质子】强令【${n.name}】遣质子入侍单于庭 (威服+5.2)`, cost_money: 120, target_node: n.id, raw: { state: n.id } });
     }
   }
 
@@ -1538,28 +2005,248 @@
         }
         parts.push(`<g pointer-events="none">${armyFlagSvg(ax, ay, ma.faction, ma.soldiers || 0, 1, !!ma.is_convoy, true)}</g>`);
       }
+
+      // 10b. 历史人物在场印章标牌（张骞/赵破奴/郑吉/傅介子 vs 单于/右贤/日逐/犁汗）
+      if (st.characters) {
+        const charByNode = {};
+        for (const ch of Object.values(st.characters)) {
+          if (!ch.loc || !coords[ch.loc]) continue;
+          if (!charByNode[ch.loc]) charByNode[ch.loc] = [];
+          charByNode[ch.loc].push(ch);
+        }
+        for (const [nid, list] of Object.entries(charByNode)) {
+          const p = coords[nid];
+          list.slice(0, 3).forEach((ch, idx) => {
+            const cx = p.x - 16 - idx * 14;
+            const cy = p.y - 12;
+            const bg = ch.faction === "han" ? "#a33a2a" : "#5d4037";
+            const stroke = ch.status === "assigned" ? "#ffd56b" : "#f6efe0";
+            parts.push(`
+              <g class="map-char-medal" data-nid="${nid}" style="cursor:pointer;" title="${ch.name} (${ch.status === "assigned" ? ch.task_desc : "驻节待命"})">
+                <rect x="${cx - 6.5}" y="${cy - 6.5}" width="13" height="13" rx="2" fill="${bg}" stroke="${stroke}" stroke-width="${ch.status === "assigned" ? 1.4 : 0.85}" filter="url(#flagShadow)"/>
+                <text x="${cx}" y="${cy + 3.2}" font-family="var(--font-title)" font-size="8.2" font-weight="700" fill="#fffaf0" text-anchor="middle" pointer-events="none">${ch.seal}</text>
+              </g>
+            `);
+          });
+        }
+      }
+    }
+
+    // 11. 本季已拟军令全部上屏（行军虚线箭矢 + 粮道流光 + 木简令签，点击可撤销）
+    if (GAME.queuedOrders && GAME.queuedOrders.length > 0) {
+      parts.push(`<g class="map-queued-orders-layer">`);
+      const orderTagMeta = (o) => {
+        const t = o.type;
+        if (t === "forge_edict") return { seal: "矫", col: "#b8251e", line: "#d63026" };
+        if (t === "set_plan" || t === "march_army") return { seal: st.meta.side === "han" ? "讨" : "掠", col: "#a33a2a", line: "#c0392b" };
+        if (t === "set_supply_line" || t === "setup_supply_line") return { seal: "粮", col: "#1f6f50", line: "#27ae60" };
+        if (t === "dispatch_elite_envoy" || t === "hire_mission") return { seal: "使", col: "#9c6d1e", line: "#d4a017" };
+        if (t === "enfeoff" || t === "make_vassal" || t === "accept_dual_allegiance") return { seal: "印", col: "#9c6d1e", line: "#d4a017" };
+        if (t === "assassinate_king") return { seal: "剑", col: "#7a1f1f", line: "#a33a2a" };
+        if (t === "build_tuntian") return { seal: "屯", col: "#1f6f50", line: "#1f6f50" };
+        if (t === "build_beacon") return { seal: "燧", col: "#1a4b8c", line: "#1a4b8c" };
+        if (t === "intimidate_city" || t === "demand_vassal" || t === "install_prince") return { seal: "威", col: "#5d4037", line: "#795548" };
+        if (t === "raid_supply_line") return { seal: "劫", col: "#8b261d", line: "#c0392b" };
+        if (t === "breed_steppe_horses" || t === "winter_shelter_prep") return { seal: "牧", col: "#4e7c3e", line: "#4e7c3e" };
+        return { seal: "令", col: "#6b4f2a", line: "#8a6524" };
+      };
+      const nodeOrderCount = {};
+      GAME.queuedOrders.forEach((ord, qIdx) => {
+        const raw = ord.raw || {};
+        const meta = orderTagMeta(ord);
+        const destId = ord.target_node || raw.target || raw.state || raw.node || raw.to || (st.meta.side === "han" ? "dun_huang" : "chanyu_ting");
+        const fromId =
+          raw.origin ||
+          raw.from ||
+          (ord.type === "dispatch_elite_envoy" || ord.type === "hire_mission" || ord.type === "forge_edict"
+            ? "dun_huang"
+            : ord.type === "intimidate_city" || ord.type === "raid_supply_line"
+            ? "cheshi_qian"
+            : null);
+
+        if (fromId && destId && fromId !== destId && coords[fromId] && coords[destId]) {
+          const rp = computeRoutePlan(fromId, destId);
+          for (let i = 1; i < rp.path.length; i++) {
+            const u = rp.path[i - 1];
+            const v = rp.path[i];
+            const rIdx = routeByPair[`${u}|${v}`];
+            const dStr = rIdx !== undefined && routeCurveD[rIdx] ? routeCurveD[rIdx] : `M ${coords[u].x} ${coords[u].y} L ${coords[v].x} ${coords[v].y}`;
+            parts.push(`
+              <path d="${dStr}" fill="none" stroke="rgba(255,248,225,0.85)" stroke-width="4.8" stroke-linecap="round" pointer-events="none"/>
+              <path d="${dStr}" fill="none" stroke="${meta.line}" stroke-width="2.6" stroke-dasharray="6,3" stroke-linecap="round" class="supply-line-anim" pointer-events="none"/>
+            `);
+          }
+        }
+        if (coords[destId]) {
+          const c = coords[destId];
+          const stackIdx = nodeOrderCount[destId] || 0;
+          nodeOrderCount[destId] = stackIdx + 1;
+          const tx = c.x + 18;
+          const ty = c.y + 12 + stackIdx * 16;
+          parts.push(`
+            <g class="map-queued-token" data-qidx="${qIdx}" style="cursor:pointer;">
+              <rect x="${tx - 16}" y="${ty - 7}" width="32" height="14" rx="2" fill="${meta.col}" stroke="#ffe680" stroke-width="1.2" filter="url(#flagShadow)"/>
+              <text x="${tx}" y="${ty + 3}" font-family="var(--font-title)" font-size="8.2" font-weight="700" fill="#fffaf0" text-anchor="middle" pointer-events="none">拟·${meta.seal}</text>
+            </g>
+          `);
+        }
+      });
+      parts.push(`</g>`);
+    }
+
+    // 12. 舆图交互选点模式：悬停实时绘制 Dijkstra 路径与中途节点
+    if (GAME.pickMode && GAME.pickMode.fromId && GAME.pickMode.hoverTargetId && GAME.pickMode.fromId !== GAME.pickMode.hoverTargetId) {
+      const rp = computeRoutePlan(GAME.pickMode.fromId, GAME.pickMode.hoverTargetId);
+      const col = GAME.pickMode.kind === "supply" ? "#1f6f50" : "#c0392b";
+      parts.push(`<g class="map-pick-preview-layer" pointer-events="none">`);
+      for (let i = 1; i < rp.path.length; i++) {
+        const u = rp.path[i - 1];
+        const v = rp.path[i];
+        const rIdx = routeByPair[`${u}|${v}`];
+        const dStr =
+          rIdx !== undefined && routeCurveD[rIdx]
+            ? routeCurveD[rIdx]
+            : coords[u] && coords[v]
+            ? `M ${coords[u].x} ${coords[u].y} L ${coords[v].x} ${coords[v].y}`
+            : "";
+        if (dStr) {
+          parts.push(`<path d="${dStr}" fill="none" stroke="#fff8dc" stroke-width="6.5" stroke-linecap="round"/>`);
+          parts.push(`<path d="${dStr}" fill="none" stroke="${col}" stroke-width="3.6" stroke-dasharray="8,4" stroke-linecap="round"/>`);
+        }
+      }
+      for (const pid of rp.path) {
+        if (coords[pid]) {
+          parts.push(`<circle cx="${coords[pid].x}" cy="${coords[pid].y}" r="13" fill="none" stroke="#ffd56b" stroke-width="2.2"/>`);
+        }
+      }
+      const destC = coords[GAME.pickMode.hoverTargetId];
+      if (destC) {
+        parts.push(`
+          <rect x="${destC.x - 48}" y="${destC.y - 34}" width="96" height="17" rx="3" fill="rgba(26,18,13,0.92)" stroke="#ffd56b" stroke-width="1"/>
+          <text x="${destC.x}" y="${destC.y - 22.5}" font-family="var(--font-mono)" font-size="8.5" font-weight="700" fill="#ffd56b" text-anchor="middle">${rp.totalDays}日 · 第${rp.arrivalTick}旬抵</text>
+        `);
+      }
+      parts.push(`</g>`);
+    }
+
+    // 13. WEGO 九旬推演实时插值行军与驿使动态层
+    if (GAME.replaying && Array.isArray(GAME.wegoActiveMovers) && GAME.wegoActiveMovers.length > 0) {
+      parts.push(`<g class="wego-live-movers" pointer-events="none">`);
+      for (const mv of GAME.wegoActiveMovers) {
+        const pathNodes = Array.isArray(mv.path) && mv.path.length >= 2 ? mv.path : [mv.from, mv.to];
+        const totalSegs = pathNodes.length - 1;
+        const p = clamp(mv.progress || 0, 0, 1);
+        const segFloat = p * totalSegs;
+        const segIdx = Math.min(Math.floor(segFloat), totalSegs - 1);
+        const localT = segFloat - segIdx;
+        const u = pathNodes[segIdx];
+        const v = pathNodes[segIdx + 1];
+        const rIdx = routeByPair[`${u}|${v}`];
+        let ax = 500,
+          ay = 310;
+        if (rIdx !== undefined && routePtsList[rIdx]) {
+          const r = routes[rIdx];
+          const dirT = (r.a || r.from) === u ? localT : 1.0 - localT;
+          const pt = sampleGodotRoutePoint(routePtsList[rIdx], dirT);
+          ax = pt[0];
+          ay = pt[1];
+        } else if (coords[u] && coords[v]) {
+          ax = coords[u].x + (coords[v].x - coords[u].x) * localT;
+          ay = coords[u].y + (coords[v].y - coords[u].y) * localT;
+        }
+        if (mv.kind === "army") {
+          parts.push(armyFlagSvg(ax, ay, mv.faction || "han", mv.soldiers || 4500, 1, false, true));
+        } else {
+          const bg = mv.kind === "courier" ? "#b8251e" : "#b8893c";
+          parts.push(`
+            <circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="7.5" fill="${bg}" stroke="#fff8dc" stroke-width="1.3" filter="url(#flagShadow)"/>
+            <text x="${ax.toFixed(1)}" y="${(ay + 3).toFixed(1)}" font-family="var(--font-title)" font-size="8.5" font-weight="700" fill="#fffaf0" text-anchor="middle">${mv.seal || "使"}</text>
+          `);
+        }
+      }
+      parts.push(`</g>`);
     }
 
     svg.innerHTML = parts.join("");
 
-    // 交互绑定：节点 / 军旗 / 政区多边形
-    svg.querySelectorAll(".map-node-g, .godot-army-marker, .map-poly").forEach((g) => {
+    // 交互绑定：已拟军令木简令签点击撤销
+    svg.querySelectorAll(".map-queued-token").forEach((tok) => {
+      tok.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const qIdx = parseInt(tok.getAttribute("data-qidx"), 10);
+        const ord = GAME.queuedOrders[qIdx];
+        if (ord) {
+          GAME.queuedOrders.splice(qIdx, 1);
+          showOrderToast(`已从舆图撤销军令：${ord.desc}`);
+          refreshAllUI();
+        }
+      });
+    });
+
+    // 交互绑定：节点 / 军旗 / 人物印章 / 政区多边形
+    svg.querySelectorAll(".map-node-g, .godot-army-marker, .map-char-medal, .map-poly").forEach((g) => {
       const nid = g.getAttribute("data-nid") || g.getAttribute("data-poly-nid");
       g.addEventListener("click", (e) => {
         e.stopPropagation();
         if (GAME.mapCam.moved) return;
+        if (GAME.pickMode) {
+          const fromId = GAME.pickMode.fromId;
+          const kind = GAME.pickMode.kind;
+          if (nid && nid !== fromId) {
+            const fromNode = st.nodes[fromId];
+            const toNode = st.nodes[nid];
+            const rp = computeRoutePlan(fromId, nid);
+            if (kind === "supply") {
+              queueCustomOrder({
+                type: "set_supply_line",
+                desc: `【万里粮道】拉通「${fromNode ? fromNode.name : fromId} → ${toNode ? toNode.name : nid}」自动补给线 (行程 ${rp.totalDays} 日)`,
+                cost_money: 220,
+                target_node: nid,
+                raw: { from: fromId, to: nid, laborers: 2500, escort: true },
+              });
+            } else {
+              GAME.planDraft.origin = fromId;
+              GAME.planDraft.target = nid;
+              queueCustomOrder({
+                type: "set_plan",
+                desc: `${st.meta.side === "han" ? "【远征军令】" : "【控弦奔袭】"}自【${fromNode ? fromNode.name : fromId}】率军 ${(GAME.planDraft.soldiers || 5000).toLocaleString()} 进击【${toNode ? toNode.name : nid}】(古道 ${rp.totalDays} 日 · 第 ${rp.arrivalTick} 旬抵)`,
+                cost_money: 180,
+                target_node: nid,
+                raw: {
+                  origin: fromId,
+                  target: nid,
+                  soldiers: GAME.planDraft.soldiers || 5000,
+                  standing_order: GAME.planDraft.standingOrder || "cautious",
+                  commander_id: GAME.planDraft.commanderId,
+                  king_key: GAME.planDraft.kingKey,
+                },
+              });
+            }
+            cancelMapPickMode();
+            GAME.selectedNodeId = nid;
+            refreshAllUI();
+          }
+          return;
+        }
         GAME.inspectorCardClosed = false;
+        GAME.contextMenuOpen = true;
+        GAME.contextMenuNodeId = nid;
         selectNodeAndPan(nid);
       });
       if (!g.classList.contains("map-poly")) {
         g.addEventListener("mouseenter", (ev) => {
+          if (GAME.pickMode && nid !== GAME.pickMode.hoverTargetId) {
+            GAME.pickMode.hoverTargetId = nid;
+            renderMapPickBanner();
+            renderStrategicMap();
+          }
           const n = st.nodes[nid];
           if (!n) return;
           const rel = n.relation;
           const troops = (n.armies || []).reduce((s, a) => s + (a.soldiers || 0), 0);
           let html = `<div class="tt-title">${n.name} · ${ownerLabel(n)}</div><div>人口 ${(n.pop || 0).toLocaleString()} · 储粮 ${((n.grain || 0) / 1000).toFixed(0)}k 石 · 城防 Lv.${n.walls || 1}</div>`;
           if (rel) html += `<div class="tt-muted">汉影响 ${rel.han_influence.toFixed(0)} · 匈威吓 ${rel.xn_intimidation.toFixed(0)} · 对匈怨恨 ${rel.xn_resentment.toFixed(0)}${rel.forage ? ` · ${rel.forage.label}` : ""}</div>`;
-          if (troops > 0) html += `<div class="tt-muted">野战驻军 ${troops.toLocaleString()} 人（点击城邑查看速览卡）</div>`;
+          if (troops > 0) html += `<div class="tt-muted">野战驻军 ${troops.toLocaleString()} 人（点击城邑弹出竹简捷令单）</div>`;
           showMapTooltip(html, ev);
         });
         g.addEventListener("mousemove", moveMapTooltip);
@@ -1605,9 +2292,11 @@
     if (panelName && (open || GAME.drawerOpen)) {
       GAME.activePanel = panelName;
       GAME.drawerOpen = true;
+      GAME.contextMenuOpen = false;
     }
     renderStrategicMap();
     renderMapInspectorCard();
+    renderMapContextMenu();
     renderFoodCurveDrawer();
     if (GAME.drawerOpen && ["inspector", "military", "diplomacy", "logistics"].includes(GAME.activePanel)) renderActiveDockPanel();
     syncDrawerUI();
@@ -1630,34 +2319,157 @@
   }
 
 
-  // ==================== 5. 底部 0–18旬粮食折线与「就食城仓」修正抽屉 ====================
+  // ==================== 5. 底部 0–18旬口粮/战马肥瘠曲线抽屉（真实 Dijkstra 古道程期 + 汉匈不对称） ====================
   function renderFoodCurveDrawer() {
     const st = GAME.state;
+    const side = st.meta.side;
     const targetNode = st.nodes[GAME.selectedNodeId] || st.nodes.lou_lan;
-    const originNode = st.nodes[GAME.planDraft.origin] || st.nodes.dun_huang;
+    const originNode = st.nodes[GAME.planDraft.origin] || (side === "han" ? st.nodes.dun_huang : st.nodes.cheshi_qian);
+    const rp = computeRoutePlan(originNode ? originNode.id : "dun_huang", targetNode ? targetNode.id : "lou_lan");
+    const arrTick = rp.arrivalTick || 3;
 
     const garBadge = document.getElementById("curve-garrison-badge");
     if (originNode && garBadge) {
-      const garTroops = (originNode.armies || []).reduce((s, a) => s + (a.soldiers || 0), 0) || 5000;
-      const monthsSupport = ((originNode.grain || 360000) / Math.max(100, garTroops * 3.0)).toFixed(1);
-      garBadge.textContent = `${originNode.name}城仓可支 ${monthsSupport} 月`;
+      if (side === "han") {
+        const garTroops = (originNode.armies || []).reduce((s, a) => s + (a.soldiers || 0), 0) || 5000;
+        const monthsSupport = ((originNode.grain || 360000) / Math.max(100, garTroops * 3.0)).toFixed(1);
+        garBadge.textContent = `${originNode.name}城仓可支 ${monthsSupport} 月`;
+      } else {
+        const sp = (st.v1 && st.v1.steppe) || { total_horses: 18500, remount_mode: 2 };
+        garBadge.textContent = `王庭总马群 ${sp.total_horses.toLocaleString()} 匹 · 1骑${GAME.planDraft.remountMode || sp.remount_mode || 2}马`;
+      }
     }
 
     const soldiers = GAME.planDraft.soldiers || 5000;
     const laborers = GAME.planDraft.laborers || 2000;
     const standing = GAME.planDraft.standingOrder || "cautious";
-    const carryCap = soldiers * 3.0 + laborers * 15.0;
-    const eatPerTick = (soldiers * 1.0 + laborers * 0.8) * 0.9;
-
-    const rel = targetNode && targetNode.relation;
-    const forageTier = rel && rel.forage ? rel.forage.tier : targetNode && targetNode.controller === st.meta.side ? "WELCOME" : "HOSTILE";
-    const forageGain = forageTier === "WELCOME" ? soldiers * 2.2 : forageTier === "MARKET" ? soldiers * 1.1 : 0;
-
-    const oName = originNode ? originNode.name : "敦煌";
+    const oName = originNode ? originNode.name : side === "han" ? "敦煌" : "车师";
     const tName = targetNode ? targetNode.name : "楼兰";
+    const rel = targetNode && targetNode.relation;
+
+    if (side === "xiongnu") {
+      // 匈奴专属：0—18旬战马肥瘠与乳肉就食推演曲线（无民夫，靠从马、水草与绿洲劫掠）
+      const remount = GAME.planDraft.remountMode || (st.v1 && st.v1.steppe && st.v1.steppe.remount_mode) || 2;
+      const kingKey = GAME.planDraft.kingKey || "youxian";
+      const trObj = st.v1 && st.v1.tribes && st.v1.tribes.tribes[kingKey];
+      const seasonBonus = st.meta.season === "autumn" ? 1.22 : st.meta.season === "winter" ? 0.82 : 1.0;
+      const initStamina = Math.round(soldiers * remount * 2.4 * seasonBonus);
+      const drainPerTick = Math.round(soldiers * (rp.hasDesert ? 1.28 : 0.85) * (remount === 3 ? 0.82 : 1.0));
+      const plunderGain = Math.round(soldiers * 3.2);
+
+      const titleEl = document.getElementById("curve-drawer-title");
+      if (titleEl) {
+        titleEl.innerHTML = `<b>控弦战马肥瘠与乳肉就食曲线</b>${oName} → ${tName} (${rp.totalDays}日/${rp.totalKm}km) · ${trObj ? trObj.name : "右贤王"} ${soldiers.toLocaleString()}骑`;
+      }
+
+      let g = initStamina;
+      let pnrTick = -1;
+      let starveTick = -1;
+      const pts = [];
+      for (let t = 0; t <= 18; t++) {
+        pts.push({ t, g: Math.max(0, g) });
+        const needReturn = Math.min(t, arrTick) * drainPerTick * 0.9;
+        if (pnrTick === -1 && g < needReturn) pnrTick = t;
+        if (starveTick === -1 && g <= soldiers * 0.6) starveTick = t;
+        g -= drainPerTick;
+        if (t === arrTick) g += plunderGain; // 破城因粮于敌、掠夺马畜回血拐点
+        if (standing === "cautious" && g < drainPerTick * 2.2) {
+          g = Math.max(drainPerTick * 1.4, g);
+        }
+      }
+
+      const X0 = 34, X1 = 528, Y0 = 14, Y1 = 100;
+      const xs = (t) => X0 + (t / 18) * (X1 - X0);
+      const maxG = Math.max(1, initStamina * 1.15);
+      const ys = (v) => Y1 - (v / maxG) * (Y1 - Y0);
+      const slaughtering = starveTick !== -1 && standing !== "cautious";
+      const lineCol = slaughtering ? "#a33a2a" : "#6b4a33";
+      const polyPts = pts.map((p) => `${xs(p.t).toFixed(1)},${ys(p.g).toFixed(1)}`).join(" ");
+      const areaPts = `${X0},${Y1} ${polyPts} ${X1},${Y1}`;
+
+      const svgEl = document.getElementById("plan-food-curve-svg");
+      if (svgEl) {
+        svgEl.innerHTML = `
+          <defs>
+            <linearGradient id="foodArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${lineCol}" stop-opacity="0.34"/>
+              <stop offset="100%" stop-color="${lineCol}" stop-opacity="0.03"/>
+            </linearGradient>
+          </defs>
+          <rect x="${xs(0)}" y="${Y0}" width="${xs(9) - xs(0)}" height="${Y1 - Y0}" fill="rgba(109,76,61,0.08)"/>
+          <line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#4e4033" stroke-width="1"/>
+          <text x="${xs(0)}" y="116" fill="#85745e" font-size="9" text-anchor="start">拔营</text>
+          <text x="${xs(arrTick)}" y="116" fill="#1f6f50" font-size="9" font-weight="700" text-anchor="middle">第${arrTick}旬 抵${tName}(掠粮回血)</text>
+          <text x="${xs(9)}" y="116" fill="#8a6524" font-size="9" text-anchor="middle">本季末</text>
+          <text x="${X1}" y="116" fill="#85745e" font-size="9" text-anchor="end">第18旬</text>
+          ${
+            pnrTick !== -1
+              ? `<line x1="${xs(pnrTick)}" y1="${Y0 - 4}" x2="${xs(pnrTick)}" y2="${Y1}" stroke="#b9822d" stroke-dasharray="3,3" stroke-width="1.2"/>
+            <rect x="${xs(pnrTick) - 34}" y="0" width="68" height="13" rx="6.5" fill="rgba(185,130,45,0.16)" stroke="#b9822d" stroke-width="0.8"/>
+            <text x="${xs(pnrTick)}" y="9.5" fill="#7a5414" font-size="8.5" text-anchor="middle">杀马充饥线·第${pnrTick}旬</text>`
+              : ""
+          }
+          <polygon points="${areaPts}" fill="url(#foodArea)"/>
+          <polyline fill="none" stroke="${lineCol}" stroke-width="2.2" stroke-linejoin="round" points="${polyPts}"/>
+          <circle cx="${xs(arrTick).toFixed(1)}" cy="${ys(pts[arrTick] ? pts[arrTick].g : initStamina * 0.6).toFixed(1)}" r="3.5" fill="#1f6f50" stroke="#fff" stroke-width="1.2"/>
+        `;
+      }
+
+      const metaEl = document.getElementById("plan-food-curve-meta");
+      if (metaEl) {
+        const unrulyWarn = trObj && trObj.loyalty < 45 ? `<span style="color:var(--cinnabar);font-weight:700;">⚠️ ${trObj.name}忠诚<45，恐半途私掠</span>` : `<span>🐺 ${trObj ? trObj.name : "右贤王"}听调出征</span>`;
+        metaEl.innerHTML = `
+          <div class="curve-stats">
+            <div class="curve-stat"><div class="k">随军从马乳肉</div><div class="v">${(initStamina / 1000).toFixed(1)}k <small>份</small></div></div>
+            <div class="curve-stat"><div class="k">古道程期</div><div class="v">${rp.totalDays}日 <small>(第${arrTick}旬抵)</small></div></div>
+            <div class="curve-stat"><div class="k">部王听调状态</div><div class="v" style="font-size:11.5px;">${unrulyWarn}</div></div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="sel-drawer-standing" style="flex:1;">
+              <option value="cautious" ${standing === "cautious" ? "selected" : ""}>掠饱即退 · 马疲前自动北归</option>
+              <option value="standard" ${standing === "standard" ? "selected" : ""}>控弦围困 · 迫城纳贡</option>
+              <option value="aggressive" ${standing === "aggressive" ? "selected" : ""}>杀马死战 · 屠城立威</option>
+            </select>
+            <button class="btn btn-han" id="btn-drawer-launch-campaign">控弦攻${tName}</button>
+          </div>
+        `;
+        document.getElementById("sel-drawer-standing").addEventListener("change", (e) => {
+          GAME.planDraft.standingOrder = e.target.value;
+          renderFoodCurveDrawer();
+        });
+        document.getElementById("btn-drawer-launch-campaign").addEventListener("click", () => {
+          if (!targetNode) return;
+          queueCustomOrder({
+            type: "set_plan",
+            desc: `【控弦奔袭】命${trObj ? trObj.name : "右贤王"}率铁骑 ${soldiers.toLocaleString()} 自【${oName}】奔袭【${targetNode.name}】(古道 ${rp.totalDays} 日 · 1骑${remount}马)`,
+            cost_money: 160,
+            target_node: targetNode.id,
+            raw: {
+              origin: originNode ? originNode.id : "cheshi_qian",
+              target: targetNode.id,
+              soldiers,
+              standing_order: standing,
+              king_key: kingKey,
+              remount_mode: remount,
+              commander_id: GAME.planDraft.commanderId || "youxian_king",
+            },
+          });
+        });
+      }
+      return;
+    }
+
+    // 汉朝专属：0—18旬口粮曲线（基于真实 Dijkstra 行程天数 arrTick 与流沙地形损耗）
+    const carryCap = soldiers * 3.0 + laborers * 15.0;
+    const terrainMult = rp.hasDesert ? 1.15 : 1.0;
+    const eatPerTick = (soldiers * 1.0 + laborers * 0.8) * 0.9 * terrainMult;
+
+    const forageTier = rel && rel.forage ? rel.forage.tier : targetNode && targetNode.controller === st.meta.side ? "WELCOME" : "HOSTILE";
+    const forageGain = forageTier === "WELCOME" ? soldiers * 2.4 : forageTier === "MARKET" ? soldiers * 1.2 : 0;
+
     const titleEl = document.getElementById("curve-drawer-title");
     if (titleEl) {
-      titleEl.innerHTML = `<b>远征粮秣预演</b>${oName} → ${tName} · ${soldiers.toLocaleString()} 兵 + ${laborers.toLocaleString()} 民夫`;
+      titleEl.innerHTML = `<b>远征粮秣预演</b>${oName} → ${tName} (${rp.totalDays}日/${rp.totalKm}km) · ${soldiers.toLocaleString()}兵 + ${laborers.toLocaleString()}民夫`;
     }
 
     let g = carryCap;
@@ -1666,11 +2478,11 @@
     const pts = [];
     for (let t = 0; t <= 18; t++) {
       pts.push({ t, g: Math.max(0, g) });
-      const needReturn = Math.min(t, 6) * eatPerTick;
+      const needReturn = Math.min(t, arrTick) * eatPerTick;
       if (pnrTick === -1 && g < needReturn) pnrTick = t;
       if (starveTick === -1 && g <= 0) starveTick = t;
       g -= eatPerTick;
-      if (t === 5) g += forageGain;
+      if (t === arrTick) g += forageGain;
       if (standing === "cautious" && g < eatPerTick * 2.5) {
         g = Math.max(eatPerTick * 1.5, g);
       }
@@ -1706,7 +2518,7 @@
         <rect x="${xs(0)}" y="${Y0}" width="${xs(9) - xs(0)}" height="${Y1 - Y0}" fill="rgba(180,140,78,0.07)"/>
         <line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#4e4033" stroke-width="1"/>
         <text x="${xs(0)}" y="116" fill="#85745e" font-size="9" text-anchor="start">出发</text>
-        <text x="${xs(5)}" y="116" fill="#1f6f50" font-size="9" text-anchor="middle">第5旬 抵${tName}</text>
+        <text x="${xs(arrTick)}" y="116" fill="#1f6f50" font-size="9" font-weight="700" text-anchor="middle">第${arrTick}旬 抵${tName}(${rp.totalDays}日)</text>
         <text x="${xs(9)}" y="116" fill="#8a6524" font-size="9" text-anchor="middle">本季末</text>
         <text x="${X1}" y="116" fill="#85745e" font-size="9" text-anchor="end">第18旬</text>
         ${
@@ -1736,7 +2548,7 @@
       metaEl.innerHTML = `
         <div class="curve-stats">
           <div class="curve-stat"><div class="k">随军粮</div><div class="v">${(carryCap / 1000).toFixed(1)}k <small style="color:var(--text-faint);font-weight:400">石</small></div></div>
-          <div class="curve-stat"><div class="k">每旬消耗</div><div class="v">${(eatPerTick / 1000).toFixed(1)}k <small style="color:var(--text-faint);font-weight:400">石</small></div></div>
+          <div class="curve-stat"><div class="k">古道程期</div><div class="v">${rp.totalDays}日 <small>(第${arrTick}旬抵)</small></div></div>
           <div class="curve-stat"><div class="k">${tName}供粮</div><div class="v" style="font-size:12.5px;color:${rel && rel.forage ? tone(rel.forage.color) : "var(--green-light)"}">${rel && rel.forage ? rel.forage.label.split(/[（(]/)[0] : "己方粮仓"}</div></div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
@@ -1757,14 +2569,16 @@
         if (!targetNode) return;
         queueCustomOrder({
           type: "set_plan",
-          desc: `【远征军令】自${originNode ? originNode.name : "帅帐"}发兵 ${soldiers.toLocaleString()} 进击【${targetNode.name}】(常备指令：${standing === "cautious" ? "谨慎保军" : standing === "aggressive" ? "见利则进" : "均衡推进"})`,
+          desc: `【远征军令】自${originNode ? originNode.name : "帅帐"}发兵 ${soldiers.toLocaleString()} 进击【${targetNode.name}】(古道 ${rp.totalDays} 日 · 常备指令：${standing === "cautious" ? "谨慎保军" : standing === "aggressive" ? "见利则进" : "均衡推进"})`,
           cost_money: 180,
           target_node: targetNode.id,
           raw: {
             origin: originNode ? originNode.id : "dun_huang",
             target: targetNode.id,
             soldiers,
+            laborers,
             standing_order: standing,
+            commander_id: GAME.planDraft.commanderId || "zhao_ponu",
           },
         });
       });
@@ -1873,10 +2687,87 @@
           ${rel ? `<div class="sel-bars">${bar("汉影响", rel.han_influence, "var(--cinnabar)")}${bar("匈威吓", rel.xn_intimidation, "var(--xn)")}</div>` : ""}
           <div class="sel-actions">
             <button class="btn btn-sm" data-ol-open="inspector">图籍详情</button>
-            <button class="btn btn-sm" data-ol-open="military">${st.meta.side === "han" ? "发兵于此" : "攻掠于此"}</button>
+            <button class="btn btn-sm" id="btn-ol-pick-march">🎯 选点出征</button>
+            <button class="btn btn-sm" data-ol-open="military">${st.meta.side === "han" ? "虎符F5" : "控弦F5"}</button>
           </div>
         </div>`;
       box.querySelectorAll("[data-ol-open]").forEach((b) => (b.onclick = () => openDrawer(b.getAttribute("data-ol-open"))));
+      const pmBtn = document.getElementById("btn-ol-pick-march");
+      if (pmBtn) pmBtn.onclick = () => startMapPickMode({ kind: "march", fromId: n.id });
+    }
+
+    // 幕僚实时进言栏（三国志式长史/军师在场感）
+    const advEl = document.getElementById("outliner-advisor");
+    const advNameEl = document.getElementById("ol-advisor-name");
+    if (advEl && st.v1) {
+      const side = st.meta.side;
+      if (advNameEl) advNameEl.textContent = side === "han" ? "都护长史·徐自为" : "王庭骨都侯·赵信";
+      let advQuote = "";
+      if (side === "han") {
+        const ed = st.v1.court.active_edict;
+        const rz = st.v1.tribes.tribes.rizhu;
+        const rp = computeRoutePlan(GAME.planDraft.origin || "dun_huang", GAME.selectedNodeId || "lou_lan");
+        if (rz && rz.surrender_window > 0) {
+          advQuote = `「日逐王先贤掸与单于庭生隙，请降窗口仅余 <b>${rz.surrender_window}季</b>！当速遣骑都尉郑吉赴【乌垒】迎降，一举省罢匈奴僮仆都尉！」`;
+        } else if (ed && !ed.complied && ed.deadline_turn - st.meta.turn <= 3) {
+          advQuote = `「天子《${ed.title}》限期仅余 <b>${Math.max(1, ed.deadline_turn - st.meta.turn)}季</b>！宜速在【诏书 F2】奉诏或上疏请展，勿令御史大夫抓获把柄。」`;
+        } else if (rp.totalDays >= 28 && GAME.planDraft.standingOrder === "aggressive") {
+          advQuote = `「自敦煌至【${n ? n.name : "西域"}】古道绵延 <b>${rp.totalDays}日</b>，流沙乏水！若执意『见利则进』恐越不归点而饥死，请先拉通粮道或改『谨慎保军』。」`;
+        } else {
+          advQuote = `「今都护功业 G=<b>${st.v1.victory.han_merit.toFixed(1)}</b>。先遣博望侯张骞持节通楼兰、乌垒，再置戊己军屯，则西域三十六国可不战而服。」`;
+        }
+      } else {
+        const rz = st.v1.tribes.tribes.rizhu;
+        const sp = st.v1.steppe || { winter_prep: false, dzud_risk: 18 };
+        if (st.meta.turn >= 2 && st.meta.turn <= 4 && !sp.winter_prep) {
+          advQuote = `「漠北今冬恐有大雪白灾（风险 <b>${sp.dzud_risk}%</b>）！请大单于速于【牧场 F4】修整呼揭冬窝子并备干草，否则西翼日逐王必因征畜而离心！」`;
+        } else if (rz && rz.loyalty < 50) {
+          advQuote = `「日逐王先贤掸近季托病不赴龙城大会（忠诚迷雾 <b>🌫️${rz.loyalty_fog ? rz.loyalty_fog[0] : 30}~${rz.loyalty_fog ? rz.loyalty_fog[1] : 52}</b>），恐暗通汉使郑吉，当速赐金马安抚！」`;
+        } else {
+          advQuote = `「汉军仰赖万里转粟，每石粮至塞外费数十石。当遣犁汗王轻骑出伊吾袭断其阳关粮道，再命右贤王趁秋高马肥威压楼兰！」`;
+        }
+      }
+      advEl.innerHTML = `<div class="advisor-box"><div class="advisor-speaker"><span>📜 ${side === "han" ? "长史徐自为进言" : "骨都侯赵信献策"}</span><span class="badge">${st.meta.season === "autumn" ? "秋高马肥" : st.meta.season === "winter" ? "严冬封山" : "春水融雪"}</span></div><div>${advQuote}</div></div>`;
+    }
+
+    // 在场历史人物与差遣栏
+    const charsEl = document.getElementById("outliner-characters");
+    const charsSumEl = document.getElementById("ol-chars-summary");
+    if (charsEl && st.characters) {
+      const myChars = Object.values(st.characters).filter((c) => c.faction === st.meta.side);
+      const idleCnt = myChars.filter((c) => c.status !== "assigned").length;
+      if (charsSumEl) charsSumEl.textContent = `${idleCnt}/${myChars.length} 待命`;
+      charsEl.innerHTML = `<div class="char-roster-list">${myChars
+        .map((ch) => {
+          const locName = st.nodes[ch.loc] ? st.nodes[ch.loc].name : ch.loc;
+          const isAssigned = ch.status === "assigned";
+          return `
+            <div class="char-chip ${isAssigned ? "assigned" : ""}" data-char-id="${ch.id}" data-char-loc="${ch.loc}" title="${ch.trait} · 点击定位其驻节城邑并设为主将">
+              <span class="char-seal">${ch.seal}</span>
+              <div class="char-info">
+                <div class="char-name-row">
+                  <span>${ch.name}</span>
+                  <span class="badge ${isAssigned ? "badge-red" : "badge-green"}" style="font-size:9.5px;padding:0 4px;">${isAssigned ? "已差遣" : `驻${locName}`}</span>
+                </div>
+                <div class="char-sub-row">${isAssigned ? ch.task_desc : ch.trait}</div>
+              </div>
+            </div>
+          `;
+        })
+        .join("")}</div>`;
+      charsEl.querySelectorAll(".char-chip").forEach((chip) => {
+        chip.onclick = () => {
+          const cid = chip.getAttribute("data-char-id");
+          const loc = chip.getAttribute("data-char-loc");
+          GAME.planDraft.commanderId = cid;
+          const chObj = st.characters[cid];
+          if (chObj && chObj.tribe) GAME.planDraft.kingKey = chObj.tribe;
+          if (loc && st.nodes[loc]) {
+            selectNodeAndPan(loc);
+            showOrderToast(`已钦定主将【${chObj ? chObj.name : cid}】（当前驻【${st.nodes[loc].name}】）`);
+          }
+        };
+      });
     }
 
     const alerts = [];
@@ -2289,9 +3180,12 @@
       const ed = v1.court.active_edict;
       const fNode = st.nodes[GAME.forgedTarget];
       const fName = fNode ? fNode.name : "车师前";
-      const red = 126;
-      const green = 98;
-      const maxD = Math.max(red, green);
+      const fRoute = computeRoutePlan("chang_an", GAME.forgedTarget);
+      const beaconBonus = fNode && fNode.has_beacon ? 0.82 : 1.0;
+      const green = Math.round((fRoute.totalDays * 0.95 + 28) * beaconBonus);
+      const red = Math.round(fRoute.totalDays * 1.25 + (GAME.forgedSelfImpeach ? 58 : 38));
+      const maxD = Math.max(red, green, 140);
+      const inTransitDocs = (v1.court && v1.court.in_transit_docs) || [];
       const pol = GAME.policies;
 
       const kpiRow = `
@@ -2371,7 +3265,7 @@
         </div>
 
         <div class="d-card">
-          ${dSecHdr("持节矫诏 · 捷报与槛车竞速推演", "将在外君命有所不受")}
+          ${dSecHdr("持节矫诏 · 捷报与槛车竞速推演", `驿道距长安 ${fRoute.totalKm} 里 · ${fNode && fNode.has_beacon ? "烽燧急递 -18%耗时" : "无烽燧常速"}`)}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; font-size:12px;">
             <label>奇袭目标
               <select id="sel-forged-target" style="width:100%; margin-top:3px;">
@@ -2382,7 +3276,7 @@
               </select>
             </label>
             <label class="chk-inline" style="flex-direction:row;align-self:end;padding-bottom:5px;">
-              <input type="checkbox" id="chk-forged-impeach" ${GAME.forgedSelfImpeach ? "checked" : ""} /> 同时上《自劾疏》（信任仅 −6）
+              <input type="checkbox" id="chk-forged-impeach" ${GAME.forgedSelfImpeach ? "checked" : ""} /> 同时上《自劾疏》（延缓槛车 20 日 · 信任仅 −6）
             </label>
           </div>
           <div class="race">
@@ -2392,8 +3286,19 @@
             <div class="race-row"><span style="color:var(--han-light)">槛车追捕</span>
               <div class="mini-bar"><div class="mini-bar-fill" style="width:${(red / maxD) * 100}%;background:var(--danger);"></div></div>
               <span style="text-align:right">${red} 日</span></div>
-            <div class="race-verdict">捷报早到 ${red - green} 日——可望将功折罪，功业 +12。</div>
+            <div class="race-verdict">${
+              red > green
+                ? `捷报比廷尉槛车早到 <strong>${red - green} 日</strong>（经 ${fRoute.path.length} 驿）——可望将功折罪，功业 +12。`
+                : `⚠️ 路途遥远且无烽燧接力，槛车恐先至（差 ${green - red} 日），请勾选《自劾疏》或先筑烽燧！`
+            }</div>
           </div>
+          ${
+            inTransitDocs.length
+              ? `<div style="margin-top:6px;padding:5px 8px;background:rgba(168,118,34,0.1);border:1px dashed var(--gold);border-radius:4px;font-size:11px;">
+                  <strong>驿道在途急递 (${inTransitDocs.length})：</strong> ${inTransitDocs.map((d) => `${d.title} (余 ${d.eta_days || 20} 日)`).join(" · ")}
+                 </div>`
+              : ""
+          }
           <button class="btn btn-han" id="btn-do-forge-edict" style="width:100%; margin-top:8px; padding:8px;">矫诏发兵 · 奇袭${fName}</button>
         </div>
       `;
@@ -2442,6 +3347,9 @@
       };
       document.getElementById("chk-forged-impeach").onchange = (e) => {
         GAME.forgedSelfImpeach = e.target.checked;
+        renderPanelCourtOrTribes(container);
+        polishPanel(container);
+        bindDrawerCausalClicks(container);
       };
       document.getElementById("btn-do-forge-edict").onclick = () => {
         const tName = st.nodes[GAME.forgedTarget] ? st.nodes[GAME.forgedTarget].name : GAME.forgedTarget;
@@ -2454,50 +3362,71 @@
         });
       };
     } else {
-      // 匈奴单于王庭与四部分赏面板
+      // 匈奴单于王庭与四部分赏面板（含缺席战争迷雾忠诚区间 & 龙城/蹛林大会议程器）
       const ratios = v1.tribes.reward_ratios || { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
       const tr = v1.tribes.tribes;
+      const rzMisty = tr.rizhu.loyalty < 50 || tr.rizhu.attended === false;
+      const rzFog = tr.rizhu.loyalty_fog || [Math.max(10, Math.round(tr.rizhu.loyalty - 12)), Math.min(95, Math.round(tr.rizhu.loyalty + 12))];
+      const rzDisp = rzMisty ? `🌫️ 约 ${rzFog[0]}~${rzFog[1]}` : `${tr.rizhu.loyalty.toFixed(0)} / 100`;
+
+      if (!GAME.assemblyTarget) GAME.assemblyTarget = "dun_huang";
+      if (!GAME.assemblyCard) GAME.assemblyCard = "诈败诱敌";
+
       const kpiRow = `
         <div class="d-kpi-grid-6">
           ${dMetricCard("撑犁单于威望", `${v1.tribes.chanyu_prestige.toFixed(0)} / 100`, "王庭号令权威", "good", "xn_prestige")}
           ${dMetricCard("王庭赏赐池", `${st.scores.xn_money.toLocaleString()} 钱`, "待分赏金帛", "warn", "xn_money")}
-          ${dMetricCard("日逐王忠诚", `${tr.rizhu.loyalty.toFixed(0)} / 100`, tr.rizhu.loyalty >= 55 ? "奉命守西域" : "谨防率众降汉", tr.rizhu.loyalty >= 55 ? "good" : "bad", "rizhu_loyalty")}
+          ${dMetricCard("日逐王忠诚", rzDisp, rzMisty ? "⚠️ 称病未赴龙城会" : "奉命守西域", rzMisty ? "bad" : "good", "rizhu_loyalty")}
           ${dMetricCard("焉耆僮仆都尉", v1.tribes.tongpu_active ? "驻节统辖" : "已被罢黜", "西域赋敛总枢", v1.tribes.tongpu_active ? "good" : "bad", "xn_weifu")}
           ${dMetricCard("服属城邦", `${st.scores.xn_vassals} 国`, "岁纳毡马粟米", "info", "xn_weifu")}
           ${dMetricCard("匈奴威服 W", `${v1.victory.xn_weifu.toFixed(1)} / 100`, "满 100 霸有西域", "good", "xn_weifu")}
         </div>
       `;
 
+      const tribeRowsHtml = [
+        ["zuoxian", "左贤王部 (东方诸部·期望35%)", tr.zuoxian],
+        ["youxian", "右贤王部 (西方诸部·期望30%)", tr.youxian],
+        ["rizhu", "日逐王部 (掌西域僮仆·期望20%)", tr.rizhu],
+        ["lihu", "犁汗王部 (南下前锋·期望15%)", tr.lihu],
+      ]
+        .map(([k, label, tObj]) => {
+          const loy = tObj.loyalty;
+          const isMisty = loy < 50 || tObj.attended === false;
+          const fog = tObj.loyalty_fog || [Math.max(10, Math.round(loy - 12)), Math.min(95, Math.round(loy + 12))];
+          const loyBadge = isMisty
+            ? `<span style="color:var(--crimson);font-weight:700">🌫️ 缺席未知：约 ${fog[0]}~${fog[1]} (抗命风险)</span>`
+            : `<span style="color:${loy >= 65 ? "var(--jade)" : "var(--gold-light)"};font-weight:700">${loy.toFixed(0)} · 到会奉命 (${(tObj.cavalry || 8000).toLocaleString()}骑)</span>`;
+          return `
+            <div style="margin-bottom:9px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px;">
+                <span>${label} — ${loyBadge}</span>
+                <strong id="lbl-share-${k}">${ratios[k]}%</strong>
+              </div>
+              ${
+                isMisty
+                  ? `<div class="misty-loyalty-bar" title="该部王称病缺席本季龙城会盟，王庭仅能揣测其真实向背"><div class="misty-loyalty-range" style="left:${fog[0]}%;width:${Math.max(12, fog[1] - fog[0])}%"></div></div>`
+                  : ""
+              }
+              <input type="range" min="0" max="70" value="${ratios[k]}" data-tribe-slider="${k}"/>
+            </div>
+          `;
+        })
+        .join("");
+
       container.innerHTML = `
         <div class="d-compact-summary">
-          <strong>漠北单于王庭与四部会盟</strong> — 匈奴以马上得天下，赖<strong>战利分赏左贤、右贤、日逐、犁汗四部</strong>以维系向心；若日逐王份额低于期望 20% 将触发嫉妒并密谋降汉。
+          <strong>漠北单于王庭与四部会盟</strong> — 匈奴以马上得天下，赖<strong>战利分赏左贤、右贤、日逐、犁汗四部</strong>以维系向心；若部落王忠诚低于 50 将<strong>称病缺席龙城大会（忠诚度化为迷雾区间）</strong>，甚至临阵抗命或降汉。
         </div>
         ${kpiRow}
         <div class="d-two-col">
           <div class="d-col">
             <div class="d-card">
-              ${dSecHdr("四部王庭分赏配额", `赏赐池 ${v1.tribes.reward_pool} 钱`)}
-              ${[
-                ["zuoxian", "左贤王部 (东方诸部·期望35%)", tr.zuoxian.loyalty],
-                ["youxian", "右贤王部 (西方诸部·期望30%)", tr.youxian.loyalty],
-                ["rizhu", "日逐王部 (掌西域僮仆·期望20%)", tr.rizhu.loyalty],
-                ["lihu", "犁汗王部 (南下前锋·期望15%)", tr.lihu.loyalty],
-              ]
-                .map(
-                  ([k, label, loy]) => `
-                <div style="margin-bottom:7px;">
-                  <div style="display:flex; justify-content:space-between; font-size:12px;">
-                    <span>${label} — 忠诚: <strong style="color:${loy >= 55 ? "var(--green-light)" : "var(--han-light)"}">${loy.toFixed(0)}</strong></span>
-                    <strong id="lbl-share-${k}">${ratios[k]}%</strong>
-                  </div>
-                  <input type="range" min="0" max="70" value="${ratios[k]}" data-tribe-slider="${k}"/>
-                </div>
-              `
-                )
-                .join("")}
+              ${dSecHdr("四部王庭分赏配额与到会状态", `赏赐池 ${v1.tribes.reward_pool} 钱`)}
+              ${tribeRowsHtml}
               <div class="action-grid" style="margin-top:8px;">
                 <button class="btn" id="btn-xn-equalize">按期望份额一键配平</button>
                 <button class="btn btn-gold" id="btn-xn-distribute">颁行本季四部分赏 (200钱)</button>
+                <button class="btn btn-gold span-2" id="btn-xn-pacify-rizhu">遣骨都侯赐良马金帛安抚日逐王先贤掸 (消除迷雾 · 忠诚+15)</button>
               </div>
             </div>
           </div>
@@ -2507,11 +3436,28 @@
               ${renderCausalGraphSvg("xiongnu", st)}
             </div>
             <div class="d-card">
-              ${dSecHdr("龙城大会 · 王庭战术 · 僮仆都尉赋敛")}
+              ${dSecHdr("正月龙城 / 秋季蹛林大会议程与王庭战术卡", "会盟定主攻方向")}
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; font-size:12px;">
+                <label>大会钦定主攻城塞
+                  <select id="sel-xn-assembly-target" style="width:100%; margin-top:3px;">
+                    <option value="dun_huang" ${GAME.assemblyTarget === "dun_huang" ? "selected" : ""}>敦煌 (河西门户)</option>
+                    <option value="lou_lan" ${GAME.assemblyTarget === "lou_lan" ? "selected" : ""}>楼兰 (南道咽喉)</option>
+                    <option value="wu_lei" ${GAME.assemblyTarget === "wu_lei" ? "selected" : ""}>乌垒 (汉军中枢)</option>
+                    <option value="cheshi_qian" ${GAME.assemblyTarget === "cheshi_qian" ? "selected" : ""}>车师前王庭 (北道锁钥)</option>
+                    <option value="qu_li" ${GAME.assemblyTarget === "qu_li" ? "selected" : ""}>渠犁 (汉军屯仓)</option>
+                  </select>
+                </label>
+                <label>颁授王庭战术方略卡
+                  <select id="sel-xn-assembly-card" style="width:100%; margin-top:3px;">
+                    <option value="诈败诱敌" ${GAME.assemblyCard === "诈败诱敌" ? "selected" : ""}>诈败诱敌 (诱敌深入伏击+30%)</option>
+                    <option value="拔除亭障" ${GAME.assemblyCard === "拔除亭障" ? "selected" : ""}>拔除亭障 (盲汉塞烽燧视野)</option>
+                    <option value="秋高马肥掠野" ${GAME.assemblyCard === "秋高马肥掠野" ? "selected" : ""}>秋高马肥掠野 (破城虏掠翻倍)</option>
+                  </select>
+                </label>
+              </div>
               <div class="action-grid">
-                <button class="btn btn-blue" id="btn-xn-assembly">召开龙城/蹛林大会盟誓 (+6威望)</button>
-                <button class="btn btn-gold" id="btn-xn-pacify-rizhu">专使赐金安抚日逐王 (忠+15)</button>
-                <button class="btn" id="btn-xn-card-retreat">战术卡：诈败诱敌 (伏击+30%)</button>
+                <button class="btn btn-blue span-2" id="btn-xn-assembly">召开龙城/蹛林大会 · 盟誓合击【${st.nodes[GAME.assemblyTarget] ? st.nodes[GAME.assemblyTarget].name : "敦煌"}】(+6威望/诸部忠+5)</button>
+                <button class="btn" id="btn-xn-card-retreat">单独激活：${GAME.assemblyCard}</button>
                 <button class="btn" id="btn-xn-card-beacon">战术卡：拔除亭障 (盲汉视野)</button>
                 <button class="btn" id="btn-xn-tax-normal">僮仆都尉：常赋岁币 (+320钱)</button>
                 <button class="btn btn-han" id="btn-xn-tax-heavy">僮仆都尉：重敛竭泽 (+550钱)</button>
@@ -2529,6 +3475,19 @@
         });
       });
 
+      document.getElementById("sel-xn-assembly-target").onchange = (e) => {
+        GAME.assemblyTarget = e.target.value;
+        renderPanelCourtOrTribes(container);
+        polishPanel(container);
+        bindDrawerCausalClicks(container);
+      };
+      document.getElementById("sel-xn-assembly-card").onchange = (e) => {
+        GAME.assemblyCard = e.target.value;
+        renderPanelCourtOrTribes(container);
+        polishPanel(container);
+        bindDrawerCausalClicks(container);
+      };
+
       document.getElementById("btn-xn-equalize").onclick = () => {
         v1.tribes.reward_ratios = { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
         renderPanelCourtOrTribes(container);
@@ -2543,12 +3502,20 @@
           target_node: "chanyu_ting",
           raw: { ratios: deepClone(v1.tribes.reward_ratios) },
         });
-      document.getElementById("btn-xn-assembly").onclick = () =>
-        queueCustomOrder({ type: "hold_assembly", desc: `【草原盛会】大会诸王于龙城/蹛林，钦定主攻敦煌 (威望+6，诸部忠+5)`, cost_money: 100, target_node: "dun_huang", raw: { target: "dun_huang", card: "feigned_retreat" } });
+      document.getElementById("btn-xn-assembly").onclick = () => {
+        const tNm = st.nodes[GAME.assemblyTarget] ? st.nodes[GAME.assemblyTarget].name : GAME.assemblyTarget;
+        queueCustomOrder({
+          type: "hold_assembly",
+          desc: `【草原盛会】大会诸王于龙城/蹛林，钦定合击【${tNm}】并授「${GAME.assemblyCard}」(威望+6，诸部忠+5)`,
+          cost_money: 100,
+          target_node: GAME.assemblyTarget,
+          raw: { target: GAME.assemblyTarget, card: GAME.assemblyCard },
+        });
+      };
       document.getElementById("btn-xn-pacify-rizhu").onclick = () =>
         queueCustomOrder({ type: "pacify_tribe", desc: `【安抚日逐】遣骨都侯赐良马金帛安抚日逐王先贤掸 (忠诚+15)`, cost_money: 150, target_node: "yan_qi", raw: { tribe: "rizhu" } });
       document.getElementById("btn-xn-card-retreat").onclick = () =>
-        queueCustomOrder({ type: "play_tactical_card", desc: `【王庭战术卡】激活「诈败诱敌」(本季诱敌断粮与伏击伤害+30%)`, cost_money: 0, target_node: "chanyu_ting", raw: { card: "诈败诱敌" } });
+        queueCustomOrder({ type: "play_tactical_card", desc: `【王庭战术卡】激活「${GAME.assemblyCard}」`, cost_money: 0, target_node: "chanyu_ting", raw: { card: GAME.assemblyCard } });
       document.getElementById("btn-xn-card-beacon").onclick = () =>
         queueCustomOrder({ type: "play_tactical_card", desc: `【王庭战术卡】激活「拔除亭障」(拆毁汉塞烽燧赏金翻倍)`, cost_money: 0, target_node: "dun_huang", raw: { card: "拔除亭障" } });
       document.getElementById("btn-xn-tax-normal").onclick = () =>
@@ -2601,7 +3568,11 @@
       })
       .join("");
 
-    const kpiRow = `
+    const xbd = v1.victory.xn_weifu_breakdown || {};
+    const weifu = v1.victory.xn_weifu || 0;
+    const kpiRow =
+      side === "han"
+        ? `
       <div class="d-kpi-grid-6">
         ${dMetricCard("都护功业 G", `${merit.toFixed(1)} / 100`, "满 100 可奏立都护府", "good", "han_merit")}
         ${dMetricCard("属国分项", `+${bd.vassal || st.scores.han_vassals * 6}`, `大汉内属 ${st.scores.han_vassals} 国`, "good", "han_vassals")}
@@ -2609,6 +3580,16 @@
         ${dMetricCard("乌垒/车师枢纽", `+${bd.hub || 0}`, "南北道锁钥控制", "info", "han_merit")}
         ${dMetricCard("塞外军屯分项", `+${bd.tuntian || ttCount * 4.5}`, `已开军屯 ${ttCount} 处`, "good", "total_grain")}
         ${dMetricCard("罢黜僮仆都尉", v1.tribes.tongpu_active ? "+0 (尚存)" : "+10 (已罢)", v1.tribes.tongpu_active ? "迎降日逐王可永罢" : "匈奴赋敛已绝", v1.tribes.tongpu_active ? "warn" : "good", "rizhu_loyalty")}
+      </div>
+    `
+        : `
+      <div class="d-kpi-grid-6">
+        ${dMetricCard("单于威服 W", `${weifu.toFixed(1)} / 100`, "满 100 漠北独尊西域", "good", "xn_weifu")}
+        ${dMetricCard("服属城邦分项", `+${(xbd.vassal ?? st.scores.xn_vassals * 6.5).toFixed(1)}`, `匈奴服属 ${st.scores.xn_vassals} 国`, "good", "xn_weifu")}
+        ${dMetricCard("焉耆僮仆都尉", v1.tribes.tongpu_active ? `+${xbd.tongpu || 18} (统辖)` : "+0 (已失)", v1.tribes.tongpu_active ? "西域岁币赋敛总枢" : "日逐王已畔降汉", v1.tribes.tongpu_active ? "good" : "bad", "xn_weifu")}
+        ${dMetricCard("单于威望折算", `+${(xbd.prestige ?? v1.tribes.chanyu_prestige * 0.16).toFixed(1)}`, `王庭威望 ${v1.tribes.chanyu_prestige.toFixed(0)}`, "info", "xn_prestige")}
+        ${dMetricCard("北道锁钥门户", `+${xbd.north_hub ?? 12}`, "车师前/后与焉耆控制", "info", "xn_weifu")}
+        ${dMetricCard("禁商与秋掠威名", `+${((xbd.embargo || 0) + (xbd.raid || 0)).toFixed(0)}`, "封锁丝路与抄掠汉道", "warn", "xn_money")}
       </div>
     `;
 
@@ -2633,7 +3614,11 @@
 
     container.innerHTML = `
       <div class="d-compact-summary">
-        <strong>西域十八国符节总览与都护四阶宏图</strong> — 顶部四阶里程碑标示立府条件。点击任意指标卡可调阅<strong>功业 G 因果拆解</strong>，点击表内城郭可在舆图居中检视。
+        ${
+          side === "han"
+            ? `<strong>西域十八国符节总览与都护四阶宏图</strong> — 顶部四阶里程碑标示立府条件。点击任意指标卡可调阅<strong>功业 G 因果拆解</strong>，点击表内城郭可在舆图居中检视。`
+            : `<strong>西域诸国藩属威压与单于威服四阶宏图</strong> — 匈奴以铁骑控弦与焉耆僮仆都尉弹压诸国。点击指标卡可调阅<strong>单于威服 W 六维拆解</strong>，防止诸国受汉使蛊惑畔附。`
+        }
       </div>
       <div class="d-ms-grid">${msHtml}</div>
       ${kpiRow}
@@ -2649,7 +3634,16 @@
           </div>
         </div>
       `
-          : ""
+          : `
+        <div class="d-card" style="margin-bottom:8px;">
+          ${dSecHdr("匈奴单于庭西域霸权大政", "遮断汉道 · 弹压西域")}
+          <div class="action-grid" style="grid-template-columns:repeat(3,1fr);">
+            <button class="btn btn-blue act" id="btn-diplo-xn-raid-supply"><span class="act-title">遣游骑袭断汉粮道</span><span class="act-meta">抄掠粟车 +260 钱 · 威服 +5</span></button>
+            <button class="btn btn-gold act" id="btn-diplo-xn-embargo"><span class="act-title">封锁天山北道商路</span><span class="act-meta">禁绝汉商 · 威服 +6 · 诸国畏匈+8</span></button>
+            <button class="btn act" id="btn-diplo-xn-pacify-rizhu"><span class="act-title">赐良马金帛安抚日逐王</span><span class="act-meta">150 钱 · 消弭降汉隐患 (忠+15)</span></button>
+          </div>
+        </div>
+      `
       }
       <div class="d-subtabs" style="justify-content:space-between;align-items:center;">
         <div style="display:flex;gap:5px;">
@@ -2665,7 +3659,7 @@
       <div class="d-card" style="padding:0;">
         <table class="d-table">
           <thead>
-            <tr><th>邦国</th><th>宗主归属</th><th style="text-align:right">亲汉度</th><th style="text-align:right">畏匈度</th><th style="text-align:right">怨匈度</th><th>过境供粮姿态</th><th style="text-align:right">仓廪储粮</th><th style="text-align:right">当季符节指令</th></tr>
+            <tr><th>邦国</th><th>宗主归属</th><th style="text-align:right">亲汉度</th><th style="text-align:right">畏匈度</th><th style="text-align:right">怨匈度</th><th>过境供粮姿态</th><th style="text-align:right">仓廪储粮</th><th style="text-align:right">当季${side === "han" ? "符节" : "威压"}指令</th></tr>
           </thead>
           <tbody>
             ${filteredNodes
@@ -2690,7 +3684,7 @@
                     ${
                       side === "han"
                         ? `<button class="d4-pol-btn" data-quick-envoy="${n.id}">精使(260)</button> <button class="d4-pol-btn" data-quick-vassal="${n.id}">册封(240)</button>`
-                        : `<button class="d4-pol-btn" data-quick-intim="${n.id}">铁骑威压</button>`
+                        : `<button class="d4-pol-btn" data-quick-intim="${n.id}">铁骑威压</button> <button class="d4-pol-btn" data-quick-plunder="${n.id}">秋掠打草谷</button>`
                     }
                   </td>
                 </tr>
@@ -2726,6 +3720,31 @@
           cost_money: 260,
           target_node: "wu_lei",
           raw: {},
+        });
+    } else {
+      document.getElementById("btn-diplo-xn-raid-supply").onclick = () =>
+        queueCustomOrder({
+          type: "raid_supply_line",
+          desc: "【袭断汉粮道】遣犁汗王游骑抄掠汉军白龙堆至楼兰转运粮车 (获金+260，夺粟+18k，威服+5)",
+          cost_money: 0,
+          target_node: "lou_lan",
+          raw: { target: "lou_lan" },
+        });
+      document.getElementById("btn-diplo-xn-embargo").onclick = () =>
+        queueCustomOrder({
+          type: "enforce_embargo",
+          desc: "【北道禁商封锁】右贤王与僮仆都尉联手封锁天山北道，禁绝汉使商旅 (威服+6，北道诸国畏匈+8)",
+          cost_money: 80,
+          target_node: "cheshi_qian",
+          raw: { target: "cheshi_qian" },
+        });
+      document.getElementById("btn-diplo-xn-pacify-rizhu").onclick = () =>
+        queueCustomOrder({
+          type: "pacify_tribe",
+          desc: "【安抚日逐王】遣王庭骨都侯赐良马金帛安抚日逐王先贤掸 (忠诚+15)",
+          cost_money: 150,
+          target_node: "yan_qi",
+          raw: { tribe: "rizhu" },
         });
     }
 
@@ -2794,13 +3813,213 @@
         queueCustomOrder({ type: "intimidate_city", desc: `【控弦威压】遣铁骑巡行威压【${nm}】(匈奴威吓+16)`, cost_money: 0, target_node: nid, raw: { state: nid } });
       });
     });
+    container.querySelectorAll("[data-quick-plunder]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const nid = btn.getAttribute("data-quick-plunder");
+        const nm = st.nodes[nid] ? st.nodes[nid].name : nid;
+        queueCustomOrder({ type: "expedition", desc: `【控弦抄掠】发右贤王铁骑 4,500 骑南下【${nm}】打草谷劫掠`, cost_money: 90, target_node: nid, raw: { target: nid, soldiers: 4500 } });
+      });
+    });
   }
 
 
-  // ---- [F4] 仓廪 · 万里粮道、粟米瀑布流账本与塞外军屯矩阵（对标 D5_Economy） ----
+  // ---- [F4] 汉：仓廪 · 万里粮道与塞外军屯矩阵 ／ 匈：牧场 · 草场载畜、从马配比与僮仆岁币 ----
   function renderPanelLogistics(container) {
     const st = GAME.state;
     const v1 = st.v1;
+    const side = st.meta.side;
+    const totalGrainK = Math.round(Object.values(st.nodes).reduce((s, n) => s + (n.grain || 0), 0) / 1000);
+
+    if (side === "xiongnu") {
+      const steppe = (v1 && v1.steppe) || {
+        horse_herd: st.scores.xn_horse_pool || 22000,
+        remount_mode: "blitz_3",
+        remount_ratio: 3,
+        pasture_health: 86,
+        winter_prep: false,
+        pastures: [
+          { id: "chanyu_ting", name: "漠南单于庭主牧场", horses: 7800, cap: 9000, grass: "水草丰美" },
+          { id: "cheshi_hou", name: "蒲类海·车师后部夏牧场", horses: 4600, cap: 5500, grass: "天山雪水" },
+          { id: "cheshi_qian", name: "博格达·北道前线牧场", horses: 3400, cap: 4500, grass: "轮牧休养" },
+          { id: "yan_qi", name: "焉耆盆地·开都河马场", horses: 3800, cap: 4500, grass: "水草丰美" },
+          { id: "wu_sun", name: "阿尔泰呼揭冬窝子", horses: 2600, cap: 3500, grass: "背风御寒" },
+        ],
+      };
+      const herd = steppe.horse_herd || st.scores.xn_horse_pool || 22000;
+      const remountRatio = steppe.remount_mode === "std_2" ? 2 : 3;
+      const springFoals = 2600;
+      const vassalTributeHorses = st.scores.xn_vassals * 180;
+      const raidCampaignLoss = remountRatio === 3 ? 950 : 1550;
+      const dzudLoss = steppe.winter_prep ? 260 : 1350;
+      const netHorses = springFoals + vassalTributeHorses - raidCampaignLoss - dzudLoss;
+      const maxHRef = Math.max(4000, springFoals + vassalTributeHorses);
+
+      const kpiRow = `
+        <div class="d-kpi-grid-6">
+          ${dMetricCard("草原战马总群", `${herd.toLocaleString()} 匹`, "控弦机动之本", "good", "steppe_horses")}
+          ${dMetricCard("季度马群净繁衍", `${netHorses >= 0 ? "+" : ""}${netHorses.toLocaleString()} 匹`, netHorses >= 0 ? "畜群兴旺" : "白灾/战损吃紧", netHorses >= 0 ? "good" : "bad", "steppe_horses")}
+          ${dMetricCard("从马配比制度", `1 骑 ${remountRatio} 马`, remountRatio === 3 ? "百里奔袭·换乘不歇" : "常备省草·负重略增", "info", "steppe_horses")}
+          ${dMetricCard("王庭草场肥度", `${(steppe.pasture_health || 86).toFixed(0)}%`, "影响战马膘情恢复", (steppe.pasture_health || 86) >= 75 ? "good" : "warn", "steppe_horses")}
+          ${dMetricCard("冬窝子防白灾", steppe.winter_prep ? "已筑御寒棚 ✓" : "未备 (冬春易冻毙)", "抵御漠北严冬白灾", steppe.winter_prep ? "good" : "warn", "steppe_horses")}
+          ${dMetricCard("焉耆僮仆岁币", v1.tribes.tongpu_active ? "+320~550 钱" : "已断绝", v1.tribes.tongpu_active ? "西域诸国岁纳毡铁" : "僮仆都尉已被汉罢", v1.tribes.tongpu_active ? "good" : "bad", "xn_money")}
+        </div>
+      `;
+
+      const leftCol = `
+        <div class="d-card">
+          ${dSecHdr("草原战马蓄殖与白灾折损瀑布流账本 (匹/季)", `<span style="cursor:pointer;color:var(--cobalt)" data-explain-key="steppe_horses">因果拆解 ▾</span>`)}
+          <div class="d4-waterfall">
+            ${dWaterfallRow("漠北与天山春水母马繁育产驹", `+${springFoals.toLocaleString()} 匹`, (springFoals / maxHRef) * 100, true)}
+            ${dWaterfallRow(`西域服属诸国岁贡良马 (${st.scores.xn_vassals}国)`, `+${vassalTributeHorses.toLocaleString()} 匹`, (vassalTributeHorses / maxHRef) * 100, true)}
+            ${dWaterfallRow(`南下奔袭与流沙马蹄劳损 (${remountRatio === 3 ? "1骑3马轻损" : "1骑2马重损"})`, `-${raidCampaignLoss.toLocaleString()} 匹`, (raidCampaignLoss / maxHRef) * 100, false)}
+            ${dWaterfallRow(`瀚海苦寒与冬春白灾冻毙 (${steppe.winter_prep ? "已筑冬窝子减免" : "未备冬窝子"})`, `-${dzudLoss.toLocaleString()} 匹`, (dzudLoss / maxHRef) * 100, false)}
+            <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--line-strong);font-size:12px;font-weight:700;">
+              <span>本季草原战马净增减</span>
+              <span class="num" style="color:${netHorses >= 0 ? "var(--jade)" : "var(--crimson)"}">${netHorses >= 0 ? "+" : ""}${netHorses.toLocaleString()} 匹/季</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-card">
+          ${dSecHdr("单于庭牧政 · 春水育马、冬窝子与从马配比", "游牧骑兵核心机动体系")}
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button type="button" class="d4-pol-btn ${remountRatio === 2 ? "active" : ""}" id="btn-xn-remount-2" style="flex:1;padding:7px;">1 骑 2 马 · 常备巡牧 (省草料)</button>
+            <button type="button" class="d4-pol-btn ${remountRatio === 3 ? "active" : ""}" id="btn-xn-remount-3" style="flex:1;padding:7px;">1 骑 3 马 · 百里奔袭 (行军+25%·防掉膘)</button>
+          </div>
+          <div class="action-grid">
+            <button class="btn btn-emerald" id="btn-xn-breed-horses">轮牧春水育马 (+2,800匹战马 / 草场+8%)</button>
+            <button class="btn btn-gold" id="btn-xn-winter-prep">修整呼揭冬窝子御白灾 (120钱 · 免冬灾)</button>
+          </div>
+        </div>
+      `;
+
+      const pastureList = Array.isArray(steppe.pastures)
+        ? steppe.pastures
+        : steppe.pasture_nodes
+        ? Object.entries(steppe.pasture_nodes).map(([pid, pObj]) => ({
+            id: pid,
+            name: pObj.name,
+            horses: pObj.horses,
+            cap: pObj.cap,
+            grass: `水草肥度 ${pObj.grass || 85}%`,
+          }))
+        : [];
+      const pasturesHtml = pastureList
+        .map(
+          (p) => `
+          <div class="pasture-card" data-log-jump="${p.id}" style="cursor:pointer">
+            <div class="pasture-card-head">
+              <strong>🐎 ${p.name}</strong>
+              <span class="badge badge-blue">${p.grass || "水草丰美"}</span>
+            </div>
+            <div class="pasture-card-meta">
+              <span>驻牧马群：<strong>${(p.horses || 3500).toLocaleString()}</strong> / ${(p.cap || 5000).toLocaleString()} 匹</span>
+              <span style="color:var(--jade)">载畜正常</span>
+            </div>
+          </div>
+        `
+        )
+        .join("");
+
+      const rightCol = `
+        <div class="d-card">
+          ${dSecHdr("漠北与天山五大王庭牧场矩阵", "点击牧场定位舆图")}
+          <div class="pasture-grid" style="margin-bottom:8px;">
+            ${pasturesHtml}
+          </div>
+        </div>
+
+        <div class="d-card">
+          ${dSecHdr("焉耆僮仆都尉三档赋敛与抄掠汉粮道", "以战养战 · 就食绿洲")}
+          <div class="action-grid">
+            <button class="btn btn-blue" id="btn-xn-log-raid-sl">遣犁汗游骑袭断汉粮道 (+260钱/+18k粟)</button>
+            <button class="btn" id="btn-xn-log-pick-raid">🎯 舆图选点抄掠绿洲粮仓</button>
+            <button class="btn" id="btn-xn-log-tax-normal">僮仆都尉：常赋岁币 (+320钱)</button>
+            <button class="btn btn-han" id="btn-xn-log-tax-heavy">僮仆都尉：重敛竭泽 (+550钱·怨恨+14)</button>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = `
+        <div class="d-compact-summary">
+          <strong>漠北王庭牧场、从马配比与僮仆岁币总账</strong> — 《史记·匈奴列传》云：「人习战攻以侵伐，其长兵则弓矢，短兵则刀铤。」匈奴不设塞外粮仓，全赖<strong>一人多马换乘奔袭、冬窝子抗白灾与焉耆僮仆都尉赋敛</strong>维持控弦霸权。
+        </div>
+        ${kpiRow}
+        <div class="d-two-col">
+          <div class="d-col">${leftCol}</div>
+          <div class="d-col">${rightCol}</div>
+        </div>
+      `;
+
+      container.querySelectorAll("[data-log-jump]").forEach((el) => {
+        el.onclick = () => selectNodeAndPan(el.getAttribute("data-log-jump"), "logistics", false);
+      });
+      document.getElementById("btn-xn-remount-2").onclick = () => {
+        queueCustomOrder({
+          type: "set_remount_mode",
+          desc: "【从马改制】改行「1骑2马·常备巡牧」配比 (节省草场载畜，远征机动回归常速)",
+          cost_money: 0,
+          target_node: "chanyu_ting",
+          raw: { mode: "std_2", ratio: 2 },
+        });
+        if (st.v1 && st.v1.steppe) {
+          st.v1.steppe.remount_mode = "std_2";
+          st.v1.steppe.remount_ratio = 2;
+        }
+        renderPanelLogistics(container);
+        renderFoodCurveDrawer();
+      };
+      document.getElementById("btn-xn-remount-3").onclick = () => {
+        queueCustomOrder({
+          type: "set_remount_mode",
+          desc: "【从马改制】改行「1骑3马·百里奔袭」配比 (轮换乘骑行军速度+25%，戈壁掉膘减半)",
+          cost_money: 80,
+          target_node: "chanyu_ting",
+          raw: { mode: "blitz_3", ratio: 3 },
+        });
+        if (st.v1 && st.v1.steppe) {
+          st.v1.steppe.remount_mode = "blitz_3";
+          st.v1.steppe.remount_ratio = 3;
+        }
+        renderPanelLogistics(container);
+        renderFoodCurveDrawer();
+      };
+      document.getElementById("btn-xn-breed-horses").onclick = () =>
+        queueCustomOrder({
+          type: "breed_steppe_horses",
+          desc: "【春水育马】迁牧蒲类海与巴里坤丰美草场育驹 (草原战马+2,800匹，草场肥度+8%)",
+          cost_money: 100,
+          target_node: "cheshi_hou",
+          raw: {},
+        });
+      document.getElementById("btn-xn-winter-prep").onclick = () =>
+        queueCustomOrder({
+          type: "winter_shelter_prep",
+          desc: "【冬窝子防白灾】在阿尔泰与天山背风谷地储草筑棚，免除严冬白灾冻毙战马",
+          cost_money: 120,
+          target_node: "chanyu_ting",
+          raw: {},
+        });
+      document.getElementById("btn-xn-log-raid-sl").onclick = () =>
+        queueCustomOrder({
+          type: "raid_supply_line",
+          desc: "【游骑断粮】遣犁汗王轻骑伏击汉军白龙堆至楼兰粮道 (获金+260，夺粟+18k，威服+5)",
+          cost_money: 0,
+          target_node: "lou_lan",
+          raw: { target: "lou_lan" },
+        });
+      document.getElementById("btn-xn-log-pick-raid").onclick = () => {
+        closeDrawer();
+        startMapPickMode({ kind: "expedition", fromId: "cheshi_qian", label: "选择控弦铁骑打草谷目标" });
+      };
+      document.getElementById("btn-xn-log-tax-normal").onclick = () =>
+        queueCustomOrder({ type: "set_tongpu_tax", desc: "【僮仆征税】焉耆僮仆都尉按「常赋岁币」征发西域 (+320钱)", cost_money: 0, target_node: "yan_qi", raw: { tier: "normal" } });
+      document.getElementById("btn-xn-log-tax-heavy").onclick = () =>
+        queueCustomOrder({ type: "set_tongpu_tax", desc: "【僮仆重敛】焉耆僮仆都尉按「重敛竭泽」强征西域 (+550钱，诸国怨恨+14)", cost_money: 0, target_node: "yan_qi", raw: { tier: "heavy" } });
+      return;
+    }
+
     const rawSls = (v1 && v1.logistics.supply_lines) || [];
     const sls = rawSls.map((s) =>
       typeof s === "string"
@@ -2817,7 +4036,6 @@
     );
     const ttNodes = (v1 && v1.logistics.tuntian_nodes) || {};
     const ttCount = Object.keys(ttNodes).length;
-    const totalGrainK = Math.round(Object.values(st.nodes).reduce((s, n) => s + (n.grain || 0), 0) / 1000);
     const totalLab = sls.reduce((s, l) => s + (l.laborers || 0), 0);
 
     const hexiIn = 185;
@@ -2890,7 +4108,10 @@
             <input type="range" id="rng-sl-lab" min="1000" max="5000" step="500" value="2500" style="margin-top:6px;"/>
           </label>
         </div>
-        <button class="btn btn-gold" id="btn-create-sl" style="width:100%;">拉通敦煌 → 终点自动补给线（180 钱）</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-gold" id="btn-create-sl" style="flex:2;">拉通敦煌 → 终点自动补给线（180 钱）</button>
+          <button class="btn" id="btn-pick-sl-map" style="flex:1;">🎯 舆图选点拉通</button>
+        </div>
       </div>
     `;
 
@@ -2958,6 +4179,10 @@
         raw: { from: "dun_huang", to: toId, laborers: lab, escort: true },
       });
     };
+    document.getElementById("btn-pick-sl-map").onclick = () => {
+      closeDrawer();
+      startMapPickMode({ kind: "supply", fromId: "dun_huang", label: "选择万里自动补给线终点" });
+    };
     document.getElementById("btn-log-tuntian-loulan").onclick = () =>
       queueCustomOrder({ type: "build_tuntian", desc: "【塞外军屯】在【楼兰】扩建军屯 (储粮+42k，功业+4.5)", cost_money: 220, target_node: "lou_lan", raw: { node: "lou_lan" } });
     document.getElementById("btn-log-tuntian-quli").onclick = () =>
@@ -2968,11 +4193,12 @@
       queueCustomOrder({ type: "build_beacon", desc: "【汉塞烽燧】在【楼兰】修筑烽燧亭障，点亮白龙堆至罗布泊精确视野", cost_money: 150, target_node: "lou_lan", raw: { node: "lou_lan" } });
   }
 
-  // ---- [F5] 虎符 · 诸军节度与远征作战计划编辑器（对标 D7_MilitaryIntel） ----
+  // ---- [F5] 汉：虎符 · 诸军节度与远征作战计划编辑器 ／ 匈：控弦 · 四翼调拨与百里奔袭方略 ----
   function renderPanelMilitary(container) {
     const st = GAME.state;
     const side = st.meta.side;
     const targetNode = st.nodes[GAME.planDraft.target] || st.nodes.lou_lan;
+    const routePlan = computeRoutePlan(GAME.planDraft.origin, targetNode ? targetNode.id : "lou_lan");
 
     const myArmies = [];
     const oppArmies = [];
@@ -2987,20 +4213,80 @@
     const myTotal = myArmies.reduce((s, a) => s + a.s, 0);
     const oppTotal = oppArmies.reduce((s, a) => s + a.s, 0);
 
+    const cmdMeta = window.COMMANDER_META || {};
+    const sideChars = Object.entries(cmdMeta).filter(([, m]) => m.faction === side);
+    if (!GAME.planDraft.commanderId || !cmdMeta[GAME.planDraft.commanderId] || cmdMeta[GAME.planDraft.commanderId].faction !== side) {
+      GAME.planDraft.commanderId = side === "han" ? "zhao_ponu" : "youxian_king";
+    }
+    if (!GAME.planDraft.wingTribe) GAME.planDraft.wingTribe = "youxian";
+    const curCmd = cmdMeta[GAME.planDraft.commanderId] || { name: side === "han" ? "赵破奴" : "右贤王·呼衍骨", title: "统帅", trait: "千里奇袭" };
+
+    const tr = (st.v1 && st.v1.tribes && st.v1.tribes.tribes) || {};
+    const selWing = tr[GAME.planDraft.wingTribe] || { name: "右贤王部", loyalty: 74, cavalry: 9000 };
+    const remountRatio = st.v1 && st.v1.steppe && st.v1.steppe.remount_mode === "std_2" ? 2 : GAME.planDraft.remountRatio || 3;
+
     const kpiRow = `
       <div class="d-kpi-grid-6">
         ${dMetricCard("我方在编总兵力", `${myTotal.toLocaleString()} 人`, `${myArmies.length} 部驻外主力`, "good", "total_grain")}
-        ${dMetricCard("已知敌军兵力", `${oppTotal.toLocaleString()} 人`, `${oppArmies.length} 部敌方军团`, "bad", "han_merit")}
-        ${dMetricCard("拟征目标城塞", targetNode ? targetNode.name : "楼兰", targetNode ? ownerLabel(targetNode) : "", "info", `node_${targetNode ? targetNode.id : "lou_lan"}`)}
-        ${dMetricCard("拟调战兵规模", `${GAME.planDraft.soldiers.toLocaleString()} 人`, `随军民夫 ${GAME.planDraft.laborers.toLocaleString()}`, "", "total_grain")}
-        ${dMetricCard("常备行军指令", GAME.planDraft.standingOrder === "cautious" ? "谨慎保军" : GAME.planDraft.standingOrder === "aggressive" ? "见利则进" : "均衡推进", "与底部口粮折线联动", GAME.planDraft.standingOrder === "aggressive" ? "bad" : "good", "total_grain")}
-        ${dMetricCard("本季已拟军令", `${GAME.queuedOrders.length} 道`, "Space 键结束本季推演", "info", "han_merit")}
+        ${dMetricCard("已知敌军兵力", `${oppTotal.toLocaleString()} 人`, `${oppArmies.length} 部敌方军团`, "bad", side === "han" ? "han_merit" : "xn_weifu")}
+        ${dMetricCard("拟征目标城塞", targetNode ? targetNode.name : "楼兰", `里程 ${routePlan.totalKm} 里 · 约 ${routePlan.totalDays} 日`, "info", `node_${targetNode ? targetNode.id : "lou_lan"}`)}
+        ${
+          side === "han"
+            ? dMetricCard("拟调战兵规模", `${GAME.planDraft.soldiers.toLocaleString()} 人`, `随军民夫 ${GAME.planDraft.laborers.toLocaleString()}`, "", "total_grain")
+            : dMetricCard("拟调控弦骑兵", `${GAME.planDraft.soldiers.toLocaleString()} 骑`, `1骑${remountRatio}马 · 配马 ${(GAME.planDraft.soldiers * remountRatio).toLocaleString()} 匹`, "info", "steppe_horses")
+        }
+        ${dMetricCard("主将与方略", curCmd.name, GAME.planDraft.standingOrder === "cautious" ? "谨慎保军" : GAME.planDraft.standingOrder === "aggressive" ? "见利则进" : "均衡推进", GAME.planDraft.standingOrder === "aggressive" ? "bad" : "good", "total_grain")}
+        ${dMetricCard("本季已拟军令", `${GAME.queuedOrders.length} 道`, "Space 键结束本季推演", "info", side === "han" ? "han_merit" : "xn_weifu")}
       </div>
     `;
 
+    const wingSelectorHtml =
+      side === "xiongnu"
+        ? `
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span><strong>调发四翼部落王铁骑</strong>（点击切换主攻部族 · 忠诚影响响应度）</span>
+            <span style="color:var(--cobalt)">从马配比：1 骑 ${remountRatio} 马</span>
+          </div>
+          <div class="king-wing-grid">
+            ${[
+              ["zuoxian", "左贤王部", tr.zuoxian || { loyalty: 76, cavalry: 11000, attended: true }],
+              ["youxian", "右贤王部", tr.youxian || { loyalty: 74, cavalry: 9500, attended: true }],
+              ["rizhu", "日逐王部", tr.rizhu || { loyalty: 58, cavalry: 8500, attended: true }],
+              ["lihu", "犁汗王部", tr.lihu || { loyalty: 70, cavalry: 6500, attended: true }],
+            ]
+              .map(([k, nm, tObj]) => {
+                const loy = tObj.loyalty ?? 70;
+                const isMisty = loy < 50 || tObj.attended === false;
+                const fog = tObj.loyalty_fog || [Math.max(10, Math.round(loy - 12)), Math.min(95, Math.round(loy + 12))];
+                const statusTxt =
+                  loy >= 65
+                    ? `<span style="color:var(--jade)">★ 踊跃从征 (+1,100精骑)</span>`
+                    : loy >= 45
+                    ? `<span style="color:var(--gold-light)">● 奉调听命</span>`
+                    : `<span style="color:var(--crimson)">⚠️ 畏战迟滞 (战力-24%)</span>`;
+                return `
+                  <div class="king-wing-card ${GAME.planDraft.wingTribe === k ? "active" : ""}" data-wing-key="${k}">
+                    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:12px;">
+                      <span>🐎 ${nm}</span>
+                      <span>${isMisty ? `🌫️${fog[0]}~${fog[1]}` : `忠 ${loy.toFixed(0)}`}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:2px;">控弦可调：${(tObj.cavalry || 8000).toLocaleString()} 骑 · ${statusTxt}</div>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        </div>
+      `
+        : "";
+
     const leftCol = `
       <div class="d-card">
-        ${dSecHdr("虎符远征方略拟定台", "与底部 0–18 旬口粮不归点折线实时联动")}
+        ${dSecHdr(
+          side === "han" ? "虎符远征方略拟定台" : "单于鸣镝 · 四翼控弦奔袭拟定台",
+          side === "han" ? "与底部 0–18 旬口粮不归点折线联动" : "与底部 0–18 旬战马肥瘠及打草谷曲线联动"
+        )}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px; margin-bottom:8px;">
           <label>出发策源地
             <select id="mil-sel-origin" style="width:100%; margin-top:3px;">
@@ -3010,34 +4296,55 @@
                      <option value="jiu_quan" ${GAME.planDraft.origin === "jiu_quan" ? "selected" : ""}>酒泉军镇 (霍去病/李广利)</option>
                      <option value="wu_lei" ${GAME.planDraft.origin === "wu_lei" ? "selected" : ""}>乌垒前线都护营 (郑吉)</option>`
                   : `<option value="chanyu_ting" ${GAME.planDraft.origin === "chanyu_ting" ? "selected" : ""}>漠南单于庭 (伊稚斜亲军)</option>
-                     <option value="cheshi_qian" ${GAME.planDraft.origin === "cheshi_qian" ? "selected" : ""}>车师前王庭 (右贤王/日逐王骑)</option>`
+                     <option value="cheshi_qian" ${GAME.planDraft.origin === "cheshi_qian" ? "selected" : ""}>车师前王庭 (右贤王/日逐王骑)</option>
+                     <option value="yan_qi" ${GAME.planDraft.origin === "yan_qi" ? "selected" : ""}>焉耆僮仆都尉牙帐 (日逐王部)</option>`
               }
             </select>
           </label>
-          <label>进击目标（可在舆图直接点选）
-            <select id="mil-sel-target" style="width:100%; margin-top:3px;">
-              ${Object.values(st.nodes)
-                .map((n) => `<option value="${n.id}" ${n.id === GAME.planDraft.target ? "selected" : ""}>${n.name}</option>`)
+          <label>进击目标
+            <div style="display:flex;gap:4px;margin-top:3px;">
+              <select id="mil-sel-target" style="flex:1;">
+                ${Object.values(st.nodes)
+                  .map((n) => `<option value="${n.id}" ${n.id === GAME.planDraft.target ? "selected" : ""}>${n.name}</option>`)
+                  .join("")}
+              </select>
+              <button type="button" class="d4-pol-btn" id="btn-mil-pick-map" title="在舆图上直接点选进击目标">🎯选点</button>
+            </div>
+          </label>
+          <label>领兵统帅 (${curCmd.title})
+            <select id="mil-sel-commander" style="width:100%; margin-top:3px;">
+              ${sideChars
+                .map(([cid, m]) => `<option value="${cid}" ${cid === GAME.planDraft.commanderId ? "selected" : ""}>${m.name} (${m.title} · ${m.trait || m.bonus_desc || ""})</option>`)
                 .join("")}
             </select>
           </label>
-          <label>战兵编制 (<strong id="lbl-mil-soldiers">${GAME.planDraft.soldiers}</strong>人)：
-            <input type="range" id="rng-mil-soldiers" min="1500" max="12000" step="500" value="${GAME.planDraft.soldiers}" style="margin-top:5px;"/>
-          </label>
-          <label>随军民夫 (<strong id="lbl-mil-lab">${GAME.planDraft.laborers}</strong>人)：
-            <input type="range" id="rng-mil-lab" min="500" max="6000" step="500" value="${GAME.planDraft.laborers}" style="margin-top:5px;"/>
-          </label>
-        </div>
-        <div style="margin-bottom:8px;">
-          <label style="font-size:12px;">将军常备指令 (Standing Order)
+          <label>常备行军指令 (Standing Order)
             <select id="mil-sel-standing" style="width:100%; margin-top:3px;">
-              <option value="cautious" ${GAME.planDraft.standingOrder === "cautious" ? "selected" : ""}>谨慎保军 · 余粮触及返程线即自动班师</option>
-              <option value="standard" ${GAME.planDraft.standingOrder === "standard" ? "selected" : ""}>均衡推进 · 常规行军围城</option>
-              <option value="aggressive" ${GAME.planDraft.standingOrder === "aggressive" ? "selected" : ""}>见利则进 · 强攻到底，越不归点断粮则饿死</option>
+              <option value="cautious" ${GAME.planDraft.standingOrder === "cautious" ? "selected" : ""}>谨慎保军 · ${side === "han" ? "余粮触返程线即班师" : "马膘低于45%即收兵归牧"}</option>
+              <option value="standard" ${GAME.planDraft.standingOrder === "standard" ? "selected" : ""}>均衡推进 · ${side === "han" ? "常规行军围城" : "破城劫掠即旋师"}</option>
+              <option value="aggressive" ${GAME.planDraft.standingOrder === "aggressive" ? "selected" : ""}>见利则进 · ${side === "han" ? "强攻到底，越不归点恐饿死" : "深入瀚海强攻，掉膘恐致毙马"}</option>
             </select>
           </label>
+          <label>${side === "han" ? "战兵编制" : "控弦骑兵"} (<strong id="lbl-mil-soldiers">${GAME.planDraft.soldiers}</strong>${side === "han" ? "人" : "骑"})：
+            <input type="range" id="rng-mil-soldiers" min="1500" max="12000" step="500" value="${GAME.planDraft.soldiers}" style="margin-top:5px;"/>
+          </label>
+          ${
+            side === "han"
+              ? `<label>随军民夫 (<strong id="lbl-mil-lab">${GAME.planDraft.laborers}</strong>人)：
+                  <input type="range" id="rng-mil-lab" min="500" max="6000" step="500" value="${GAME.planDraft.laborers}" style="margin-top:5px;"/>
+                 </label>`
+              : `<label>从马配比 (<strong id="lbl-mil-remount">1骑${remountRatio}马</strong> · 需马 ${(GAME.planDraft.soldiers * remountRatio).toLocaleString()} 匹)：
+                  <div style="display:flex;gap:6px;margin-top:5px;">
+                    <button type="button" class="d4-pol-btn ${remountRatio === 2 ? "active" : ""}" data-mil-remount="2" style="flex:1;">1骑2马 (常速)</button>
+                    <button type="button" class="d4-pol-btn ${remountRatio === 3 ? "active" : ""}" data-mil-remount="3" style="flex:1;">1骑3马 (奔袭+25%)</button>
+                  </div>
+                 </label>`
+          }
         </div>
-        <button class="btn btn-han" id="btn-mil-commit-plan" style="width:100%; padding:8px;">传檄 · 远征${targetNode ? targetNode.name : "目标"} (180 钱)</button>
+        ${wingSelectorHtml}
+        <button class="btn ${side === "han" ? "btn-han" : "btn-blue"}" id="btn-mil-commit-plan" style="width:100%; padding:8px;">
+          ${side === "han" ? `传檄 · 命【${curCmd.name}】远征${targetNode ? targetNode.name : "目标"} (180 钱)` : `鸣镝 · 调【${selWing.name || "右贤王部"}·${curCmd.name}】奔袭${targetNode ? targetNode.name : "目标"} (120 钱)`}
+        </button>
       </div>
 
       <div class="d-card">
@@ -3063,20 +4370,28 @@
       </div>
     `;
 
-    const waypoints =
-      side === "han"
-        ? ["dun_huang", "yu_men_guan", "lou_lan", targetNode && targetNode.id !== "lou_lan" ? targetNode.id : "qu_li"]
-        : ["chanyu_ting", "cheshi_hou", "cheshi_qian", targetNode ? targetNode.id : "lou_lan"];
+    const waypoints = routePlan.path && routePlan.path.length >= 2 ? routePlan.path : [GAME.planDraft.origin, targetNode ? targetNode.id : "lou_lan"];
     const segRows = waypoints
       .map((nid, idx) => {
         const nd = st.nodes[nid];
         if (!nd) return "";
         const rel = nd.relation;
-        const forageLbl = rel && rel.forage ? rel.forage.label.split(/[（(]/)[0] : "己方官仓直供";
-        const forageCol = rel && rel.forage ? tone(rel.forage.color) : "var(--jade)";
-        const lossRate = idx === 0 ? "0%" : rel && rel.forage && rel.forage.attrition_mult > 1.2 ? "4.6% / 旬" : "1.5% / 旬";
-        return `<tr>
-          <td>第 ${idx + 1} 站 · <strong>${nd.name}</strong></td>
+        const isOasisSupply =
+          (side === "han" && (nd.owner === "han" || (rel && rel.overlord === "han") || (nd.tuntian_lv || 0) > 0)) ||
+          (side === "xiongnu" && (nd.owner === "xiongnu" || (rel && rel.overlord === "xiongnu")));
+        const forageLbl = isOasisSupply
+          ? side === "han"
+            ? "★ 就食城仓/军屯补给"
+            : "★ 属国草场换马饮水"
+          : rel && rel.forage
+          ? rel.forage.label.split(/[（(]/)[0]
+          : side === "xiongnu"
+          ? "掠野打草谷就食"
+          : "平价开市";
+        const forageCol = isOasisSupply ? "var(--jade)" : rel && rel.forage ? tone(rel.forage.color) : "var(--gold-light)";
+        const lossRate = idx === 0 ? "起点" : isOasisSupply ? "0.6% / 旬" : rel && rel.forage && rel.forage.attrition_mult > 1.2 ? "4.6% / 旬" : "1.8% / 旬";
+        return `<tr style="cursor:pointer" data-mil-jump="${nid}">
+          <td>第 ${idx + 1} 驿 · <strong>${nd.name}</strong></td>
           <td>${ownerLabel(nd)}</td>
           <td style="color:${forageCol};font-weight:700">${forageLbl}</td>
           <td class="num">${lossRate}</td>
@@ -3086,9 +4401,9 @@
 
     const rightCol = `
       <div class="d-card">
-        ${dSecHdr(`远征【${targetNode ? targetNode.name : "楼兰"}】沿途就食与损耗预演`, "闭门绝市将加剧非战斗减员")}
+        ${dSecHdr(`远征【${targetNode ? targetNode.name : "楼兰"}】最短驿道 (${waypoints.length}站 · ${routePlan.totalDays}日) 与就食预演`, "实算丝路地形与绿洲就食")}
         <table class="d-table">
-          <thead><tr><th>行军途经站</th><th>所属宗主</th><th>过境供粮姿态</th><th style="text-align:right">预计行军损耗</th></tr></thead>
+          <thead><tr><th>行军途经驿站</th><th>所属宗主</th><th>${side === "han" ? "过境供粮/就食城仓" : "牧场饮马/打草谷"}</th><th style="text-align:right">预计行军损耗</th></tr></thead>
           <tbody>${segRows}</tbody>
         </table>
       </div>
@@ -3118,7 +4433,11 @@
 
     container.innerHTML = `
       <div class="d-compact-summary">
-        <strong>虎符调兵与万里远征推演</strong> — 西域用兵，胜负七分在粮道、三分在锋镝。下方可拟定远征兵力与常备指令，并对照底栏<strong>0–18旬口粮曲线</strong>防范断粮饿死。
+        ${
+          side === "han"
+            ? `<strong>虎符调兵与万里远征推演</strong> — 西域用兵，胜负七分在粮道、三分在锋镝。下方可钦定领兵统帅、兵力与常备指令，并对照底栏<strong>0–18旬口粮曲线</strong>防范断粮饿死。`
+            : `<strong>单于鸣镝 · 四翼控弦与百里奔袭推演</strong> — 匈奴控弦之士「利则进，不利则退」。下方可调发左贤、右贤、日逐、犁汗四翼骑兵，设定<strong>1骑2马/3马配比</strong>，对照底栏<strong>战马肥瘠与打草谷曲线</strong>劫掠绿洲。`
+        }
       </div>
       ${kpiRow}
       <div class="d-two-col">
@@ -3131,8 +4450,32 @@
       el.onclick = () => selectNodeAndPan(el.getAttribute("data-mil-jump"), "military", false);
     });
 
+    container.querySelectorAll("[data-wing-key]").forEach((card) => {
+      card.onclick = () => {
+        GAME.planDraft.wingTribe = card.getAttribute("data-wing-key");
+        const wingToCmd = { zuoxian: "zuoxian_king", youxian: "youxian_king", rizhu: "rizhu_king", lihu: "lihu_king" };
+        if (wingToCmd[GAME.planDraft.wingTribe]) GAME.planDraft.commanderId = wingToCmd[GAME.planDraft.wingTribe];
+        renderPanelMilitary(container);
+        renderFoodCurveDrawer();
+      };
+    });
+
+    container.querySelectorAll("[data-mil-remount]").forEach((btn) => {
+      btn.onclick = () => {
+        const r = parseInt(btn.getAttribute("data-mil-remount"), 10);
+        GAME.planDraft.remountRatio = r;
+        if (st.v1 && st.v1.steppe) {
+          st.v1.steppe.remount_mode = r === 3 ? "blitz_3" : "std_2";
+          st.v1.steppe.remount_ratio = r;
+        }
+        renderPanelMilitary(container);
+        renderFoodCurveDrawer();
+      };
+    });
+
     document.getElementById("mil-sel-origin").onchange = (e) => {
       GAME.planDraft.origin = e.target.value;
+      renderPanelMilitary(container);
       renderFoodCurveDrawer();
     };
     document.getElementById("mil-sel-target").onchange = (e) => {
@@ -3144,16 +4487,27 @@
       polishPanel(container);
       bindDrawerCausalClicks(container);
     };
+    document.getElementById("mil-sel-commander").onchange = (e) => {
+      GAME.planDraft.commanderId = e.target.value;
+      renderPanelMilitary(container);
+    };
+    document.getElementById("btn-mil-pick-map").onclick = () => {
+      closeDrawer();
+      startMapPickMode({ kind: "expedition", fromId: GAME.planDraft.origin, label: `选择【${curCmd.name}】远征目标城塞` });
+    };
     document.getElementById("rng-mil-soldiers").oninput = (e) => {
       GAME.planDraft.soldiers = parseInt(e.target.value, 10);
       document.getElementById("lbl-mil-soldiers").textContent = e.target.value;
       renderFoodCurveDrawer();
     };
-    document.getElementById("rng-mil-lab").oninput = (e) => {
-      GAME.planDraft.laborers = parseInt(e.target.value, 10);
-      document.getElementById("lbl-mil-lab").textContent = e.target.value;
-      renderFoodCurveDrawer();
-    };
+    const rngLab = document.getElementById("rng-mil-lab");
+    if (rngLab) {
+      rngLab.oninput = (e) => {
+        GAME.planDraft.laborers = parseInt(e.target.value, 10);
+        document.getElementById("lbl-mil-lab").textContent = e.target.value;
+        renderFoodCurveDrawer();
+      };
+    }
     document.getElementById("mil-sel-standing").onchange = (e) => {
       GAME.planDraft.standingOrder = e.target.value;
       renderFoodCurveDrawer();
@@ -3162,13 +4516,20 @@
       const tNode = st.nodes[GAME.planDraft.target] || st.nodes.lou_lan;
       queueCustomOrder({
         type: "set_plan",
-        desc: `【传檄远征】发兵 ${GAME.planDraft.soldiers.toLocaleString()} 人进击【${tNode.name}】(常备指令：${GAME.planDraft.standingOrder === "cautious" ? "谨慎保军" : GAME.planDraft.standingOrder === "aggressive" ? "见利则进" : "均衡推进"})`,
-        cost_money: 180,
+        desc:
+          side === "han"
+            ? `【传檄远征】命【${curCmd.name}】率军 ${GAME.planDraft.soldiers.toLocaleString()} 人进击【${tNode.name}】(${GAME.planDraft.standingOrder === "cautious" ? "谨慎保军" : GAME.planDraft.standingOrder === "aggressive" ? "见利则进" : "均衡推进"})`
+            : `【控弦奔袭】调【${curCmd.name}】率 ${GAME.planDraft.soldiers.toLocaleString()} 骑 (1骑${remountRatio}马) 奔袭【${tNode.name}】`,
+        cost_money: side === "han" ? 180 : 120,
         target_node: tNode.id,
         raw: {
           origin: GAME.planDraft.origin,
           target: tNode.id,
           soldiers: GAME.planDraft.soldiers,
+          commander: curCmd.name,
+          commander_id: GAME.planDraft.commanderId,
+          wing_tribe: GAME.planDraft.wingTribe,
+          remount_ratio: remountRatio,
           standing_order: GAME.planDraft.standingOrder,
         },
       });
@@ -3178,25 +4539,31 @@
   // ---- [F6] 史册 · 太史竹帛战报流与断粮饿死单列面板 ----
   function renderPanelChronicle(container) {
     const st = GAME.state;
+    const side = st.meta.side;
     const logs = [...(st.turn_logs || [])].reverse();
     const reports = st.battle_reports || [];
     const totalCombat = reports.reduce((s, r) => s + (r.attacker_combat_loss || 0) + (r.defender_loss || 0), 0);
     const totalStarve = st.scores.starve_losses || reports.reduce((s, r) => s + (r.attacker_starve_loss || 0), 0);
+    if (!GAME.chronicleFilter) GAME.chronicleFilter = "all";
 
     const kpiRow = `
       <div class="d-kpi-grid-6">
-        ${dMetricCard("当前纪年", st.meta.date_text.replace(/\s.*$/, ""), `第 ${st.meta.turn + 1} / ${st.meta.max_turns} 季`, "info", "han_merit")}
-        ${dMetricCard("西域会战总计", `${reports.length} 役`, "点击详报查阅伤亡拆解", "", "han_merit")}
+        ${dMetricCard("当前纪年", st.meta.date_text.replace(/\s.*$/, ""), `第 ${st.meta.turn + 1} / ${st.meta.max_turns} 季`, "info", side === "han" ? "han_merit" : "xn_weifu")}
+        ${dMetricCard("西域会战总计", `${reports.length} 役`, "点击详报查阅伤亡拆解", "", side === "han" ? "han_merit" : "xn_weifu")}
         ${dMetricCard("累计交锋阵亡", `${totalCombat.toLocaleString()} 人`, "两军白刃矢石伤亡", "bad", "total_grain")}
-        ${dMetricCard("累计断粮饿死", `${totalStarve.toLocaleString()} 人`, "越过不归点非战斗减员", "warn", "total_grain")}
-        ${dMetricCard("太史实录卷数", `${logs.length} 季`, "点击条目定位城邦", "", "han_merit")}
-        ${dMetricCard("大局功业 G", `${st.v1.victory.han_merit.toFixed(1)} / 100`, `属国 ${st.scores.han_vassals} / 18`, "good", "han_merit")}
+        ${dMetricCard(side === "han" ? "累计断粮饿死" : "流沙掉膘折损", `${totalStarve.toLocaleString()} 人`, "越过不归点非战斗减员", "warn", "total_grain")}
+        ${dMetricCard("太史实录卷数", `${logs.length} 季`, "点击条目定位城邦", "", side === "han" ? "han_merit" : "xn_weifu")}
+        ${
+          side === "han"
+            ? dMetricCard("都护功业 G", `${st.v1.victory.han_merit.toFixed(1)} / 100`, `汉内属 ${st.scores.han_vassals} / 18`, "good", "han_merit")
+            : dMetricCard("单于威服 W", `${st.v1.victory.xn_weifu.toFixed(1)} / 100`, `匈服属 ${st.scores.xn_vassals} / 18`, "good", "xn_weifu")
+        }
       </div>
     `;
 
     const leftCol = `
       <div class="d-card">
-        ${dSecHdr("历次会战 · 阵亡与断粮饿死分列账本", `累计饿死 ${totalStarve} 人`)}
+        ${dSecHdr("历次会战 · 阵亡与断粮饿死分列账本", `累计非战斗饿损 ${totalStarve} 人`)}
         ${
           reports.length === 0
             ? `<div style="font-size:12px; color:var(--text-muted); padding:6px 0;">尚无交战记录。下达远征军令并推进一季后，战报会出现在这里。</div>`
@@ -3222,37 +4589,64 @@
       </div>
 
       <div class="d-card">
-        ${dSecHdr("太史公西域大势评")}
+        ${dSecHdr(side === "han" ? "太史公西域大势评" : "太史公匈奴列传评")}
         <div style="font-size:12px;color:var(--ink-2);line-height:1.6;font-style:italic;">
-          「太史公曰：自张骞开外国道以尊贵其吏，汉室岁发使者十余辈，楼兰、姑师当道苦之。夫善用兵者，先筑亭障、广开轮台渠犁之屯，令士卒宿饱而后鸣镝西指，则三十六国莫不奉珍纳质矣。」
+          ${
+            side === "han"
+              ? "「太史公曰：自张骞开外国道以尊贵其吏，汉室岁发使者十余辈，楼兰、姑师当道苦之。夫善用兵者，先筑亭障、广开轮台渠犁之屯，令士卒宿饱而后鸣镝西指，则三十六国莫不奉珍纳质矣。」"
+              : "「太史公曰：匈奴逐水草迁徙，毋城郭常处耕田之业，然亦各有分地。置僮仆都尉居焉耆、危须、尉黎间，赋税诸国，取富给焉。若四翼同心、战马肥壮，则西域诸国莫敢不震怖奉贡。」"
+          }
         </div>
       </div>
     `;
 
+    const matchCategory = (evText) => {
+      if (GAME.chronicleFilter === "all") return true;
+      const t = evText || "";
+      if (GAME.chronicleFilter === "battle") return /战|攻|破|骑|兵|围|捷|袭|伏|饿/.test(t);
+      if (GAME.chronicleFilter === "court") return /诏|朝|信任|王庭|分赏|大会|日逐|单于|都护/.test(t);
+      if (GAME.chronicleFilter === "diplo") return /使|册封|属|威压|怨|盟|乌孙/.test(t);
+      if (GAME.chronicleFilter === "logistics") return /粮|屯|粟|马|牧|白灾|烽燧|税/.test(t);
+      return true;
+    };
+
     const rightCol = `
       <div class="d-card">
         ${dSecHdr("太史公编年纪事长卷", "点击条目定位城邦")}
-        <div style="max-height:380px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex;gap:4px;margin-bottom:8px;">
+          ${[
+            ["all", "全部纪事"],
+            ["battle", "⚔ 兵戈"],
+            ["court", side === "han" ? "📜 朝堂" : "🐺 王庭"],
+            ["diplo", "🚩 邦交"],
+            ["logistics", side === "han" ? "🌾 粮屯" : "🐎 牧马"],
+          ]
+            .map(([k, lbl]) => `<button type="button" class="d4-pol-btn ${GAME.chronicleFilter === k ? "active" : ""}" data-chr-filter="${k}">${lbl}</button>`)
+            .join("")}
+        </div>
+        <div style="max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
           ${
             logs.length === 0
               ? `<div style="color:var(--text-muted); font-size:12px;">尚无纪事。拟定军令后点击右下角「结束本季」开始推演。</div>`
               : logs
-                  .map(
-                    (lg) => `
+                  .map((lg) => {
+                    const fEvents = (lg.events || []).filter((ev) => matchCategory(ev.text));
+                    if (!fEvents.length) return "";
+                    return `
                 <div class="log-turn">
                   <div class="log-turn-title">第 ${lg.turn} 季 · ${lg.date}</div>
-                  ${(lg.events || [])
+                  ${fEvents
                     .map(
                       (ev) => `
                     <div class="log-ev" data-ev-node="${ev.node || ""}">
-                      ${ev.text}
+                      <span style="color:var(--muted);font-size:10px;margin-right:4px;">[第${ev.sub_tick || 5}旬]</span>${ev.text}
                     </div>
                   `
                     )
                     .join("")}
                 </div>
-              `
-                  )
+              `;
+                  })
                   .join("")
           }
         </div>
@@ -3269,6 +4663,13 @@
         <div class="d-col">${rightCol}</div>
       </div>
     `;
+
+    container.querySelectorAll("[data-chr-filter]").forEach((btn) => {
+      btn.onclick = () => {
+        GAME.chronicleFilter = btn.getAttribute("data-chr-filter");
+        renderPanelChronicle(container);
+      };
+    });
 
     container.querySelectorAll("[data-open-battle]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -3301,6 +4702,7 @@
     });
     renderTopHUD();
     renderBottomOrderQueue();
+    renderStrategicMap();
   }
 
   function renderBottomOrderQueue() {
@@ -3312,7 +4714,7 @@
     if (GAME.queuedOrders.length === 0) {
       bar.innerHTML = `
         <div class="queue-head"><span class="title">本季军令</span><span style="color:var(--text-faint)">0 道</span></div>
-        <div class="queue-empty">尚未拟令。从底部器物打开抽屉下令；直接用印则由幕僚代拟。</div>
+        <div class="queue-empty">尚未拟令。可直接点击舆图城邦弹出情境指令环，或打开案上器物下令。</div>
       `;
       return;
     }
@@ -3344,6 +4746,7 @@
       GAME.queuedOrders = [];
       renderTopHUD();
       renderBottomOrderQueue();
+      renderStrategicMap();
     };
     bar.querySelectorAll("[data-del-ord]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -3351,6 +4754,7 @@
         GAME.queuedOrders = GAME.queuedOrders.filter((o) => o.id !== oid);
         renderTopHUD();
         renderBottomOrderQueue();
+        renderStrategicMap();
       });
     });
   }
@@ -3371,15 +4775,110 @@
     }
     renderTopHUD();
     renderBottomOrderQueue();
+    renderStrategicMap();
   }
 
-  // ==================== 8. 90日 (9旬) WEGO 动画回放与回合推进 ====================
+  // ==================== 8. 90日 (9旬) WEGO 动画回放与舆图行军演出 ====================
+  function buildWEGOMovers(ordersToRun, nextState) {
+    const pos = BUNDLE.map_presentation.positions || {};
+    const side = nextState.meta.side;
+    const defaultOrigin = side === "han" ? "dun_huang" : "chanyu_ting";
+    const movers = [];
+
+    // 1. 引擎生成的野战行军队列
+    for (const ma of nextState.moving_armies || []) {
+      const pathIds = ma.path && ma.path.length >= 2 ? ma.path : computeRoutePlan(ma.from || defaultOrigin, ma.to || "lou_lan").path;
+      movers.push({
+        faction: ma.faction || side,
+        label: `${ma.commander_name || (ma.faction === "han" ? "汉军" : "控弦骑")} · ${Math.round((ma.soldiers || 4000) / 1000)}k`,
+        glyph: ma.faction === "han" ? "讨" : "掠",
+        path: pathIds.filter((id) => pos[id]),
+      });
+    }
+
+    // 2. 玩家当季下达的使团、粮道、矫诏与出征指令
+    for (const o of ordersToRun || []) {
+      const dst = o.target_node || (o.raw && (o.raw.target || o.raw.state || o.raw.to || o.raw.node));
+      if (!dst || !pos[dst]) continue;
+      const src = (o.raw && (o.raw.origin || o.raw.from)) || (o.type === "forge_edict" || o.type === "request_appropriation" ? "chang_an" : defaultOrigin);
+      if (src === dst) continue;
+      const pathIds = computeRoutePlan(src, dst).path.filter((id) => pos[id]);
+      if (pathIds.length < 2) continue;
+
+      let glyph = "令";
+      let label = "军令驰递";
+      if (o.type === "dispatch_envoy" || o.type === "dispatch_elite_envoy" || o.type === "make_vassal") {
+        glyph = "使";
+        label = `汉使节团 → ${nextState.nodes[dst] ? nextState.nodes[dst].name : dst}`;
+      } else if (o.type === "set_supply_line") {
+        glyph = "粮";
+        label = `转运粟车 → ${nextState.nodes[dst] ? nextState.nodes[dst].name : dst}`;
+      } else if (o.type === "forge_edict") {
+        glyph = "诏";
+        label = `矫诏急递 → ${nextState.nodes[dst] ? nextState.nodes[dst].name : dst}`;
+      } else if (o.type === "expedition" || o.type === "set_plan" || o.type === "raid_supply_line" || o.type === "intimidate_city") {
+        if (movers.some((m) => m.path[m.path.length - 1] === dst)) continue;
+        glyph = side === "han" ? "讨" : "掠";
+        label = `${(o.raw && o.raw.commander) || (side === "han" ? "汉远征军" : "匈奴铁骑")} → ${nextState.nodes[dst] ? nextState.nodes[dst].name : dst}`;
+      } else {
+        continue;
+      }
+      movers.push({ faction: side, label, glyph, path: pathIds });
+    }
+    return movers;
+  }
+
+  function interpolateMoverAtTick(mover, tickFrac) {
+    const pos = BUNDLE.map_presentation.positions || {};
+    const pts = (mover.path || []).map((id) => pos[id]).filter(Boolean);
+    if (pts.length === 0) return { x: 500, y: 300, trailPts: "500,300" };
+    if (pts.length === 1) return { x: pts[0][0], y: pts[0][1], trailPts: `${pts[0][0]},${pts[0][1]}` };
+    const totalSegs = pts.length - 1;
+    const scaled = clamp(tickFrac, 0, 1) * totalSegs;
+    const segIdx = Math.min(totalSegs - 1, Math.floor(scaled));
+    const localT = scaled - segIdx;
+    const p0 = pts[segIdx];
+    const p1 = pts[segIdx + 1];
+    const x = p0[0] + (p1[0] - p0[0]) * localT;
+    const y = p0[1] + (p1[1] - p0[1]) * localT;
+    const trail = pts.slice(0, segIdx + 1).map((p) => `${p[0]},${p[1]}`);
+    trail.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    return { x, y, trailPts: trail.join(" ") };
+  }
+
+  function spawnWEGOCallout(ev) {
+    const layer = document.getElementById("map-floating-callouts");
+    const vp = document.getElementById("map-viewport");
+    if (!layer || !vp || !ev) return;
+    const pos = BUNDLE.map_presentation.positions || {};
+    const nid = ev.node && pos[ev.node] ? ev.node : GAME.state.meta.side === "han" ? "lou_lan" : "cheshi_qian";
+    const pt = pos[nid] || [500, 300];
+    const r = vp.getBoundingClientRect();
+    const c = GAME.mapCam;
+    const sx = ((pt[0] - c.x) / c.w) * r.width;
+    const sy = ((pt[1] - c.y) / c.h) * r.height;
+
+    const item = document.createElement("div");
+    const isWarn = /战|破|袭|饿|断|警|危机/.test(ev.callout || ev.text || "");
+    item.className = `wego-callout-item ${isWarn ? "callout-warn" : ""}`;
+    item.style.left = `${clamp(sx, 80, r.width - 140)}px`;
+    item.style.top = `${clamp(sy - 26, 48, r.height - 80)}px`;
+    item.textContent = ev.callout || (ev.text || "").slice(0, 22);
+    layer.appendChild(item);
+    setTimeout(() => {
+      if (item.parentNode) item.parentNode.removeChild(item);
+    }, 1550);
+  }
+
   function advanceSeasonWithWEGOReplay() {
     if (GAME.replaying || !GAME.state) return;
     if (GAME.state.meta.winner) {
       openSeasonSummaryModal();
       return;
     }
+
+    cancelMapPickMode();
+    closeMapContextMenu();
 
     if (GAME.queuedOrders.length === 0) {
       fillAdvisorOrders();
@@ -3395,6 +4894,7 @@
     if (speedMs <= 0) {
       GAME.state = nextState;
       GAME.queuedOrders = [];
+      GAME.wegoActiveMovers = [];
       recordMetricSnapshot();
       refreshAllUI();
       saveToSlot("autosave");
@@ -3403,38 +4903,89 @@
     }
 
     GAME.replaying = true;
+    GAME.wegoPaused = false;
     document.getElementById("btn-end-season").disabled = true;
     const bar = document.getElementById("wego-replay-bar");
     const tickLbl = document.getElementById("wego-replay-tick-label");
     const progFill = document.getElementById("wego-replay-progress");
     const toastEl = document.getElementById("wego-replay-event-toast");
+    const pauseBtn = document.getElementById("btn-wego-pause");
+    const skipBtn = document.getElementById("btn-wego-skip");
+    const calloutsLayer = document.getElementById("map-floating-callouts");
+    if (calloutsLayer) calloutsLayer.innerHTML = "";
     bar.style.display = "block";
 
+    const baseMovers = buildWEGOMovers(ordersToRun, nextState);
     let curSubTick = 1;
-    const timer = setInterval(() => {
+    let timer = null;
+
+    const finishReplay = () => {
+      if (timer) clearInterval(timer);
+      bar.style.display = "none";
+      if (calloutsLayer) calloutsLayer.innerHTML = "";
+      GAME.replaying = false;
+      GAME.wegoPaused = false;
+      GAME.wegoActiveMovers = [];
+      document.getElementById("btn-end-season").disabled = false;
+      GAME.state = nextState;
+      GAME.queuedOrders = [];
+      recordMetricSnapshot();
+      refreshAllUI();
+      saveToSlot("autosave");
+      if (GAME.autoPopupSummary || GAME.state.meta.winner) {
+        openSeasonSummaryModal();
+      }
+    };
+
+    if (pauseBtn) {
+      pauseBtn.textContent = "⏸ 暂停";
+      pauseBtn.onclick = () => {
+        GAME.wegoPaused = !GAME.wegoPaused;
+        pauseBtn.textContent = GAME.wegoPaused ? "▶ 继续" : "⏸ 暂停";
+      };
+    }
+    if (skipBtn) {
+      skipBtn.onclick = finishReplay;
+    }
+
+    const stepTick = () => {
+      if (GAME.wegoPaused) return;
       tickLbl.textContent = `第 ${curSubTick} / 9 旬 (${curSubTick * 10} 日)`;
       progFill.style.width = `${(curSubTick / 9) * 100}%`;
-      const ev = evList[Math.min(evList.length - 1, Math.floor(((curSubTick - 1) / 9) * evList.length))];
-      toastEl.textContent = ev ? ev.text : "塞下烽燧平安，转运司粟车络绎于道...";
+
+      const tickEvents = evList.filter((e) => e.sub_tick === curSubTick);
+      const fallbackEv = evList[Math.min(evList.length - 1, Math.floor(((curSubTick - 1) / 9) * evList.length))];
+      const activeEv = tickEvents[0] || fallbackEv;
+      toastEl.textContent = activeEv ? activeEv.text : "塞下烽燧平安，转运司粟车与斥候游骑络绎于道...";
+      if (tickEvents.length > 0) {
+        tickEvents.slice(0, 2).forEach((ev) => spawnWEGOCallout(ev));
+      } else if (curSubTick % 3 === 1 && fallbackEv) {
+        spawnWEGOCallout(fallbackEv);
+      }
+
+      const frac = curSubTick / 9;
+      GAME.wegoActiveMovers = baseMovers.map((m) => {
+        const pt = interpolateMoverAtTick(m, frac);
+        return {
+          faction: m.faction,
+          label: m.label,
+          glyph: m.glyph,
+          x: pt.x,
+          y: pt.y,
+          trailPts: pt.trailPts,
+        };
+      });
+      renderStrategicMap();
 
       curSubTick += 1;
       if (curSubTick > 9) {
         clearInterval(timer);
-        setTimeout(() => {
-          bar.style.display = "none";
-          GAME.replaying = false;
-          document.getElementById("btn-end-season").disabled = false;
-          GAME.state = nextState;
-          GAME.queuedOrders = [];
-          recordMetricSnapshot();
-          refreshAllUI();
-          saveToSlot("autosave");
-          if (GAME.autoPopupSummary || GAME.state.meta.winner) {
-            openSeasonSummaryModal();
-          }
-        }, 120);
+        setTimeout(finishReplay, 160);
       }
-    }, speedMs);
+    };
+
+    stepTick();
+    timer = setInterval(stepTick, Math.max(95, speedMs));
   }
 
   // ==================== 9. 模态弹窗：季初太史纪事 / 战报详单 / 剧本与多槽存档 ====================
@@ -3636,6 +5187,9 @@
     layersPop.addEventListener("mousedown", (e) => e.stopPropagation());
     document.addEventListener("mousedown", (e) => {
       if (!e.target.closest("#map-layers")) setLayersOpen(false);
+      if (GAME.contextMenuNodeId && !e.target.closest("#map-context-menu") && !e.target.closest(".node-group")) {
+        closeMapContextMenu();
+      }
       if (
         GAME.transientTooltip &&
         !e.target.closest("#causal-tooltip-stack") &&
@@ -3801,7 +5355,7 @@
     );
     vp.addEventListener("mousedown", (e) => {
       if (e.button !== 0 || e.sourceCapabilities?.firesTouchEvents) return;
-      if (e.target.closest(".tutorial-floating-card, .map-hud-controls, .map-layers, .map-cartouche, .map-inspector-card, .causal-tooltip-stack")) return;
+      if (e.target.closest(".tutorial-floating-card, .map-hud-controls, .map-layers, .map-cartouche, .map-inspector-card, .causal-tooltip-stack, .map-context-menu, .map-pick-banner")) return;
       GAME.mapCam.dragging = true;
       GAME.mapCam.moved = false;
       GAME.mapCam.startX = e.clientX;
@@ -3907,18 +5461,24 @@
         6: "chronicle",
       };
       if (e.key === "Escape") {
-        const openModal = document.querySelector(".modal-backdrop.open");
-        if (openModal) openModal.classList.remove("open");
-        else if (GAME.transientTooltip) {
-          GAME.transientTooltip = null;
-          renderCausalTooltips();
-        } else if (GAME.lockedTooltips.length > 0) {
-          GAME.lockedTooltips.pop();
-          renderCausalTooltips();
-        } else if (document.getElementById("layers-pop").classList.contains("open")) {
-          document.getElementById("btn-layers").click();
+        if (GAME.pickMode) {
+          cancelMapPickMode();
+        } else if (GAME.contextMenuNodeId) {
+          closeMapContextMenu();
         } else {
-          closeDrawer();
+          const openModal = document.querySelector(".modal-backdrop.open");
+          if (openModal) openModal.classList.remove("open");
+          else if (GAME.transientTooltip) {
+            GAME.transientTooltip = null;
+            renderCausalTooltips();
+          } else if (GAME.lockedTooltips.length > 0) {
+            GAME.lockedTooltips.pop();
+            renderCausalTooltips();
+          } else if (document.getElementById("layers-pop").classList.contains("open")) {
+            document.getElementById("btn-layers").click();
+          } else {
+            closeDrawer();
+          }
         }
       } else if (fMap[e.key]) {
         e.preventDefault();

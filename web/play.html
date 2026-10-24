@@ -76,17 +76,30 @@
         <!-- 左上（题签下）：舆图城塞速览卡 (RegionInspectorCard 对标) -->
         <div class="map-inspector-card" id="map-inspector-card" aria-hidden="true"></div>
 
+        <!-- 城塞旁就地弹出式竹简/毡帐指令菜单（三国志9/11/14式不遮挡舆图操作流） -->
+        <div class="map-context-menu" id="map-context-menu" aria-hidden="true"></div>
+
+        <!-- 舆图交互选点横幅（自此出征 / 粮道选点 / 使团选点，悬停实时预览 Dijkstra 路径与不归点） -->
+        <div class="map-pick-banner" id="map-pick-banner" aria-hidden="true"></div>
+
+        <!-- WEGO 九旬同步推演：城头浮动战报/饥荒/诏书战旗跳字层 -->
+        <div class="map-floating-callouts" id="map-floating-callouts" aria-hidden="true"></div>
+
         <!-- 右上：72刻度古典方位罗盘 (Compass Rose) -->
         <svg class="map-compass" id="map-compass-svg" viewBox="-48 -48 96 96" aria-hidden="true"></svg>
 
         <!-- 右上（罗盘下）：可锁定因果拆解与趋势浮窗栈 (CausalTooltipManager 对标) -->
         <div class="causal-tooltip-stack" id="causal-tooltip-stack"></div>
 
-        <!-- 顶部居中：九旬推演回放 -->
+        <!-- 顶部居中：九旬推演回放（支持暂停细察与跳过） -->
         <div class="wego-replay-overlay" id="wego-replay-bar">
           <div class="wego-head">
             <strong id="wego-replay-title">推演本季九旬军政</strong>
-            <span class="wego-tick" id="wego-replay-tick-label">第 1 / 9 旬</span>
+            <div class="wego-ctrl-group">
+              <span class="wego-tick" id="wego-replay-tick-label">第 1 / 9 旬</span>
+              <button type="button" class="btn btn-xs" id="btn-wego-pause" title="暂停/继续九旬回放">⏸ 暂停</button>
+              <button type="button" class="btn btn-xs btn-gold" id="btn-wego-skip" title="直接跳至本季结算">⏭ 跳过</button>
+            </div>
           </div>
           <div class="mini-bar wego-bar"><div class="mini-bar-fill" id="wego-replay-progress" style="width:10%;"></div></div>
           <div class="wego-toast" id="wego-replay-event-toast"></div>
@@ -159,12 +172,12 @@
     <!-- ==================== 抽屉 Drawer（含顶部快速切换标签栏 + 双栏高密度卷宗） ==================== -->
     <aside class="drawer" id="drawer" aria-hidden="true">
       <div class="drawer-tabs" id="drawer-tabs" role="tablist" aria-label="六部案卷快速切换">
-        <button type="button" class="drawer-tab" data-tab-panel="inspector">F1 图籍 · 城塞驻军</button>
+        <button type="button" class="drawer-tab" data-tab-panel="inspector" id="dtab-inspector">F1 图籍 · 城塞驻军</button>
         <button type="button" class="drawer-tab" data-tab-panel="court" id="dtab-court">F2 诏书 · 朝廷因果</button>
-        <button type="button" class="drawer-tab" data-tab-panel="diplomacy">F3 符节 · 西域诸国</button>
-        <button type="button" class="drawer-tab" data-tab-panel="logistics">F4 仓廪 · 粮道军屯</button>
-        <button type="button" class="drawer-tab" data-tab-panel="military">F5 虎符 · 军令远征</button>
-        <button type="button" class="drawer-tab" data-tab-panel="chronicle">F6 史册 · 战报纪事</button>
+        <button type="button" class="drawer-tab" data-tab-panel="diplomacy" id="dtab-diplomacy">F3 符节 · 西域诸国</button>
+        <button type="button" class="drawer-tab" data-tab-panel="logistics" id="dtab-logistics">F4 仓廪 · 粮道军屯</button>
+        <button type="button" class="drawer-tab" data-tab-panel="military" id="dtab-military">F5 虎符 · 军令远征</button>
+        <button type="button" class="drawer-tab" data-tab-panel="chronicle" id="dtab-chronicle">F6 史册 · 战报纪事</button>
       </div>
       <div class="drawer-panel-box">
         <div class="drawer-head">
@@ -203,6 +216,16 @@
       <div class="ol-head"><span>所选</span><small id="ol-selected-kind">城邑</small></div>
       <div id="outliner-selected"></div>
     </section>
+    <!-- 幕僚实时谏言栏（三国志式长史/军师在场谏言） -->
+    <section class="ol-sec ol-advisor" id="ol-sec-advisor">
+      <div class="ol-head"><span id="ol-advisor-title">幕僚进言</span><small id="ol-advisor-name">都护长史</small></div>
+      <div id="outliner-advisor"></div>
+    </section>
+    <!-- 在场历史人物与差遣状态（张骞/赵破奴/郑吉/傅介子 vs 单于/四部王） -->
+    <section class="ol-sec ol-chars" id="ol-sec-chars">
+      <div class="ol-head"><span id="ol-chars-title">在场将使</span><small id="ol-chars-summary">驻节待命</small></div>
+      <div id="outliner-characters"></div>
+    </section>
     <!-- 新手教学（收在军情栏，联动聚光灯高亮） -->
     <section class="ol-sec tutorial-floating-card" id="tutorial-card">
       <div class="tut-head">
@@ -232,33 +255,33 @@
   <!-- ==================== 案上器物 DeskBar（漆面，高 96） ==================== -->
   <footer class="desk-bar">
     <div class="desk-props" id="desk-props">
-      <button class="desk-prop" data-panel="inspector" title="展开城邑图籍：所选城邑的户口、仓储、邦交与驻军（F1）">
+      <button class="desk-prop" data-panel="inspector" id="prop-inspector" title="展开城邑图籍：所选城邑的户口、仓储、邦交与驻军（F1）">
         <i class="prop-icon i-tuji"></i>
-        <span class="prop-text"><span class="prop-name">图籍</span><span class="prop-act">城塞与驻军 · F1</span></span>
+        <span class="prop-text"><span class="prop-name" id="prop-inspector-name">图籍</span><span class="prop-act" id="prop-inspector-act">城塞与驻军 · F1</span></span>
       </button>
       <button class="desk-prop" data-panel="court" id="prop-court" title="展开诏书：长安诏令、国策方略、持节矫诏与因果网（F2）">
         <i class="prop-icon i-zhaoshu" id="prop-court-icon"></i>
         <span class="prop-text"><span class="prop-name" id="prop-court-name">诏书</span><span class="prop-act" id="prop-court-act">朝廷与因果 · F2</span></span>
       </button>
-      <button class="desk-prop" data-panel="diplomacy" title="手持符节：西域诸国矩阵与都护四阶宏图（F3）">
+      <button class="desk-prop" data-panel="diplomacy" id="prop-diplomacy" title="手持符节：西域诸国矩阵与都护四阶宏图（F3）">
         <i class="prop-icon i-fujie"></i>
-        <span class="prop-text"><span class="prop-name">符节</span><span class="prop-act">西域诸国 · F3</span></span>
+        <span class="prop-text"><span class="prop-name" id="prop-diplomacy-name">符节</span><span class="prop-act" id="prop-diplomacy-act">西域诸国 · F3</span></span>
       </button>
       <button class="desk-prop" data-panel="speed" id="prop-speed" title="拨动漏刻：切换九旬回放速度（慢 / 快 / 瞬时）">
         <i class="prop-icon i-louke"></i>
         <span class="prop-text"><span class="prop-name">漏刻</span><span class="prop-act" id="prop-speed-act">回放：快</span></span>
       </button>
-      <button class="desk-prop" data-panel="logistics" title="查点仓廪：粮道瀑布流账本、自动补给线与军屯矩阵（F4）">
+      <button class="desk-prop" data-panel="logistics" id="prop-logistics" title="查点仓廪：粮道瀑布流账本、自动补给线与军屯矩阵（F4）">
         <i class="prop-icon i-canglin"></i>
-        <span class="prop-text"><span class="prop-name">仓廪</span><span class="prop-act">粮道与屯田 · F4</span></span>
+        <span class="prop-text"><span class="prop-name" id="prop-logistics-name">仓廪</span><span class="prop-act" id="prop-logistics-act">粮道与屯田 · F4</span></span>
       </button>
-      <button class="desk-prop" data-panel="military" title="合验虎符：在编军团、远征计划与0-18旬不归点曲线（F5）">
+      <button class="desk-prop" data-panel="military" id="prop-military" title="合验虎符：在编军团、远征计划与0-18旬不归点曲线（F5）">
         <i class="prop-icon i-hufu"></i>
-        <span class="prop-text"><span class="prop-name">虎符</span><span class="prop-act">军令与远征 · F5</span></span>
+        <span class="prop-text"><span class="prop-name" id="prop-military-name">虎符</span><span class="prop-act" id="prop-military-act">军令与远征 · F5</span></span>
       </button>
-      <button class="desk-prop" data-panel="chronicle" title="翻阅史册：会战详报、伤亡拆解与太史公编年纪事（F6）">
+      <button class="desk-prop" data-panel="chronicle" id="prop-chronicle" title="翻阅史册：会战详报、伤亡拆解与太史公编年纪事（F6）">
         <i class="prop-icon i-shice"></i>
-        <span class="prop-text"><span class="prop-name">史册</span><span class="prop-act">战报与纪事 · F6</span></span>
+        <span class="prop-text"><span class="prop-name" id="prop-chronicle-name">史册</span><span class="prop-act" id="prop-chronicle-act">战报与纪事 · F6</span></span>
       </button>
     </div>
     <button class="seal-btn" id="btn-end-season" title="用印：结束本季，推演九旬（空格键）">

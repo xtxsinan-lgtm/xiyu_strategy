@@ -1004,3 +1004,322 @@ label { color: var(--ink-2); }
 /* 匈奴阵营：主操作改用匈奴褐 */
 .faction-xiongnu .seal-btn { background: radial-gradient(ellipse at 50% 30%, #84604a 0%, var(--xn) 60%, #4d3423 100%); }
 .faction-xiongnu .drawer-seal { background: var(--xn); box-shadow: inset 0 0 0 2px var(--xn), inset 0 0 0 3px rgba(242, 234, 216, 0.7); }
+
+/* ==================== 三国志9/11/14式：舆图就地弹出式竹简/毡帐指令菜单 ==================== */
+.map-context-menu {
+  position: absolute;
+  z-index: 28;
+  display: none;
+  width: 248px;
+  padding: 9px 11px 10px;
+  background: rgba(244, 236, 219, 0.97);
+  border: 1.5px solid var(--ink);
+  box-shadow: inset 0 0 0 2px var(--silk), inset 0 0 0 3px rgba(176, 134, 72, 0.75), 0 10px 26px rgba(10, 6, 4, 0.45);
+  pointer-events: auto;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.map-context-menu.open {
+  display: block;
+}
+.faction-xiongnu .map-context-menu {
+  background: rgba(240, 229, 210, 0.97);
+  border-color: #4d3423;
+}
+.ctx-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 5px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+.ctx-title {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.08em;
+}
+.ctx-close {
+  border: 0;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 3px;
+}
+.ctx-close:hover { color: var(--cinnabar); }
+.ctx-meta {
+  font-size: 11px;
+  color: var(--ink-2);
+  margin-bottom: 7px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ctx-group-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  margin: 5px 0 3px;
+}
+.ctx-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ctx-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 5px 8px;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 12px;
+  background: var(--silk-2);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.ctx-btn:hover {
+  border-color: var(--cinnabar);
+  background: #fff;
+  color: var(--cinnabar);
+}
+.ctx-btn.ctx-primary {
+  background: rgba(163, 58, 42, 0.1);
+  border-color: var(--cinnabar);
+  font-weight: 600;
+}
+.faction-xiongnu .ctx-btn.ctx-primary {
+  background: rgba(110, 75, 48, 0.14);
+  border-color: var(--xn);
+}
+.ctx-btn small {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+/* ==================== 舆图交互选点横幅 (Map Pick Mode Banner) ==================== */
+.map-pick-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 32;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(28, 20, 14, 0.94);
+  color: var(--silk);
+  border: 1.5px solid #d4af37;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+.map-pick-banner.open {
+  display: flex;
+}
+.pick-badge {
+  padding: 2px 7px;
+  background: var(--cinnabar);
+  color: #fff;
+  font-family: var(--font-title);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.pick-text {
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.pick-text b {
+  color: #f3d27a;
+}
+
+/* ==================== WEGO 九旬推演：城头浮动战报跳字与回放控制 ==================== */
+.wego-ctrl-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.map-floating-callouts {
+  position: absolute;
+  inset: 0;
+  z-index: 26;
+  pointer-events: none;
+  overflow: hidden;
+}
+.wego-callout-item {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  padding: 4px 10px;
+  background: rgba(26, 18, 13, 0.92);
+  color: #f8ebd2;
+  border: 1.5px solid #d4af37;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  animation: wegoCalloutFloat 1.8s ease-out forwards;
+}
+.wego-callout-item.kind-battle {
+  background: rgba(138, 34, 24, 0.95);
+  border-color: #f5c16c;
+  color: #fff;
+}
+.wego-callout-item.kind-logistics {
+  background: rgba(34, 88, 54, 0.94);
+  border-color: #9be0b0;
+}
+.wego-callout-item.kind-diplomacy {
+  background: rgba(112, 78, 24, 0.94);
+  border-color: #f3d27a;
+}
+@keyframes wegoCalloutFloat {
+  0% { opacity: 0; transform: translate(-50%, -70%) scale(0.88); }
+  15% { opacity: 1; transform: translate(-50%, -115%) scale(1.03); }
+  80% { opacity: 1; transform: translate(-50%, -140%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -165%) scale(0.96); }
+}
+
+/* ==================== 军情栏：幕僚谏言与在场将使差遣 ==================== */
+.advisor-box {
+  padding: 7px 9px;
+  background: linear-gradient(180deg, rgba(235, 224, 201, 0.9), rgba(226, 212, 184, 0.9));
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--cinnabar);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.faction-xiongnu .advisor-box {
+  border-left-color: var(--xn);
+}
+.advisor-speaker {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--cinnabar);
+  margin-bottom: 3px;
+}
+.faction-xiongnu .advisor-speaker {
+  color: var(--xn);
+}
+.char-roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 158px;
+  overflow-y: auto;
+}
+.char-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 7px;
+  background: var(--silk-3);
+  border: 1px solid var(--rule-soft);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.char-chip:hover {
+  border-color: var(--cinnabar);
+  background: #fff;
+}
+.char-chip.assigned {
+  background: rgba(163, 58, 42, 0.08);
+  border-color: rgba(163, 58, 42, 0.45);
+}
+.char-seal {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  background: var(--cinnabar);
+  color: var(--silk);
+  font-family: var(--font-title);
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 2px;
+}
+.faction-xiongnu .char-seal {
+  background: var(--xn);
+}
+.char-info {
+  flex: 1;
+  min-width: 0;
+}
+.char-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.char-sub-row {
+  font-size: 10.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==================== 匈奴专属：四部王旗点将卡与草原牧场矩阵 ==================== */
+.king-wing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+  margin: 6px 0 8px;
+}
+.king-wing-card {
+  padding: 7px 9px;
+  background: var(--silk-2);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.king-wing-card:hover {
+  border-color: var(--xn);
+}
+.king-wing-card.active {
+  border-color: var(--xn);
+  box-shadow: inset 0 0 0 1.5px var(--xn);
+  background: #fff;
+}
+.pasture-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+.pasture-card {
+  padding: 8px 10px;
+  background: var(--silk-3);
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--xn);
+}
+.misty-loyalty-bar {
+  position: relative;
+  height: 8px;
+  background: rgba(40, 30, 22, 0.14);
+  overflow: hidden;
+  margin-top: 3px;
+}
+.misty-loyalty-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(45deg, rgba(163, 58, 42, 0.65), rgba(163, 58, 42, 0.65) 4px, rgba(214, 160, 74, 0.65) 4px, rgba(214, 160, 74, 0.65) 8px);
+}
