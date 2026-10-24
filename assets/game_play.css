@@ -40,6 +40,9 @@
   --gold-light: #8a6524;
   --danger: var(--cinnabar);
   --border: var(--rule);
+  --jade: var(--patina);
+  --crimson: var(--cinnabar);
+  --line-strong: var(--rule);
 
   --font-title: "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", "Noto Serif SC", "Songti SC", serif;
   --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -565,6 +568,7 @@ strong { font-weight: 600; color: var(--ink); }
 .d-metric-sub { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .d-status-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
   font-size: 11.5px; font-weight: 600; color: var(--cobalt);
   min-height: 16px; padding: 1px 4px;
 }
@@ -599,8 +603,10 @@ strong { font-weight: 600; color: var(--ink); }
   background: rgba(255, 255, 255, 0.55); font-size: 11px;
   display: flex; flex-direction: column; gap: 2px;
 }
-.d-ms-card.ms-done { border-left: 3px solid var(--patina); background: rgba(31, 111, 80, 0.08); }
-.d-ms-card.ms-pend { border-left: 3px solid var(--amber); }
+.d-ms-card.ms-done, .d-ms-card.done { border-left: 3px solid var(--patina); background: rgba(31, 111, 80, 0.08); }
+.d-ms-card.ms-pend, .d-ms-card.active { border-left: 3px solid var(--amber); background: rgba(184, 115, 20, 0.06); }
+.d-ms-idx { font-size: 10px; font-weight: 700; color: var(--muted); }
+.d-ms-title { font-family: var(--font-title); font-size: 12.5px; font-weight: 700; color: var(--ink); }
 .d-ms-top { display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--ink); }
 .d-ms-desc { font-size: 10px; color: var(--muted); line-height: 1.3; }
 
@@ -613,8 +619,8 @@ strong { font-weight: 600; color: var(--ink); }
 }
 .d4-lever-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .d4-lever-name { font-size: 12px; font-weight: 700; color: var(--ink); }
-.d4-lever-desc { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.d4-tier-bar { display: flex; gap: 3px; flex-shrink: 0; }
+.d4-lever-desc, .d4-lever-meta { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d4-tier-bar, .d4-btn-group { display: flex; gap: 3px; flex-shrink: 0; }
 .d4-pol-btn {
   padding: 2px 7px; font-size: 11px; background: var(--silk-3);
   border: 1px solid rgba(30, 28, 26, 0.45); cursor: pointer; color: var(--ink-2);
@@ -635,6 +641,12 @@ strong { font-weight: 600; color: var(--ink); }
 .d4-wf-val { font-family: var(--font-mono); text-align: right; font-weight: 700; }
 
 /* 进度计量条 */
+.d-meter-row {
+  display: grid; grid-template-columns: 92px 1fr 48px;
+  align-items: center; gap: 6px; font-size: 11.5px; margin: 2px 0;
+}
+.d-meter-lbl { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-meter-val { font-family: var(--font-mono); text-align: right; font-weight: 600; }
 .d-meter-track {
   width: 100%; height: 6px; background: rgba(30, 28, 26, 0.13);
   overflow: hidden; position: relative;
@@ -660,7 +672,7 @@ strong { font-weight: 600; color: var(--ink); }
 .d-table tr.clickable { cursor: pointer; }
 .d-table tr.clickable:hover td { background: rgba(184, 115, 20, 0.10); }
 .d-table tr.sel td { background: rgba(163, 58, 42, 0.09); }
-.d-table td.td-num { font-family: var(--font-mono); text-align: right; font-weight: 600; }
+.d-table td.td-num, .d-table td.num { font-family: var(--font-mono); text-align: right; font-weight: 600; }
 .d-table td.td-bold { font-weight: 700; color: var(--ink); }
 
 /* 分类子标签栏 (同 D3 .d-subtabs) */
