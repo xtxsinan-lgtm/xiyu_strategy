@@ -447,8 +447,13 @@
         if (!st.v1.tribes.reward_ratios) {
           st.v1.tribes.reward_ratios = { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
         }
+        // 赏赐池与账面余额同源，避免顶栏 1000 / 分赏区 1200 口径打架
+        st.v1.tribes.reward_pool = st.scores.xn_money;
         if (!st.v1.tribes.tax_rate_tier) {
           st.v1.tribes.tax_rate_tier = "normal"; // light | normal | heavy
+        }
+        if (st.v1.court.active_edict && st.v1.court.active_edict.bargain_count == null) {
+          st.v1.court.active_edict.bargain_count = st.v1.court.active_edict.bargained ? 1 : 0;
         }
         for (const tk of ["zuoxian", "youxian", "rizhu", "lihu"]) {
           const tr = st.v1.tribes.tribes && st.v1.tribes.tribes[tk];
@@ -615,29 +620,122 @@
           text: `汉使奉诏拜表：《${v1.court.active_edict.title}》，朝廷信任 +5.0，获得对【${this._nodeName(st, v1.court.active_edict.target)}】奉诏讨伐/招抚便宜权。`,
         });
       } else if (t === "bargain_edict" && v1 && v1.court.active_edict) {
-        v1.court.active_edict.bargained = true;
-        const addTurns = c.add_turns || 2;
-        const askMoney = c.ask_money || 500;
-        v1.court.active_edict.deadline_turn += addTurns;
-        st.scores.han_money += askMoney;
-        v1.court.trust = clamp(v1.court.trust - 2.0, 0, 100);
-        v1.court.in_transit_docs.push({
-          id: "doc_bargain_" + st.meta.turn,
-          type: "memorial",
-          title: `《陈情请宽限并增拨军资疏》`,
-          from: "dun_huang",
-          to: "chang_an",
-          cur_node: "jiu_quan",
-          days_left: 16,
-        });
+        const ed = v1.court.active_edict;
+        ed.bargain_count = ed.bargain_count || 0;
+        // 同一道诏令仅允许一次陈情宽期奖励，避免「陈情+奉诏」循环套利
+        if (ed.bargain_count >= 1) {
+          v1.court.trust = clamp(v1.court.trust - 1.0, 0, 100);
+          events.push({
+            date: d,
+            sub_tick: 2,
+            kind: "court",
+            node: "chang_an",
+            callout: "📨 再疏未准",
+            text: `【诏令已宽过】《${ed.title}》本道诏令业经一次陈情宽限，御史台驳回再请；朝廷信任 -1.0，未再增拨军资。`,
+          });
+        } else {
+          ed.bargained = true;
+          ed.bargain_count = 1;
+          const addTurns = c.add_turns || 2;
+          const askMoney = c.ask_money || 500;
+          ed.deadline_turn += addTurns;
+          st.scores.han_money += askMoney;
+          v1.court.trust = clamp(v1.court.trust - 2.0, 0, 100);
+          v1.court.in_transit_docs.push({
+            id: "doc_bargain_" + st.meta.turn,
+            type: "memorial",
+            title: `《陈情请宽限并增拨军资疏》`,
+            from: "dun_huang",
+            to: "chang_an",
+            cur_node: "jiu_quan",
+            days_left: 16,
+          });
+          events.push({
+            date: d,
+            sub_tick: 3,
+            kind: "court",
+            node: "chang_an",
+            callout: `📨 诏准宽限 (+${askMoney}钱)`,
+            text: `汉使上疏陈情讨价准奏：《${ed.title}》宽展 ${addTurns} 季，少府增拨军资 +${askMoney} 钱（朝廷信任 -2.0；本道诏令不可再请宽限）。`,
+          });
+        }
+      } else if (t === "rest_season" || t === "stand_down") {
         events.push({
           date: d,
-          sub_tick: 3,
+          sub_tick: 1,
           kind: "court",
-          node: "chang_an",
-          callout: `📨 诏准宽限 (+${askMoney}钱)`,
-          text: `汉使上疏陈情讨价准奏：《${v1.court.active_edict.title}》宽展 ${addTurns} 季，少府增拨军资 +${askMoney} 钱（朝廷信任 -2.0）。`,
+          node: faction === "han" ? "dun_huang" : "chanyu_ting",
+          callout: "🕊️ 本季休整观势",
+          text: faction === "han"
+            ? "【休整观势】持节使臣本季不发新令，屯戍烽燧自守，静观西域向背与匈奴动静。"
+            : "【休整观势】单于本季不发控弦，四部就水草牧马，静观汉使动静。",
         });
+      } else if (t === "garrison_hold" && v1) {
+        const nid = c.node || item.target_node;
+        const n = st.nodes[nid];
+        const leave = Math.max(800, Number(c.leave_soldiers || 2000));
+        if (n) {
+          if (!n.armies) n.armies = [];
+          n.armies.push({
+            id: "gar_" + nid + "_" + st.meta.turn,
+            name: faction === "han" ? "留城戍卒" : "留镇控弦",
+            faction,
+            soldiers: leave,
+            grain: Math.round(leave * 4),
+            laborers: 200,
+            horses: Math.round(leave * 0.15),
+            status: "garrison",
+            commander_name: faction === "han" ? "留城都尉" : "留守骨都侯",
+            standing_order: "cautious",
+          });
+          if (n.relation) {
+            if (faction === "han") n.relation.han_influence = clamp(n.relation.han_influence + 6, 0, 100);
+            else n.relation.xn_intimidation = clamp(n.relation.xn_intimidation + 6, 0, 100);
+            n.relation.forage = this._forageTier(n.relation);
+          }
+          events.push({
+            date: d,
+            sub_tick: 2,
+            kind: "military",
+            node: nid,
+            callout: `🛡️ 留兵守【${n.name}】`,
+            text: `【留兵守城】远征军抽 ${leave.toLocaleString()} 人戍守【${n.name}】，巩固城防；余部整装待命。失守则军屯与粮道一并危险。`,
+          });
+        }
+        if (st.pending_garrison && st.pending_garrison.node_id === nid) st.pending_garrison = null;
+      } else if (t === "garrison_enfeoff" && v1) {
+        const nid = c.node || item.target_node;
+        const n = st.nodes[nid];
+        if (n && n.relation && faction === "han") {
+          n.relation.overlord = "han";
+          n.relation.han_enfeoffed = true;
+          n.relation.han_influence = clamp(n.relation.han_influence + 12, 0, 100);
+          n.relation.forage = this._forageTier(n.relation);
+          st.scores.han_money = Math.max(0, st.scores.han_money - 120);
+          events.push({
+            date: d,
+            sub_tick: 3,
+            kind: "diplomacy",
+            node: nid,
+            callout: `💮 扶立【${n.name}】亲汉王`,
+            text: `【扶立亲汉王】破城后扶立质子为王、颁赐印绶（-120 钱）。羁縻为主，驻军从简；若匈奴反攻，当地守备较弱。`,
+          });
+        }
+        if (st.pending_garrison && st.pending_garrison.node_id === nid) st.pending_garrison = null;
+      } else if (t === "garrison_withdraw" && v1) {
+        const nid = c.node || item.target_node;
+        const n = st.nodes[nid];
+        if (n) {
+          events.push({
+            date: d,
+            sub_tick: 2,
+            kind: "military",
+            node: nid,
+            callout: `↩️ 撤军保持羁縻`,
+            text: `【撤军羁縻】远征军自【${n.name}】班师。城虽一时归附，实际防御薄弱，匈奴反攻风险高；军屯若未巩固可能被毁。`,
+          });
+        }
+        if (st.pending_garrison && st.pending_garrison.node_id === nid) st.pending_garrison = null;
       } else if (t === "forge_edict" && v1) {
         const target = c.target || item.target_node || "cheshi_qian";
         const selfImpeach = c.self_impeach !== false;
@@ -919,20 +1017,26 @@
           }
         }
       } else if (t === "distribute_rewards" && v1) {
-        const ratios = c.ratios || v1.tribes.reward_ratios || { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
-        v1.tribes.reward_ratios = ratios;
-        const sum = Math.max(1, (ratios.zuoxian || 0) + (ratios.youxian || 0) + (ratios.rizhu || 0) + (ratios.lihu || 0));
-        const expects = { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
+        const ux = window.XIYU_UX;
+        const rawRatios = c.ratios || v1.tribes.reward_ratios || { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
+        const norm = ux ? ux.normalizeRewardShares(rawRatios) : rawRatios;
+        const preview = ux ? ux.previewLoyaltyDeltas(rawRatios, st) : null;
+        v1.tribes.reward_ratios = {
+          zuoxian: norm.zuoxian,
+          youxian: norm.youxian,
+          rizhu: norm.rizhu,
+          lihu: norm.lihu,
+        };
         const details = [];
         for (const tk of ["zuoxian", "youxian", "rizhu", "lihu"]) {
-          const sharePct = ((ratios[tk] || 0) / sum) * 100;
-          const diff = sharePct - expects[tk];
-          const delta = diff >= -2 ? 7.0 + diff * 0.25 : diff * 0.85;
+          const sharePct = norm[tk];
+          const delta = preview ? preview.details[tk].delta : 0;
           const trObj = v1.tribes.tribes[tk];
           if (trObj) {
             trObj.loyalty = clamp(Math.round((trObj.loyalty + delta) * 10) / 10, 0, 100);
             trObj.attended = trObj.loyalty >= 50;
-            details.push(`${trObj.name}(${sharePct.toFixed(0)}%→忠${delta >= 0 ? "+" : ""}${delta.toFixed(1)})`);
+            const wantLbl = preview && preview.details[tk].want ? preview.details[tk].want.label : "";
+            details.push(`${trObj.name}(最终${sharePct.toFixed(0)}%→忠${delta >= 0 ? "+" : ""}${delta.toFixed(1)}${wantLbl ? "·" + wantLbl : ""})`);
             if (tk === "rizhu" && trObj.loyalty < 45) {
               trObj.surrender_window = 3;
               v1.events_meta.rizhu_offered = true;
@@ -940,10 +1044,29 @@
           }
         }
         v1.tribes.chanyu_prestige = clamp(v1.tribes.chanyu_prestige + 4.0, 0, 100);
-        events.push({ date: d, sub_tick: 2, kind: "court", node: "chanyu_ting", callout: "🐺 王庭颁行四部分赏", text: `单于王庭颁行四部分赏：${details.join("，")}。` });
+        v1.tribes.reward_pool = st.scores.xn_money;
+        events.push({
+          date: d,
+          sub_tick: 2,
+          kind: "court",
+          node: "chanyu_ting",
+          callout: "🐺 王庭颁行四部分赏",
+          text: `单于王庭颁行四部分赏（拖动份额已按总计归一）：${details.join("，")}。`,
+        });
       } else if ((t === "hold_assembly" || t === "hold_chanyu_assembly") && v1) {
         const target = c.target || "dun_huang";
-        const card = c.card || "feigned_retreat";
+        const cardRaw = c.card || "feigned_retreat";
+        const cardMap = {
+          诈败诱敌: "feigned_retreat",
+          拔除亭障: "beacon_blind",
+          秋高马肥掠野: "autumn_raid",
+          feigned_retreat: "feigned_retreat",
+          scorched_earth: "scorched_earth",
+          beacon_blind: "beacon_blind",
+          autumn_raid: "autumn_raid",
+        };
+        const card = cardMap[cardRaw] || "feigned_retreat";
+        const cardLabel = (window.XIYU_UX && window.XIYU_UX.localizeId(card)) || card;
         v1.tribes.active_tactical_card = card;
         v1.tribes.tactical_card_ticks = 9;
         v1.tribes.assembly_target = target;
@@ -952,7 +1075,14 @@
           v1.tribes.tribes[tk].loyalty = clamp(v1.tribes.tribes[tk].loyalty + 5.0, 0, 100);
           v1.tribes.tribes[tk].attended = v1.tribes.tribes[tk].loyalty >= 48;
         }
-        events.push({ date: d, sub_tick: 3, kind: "v1", node: target, callout: `🔥 龙城盟誓主攻${this._nodeName(st, target)}`, text: `【草原盛会盟誓】单于大会诸王于龙城/蹛林，钦定本季主攻方向【${this._nodeName(st, target)}】（攻取重赏），激活王庭战术卡【${card}】，单于威望 +6.0！` });
+        events.push({
+          date: d,
+          sub_tick: 3,
+          kind: "v1",
+          node: target,
+          callout: `🔥 龙城盟誓主攻${this._nodeName(st, target)}`,
+          text: `【草原盛会盟誓】单于大会诸王于龙城/蹛林，钦定本季主攻方向【${this._nodeName(st, target)}】（攻取重赏），激活王庭战术卡【${cardLabel}】，单于威望 +6.0！`,
+        });
       } else if (t === "pacify_tribe" && v1) {
         const tk = c.tribe || "rizhu";
         if (v1.tribes.tribes[tk]) {
@@ -962,16 +1092,30 @@
           events.push({ date: d, sub_tick: 3, kind: "court", node: "yan_qi", callout: `🐎 赐金马安抚${v1.tribes.tribes[tk].name} (+15)`, text: `单于遣骨都侯赐金马安抚【${v1.tribes.tribes[tk].name}】，其忠诚回升 +15.0，消弭私通汉使之患。` });
         }
       } else if (t === "play_tactical_card" && v1) {
-        v1.tribes.active_tactical_card = c.card || "feigned_retreat";
+        const cardRaw = c.card || "feigned_retreat";
+        const cardMap = {
+          诈败诱敌: "feigned_retreat",
+          拔除亭障: "beacon_blind",
+          秋高马肥掠野: "autumn_raid",
+        };
+        v1.tribes.active_tactical_card = cardMap[cardRaw] || cardRaw;
         v1.tribes.tactical_card_ticks = 9;
-        events.push({ date: d, sub_tick: 2, kind: "v1", node: "chanyu_ting", callout: `🃏 发动战术卡:${v1.tribes.active_tactical_card}`, text: `单于王庭发动本季战术卡：【${v1.tribes.active_tactical_card}】（全局野战/劫掠加成生效）。` });
+        const cardLabel = (window.XIYU_UX && window.XIYU_UX.localizeId(v1.tribes.active_tactical_card)) || v1.tribes.active_tactical_card;
+        events.push({
+          date: d,
+          sub_tick: 2,
+          kind: "v1",
+          node: "chanyu_ting",
+          callout: `🃏 发动战术卡：${cardLabel}`,
+          text: `单于王庭发动本季战术卡：【${cardLabel}】（全局野战/劫掠加成生效）。`,
+        });
       } else if (t === "set_tongpu_tax" && v1) {
         const tier = c.tier || "normal";
         v1.tribes.tax_rate_tier = tier;
         const income = tier === "heavy" ? 550 : tier === "normal" ? 320 : 160;
         const resentDelta = tier === "heavy" ? 14 : tier === "normal" ? 4 : -8;
         st.scores.xn_money += income;
-        v1.tribes.reward_pool += income;
+        v1.tribes.reward_pool = st.scores.xn_money;
         for (const nid of Object.keys(st.nodes)) {
           const rel = st.nodes[nid].relation;
           if (rel && rel.overlord === "xiongnu") {
@@ -1008,7 +1152,7 @@
         const targetNode = c.target || "lou_lan";
         st.scores.xn_money += 280;
         st.scores.han_money = Math.max(0, st.scores.han_money - 160);
-        v1.tribes.reward_pool += 280;
+        v1.tribes.reward_pool = st.scores.xn_money;
         v1.victory.xn_perm_weifu = (v1.victory.xn_perm_weifu || 0) + 4.0;
         if (v1.logistics.supply_lines && v1.logistics.supply_lines.length > 0) {
           const sl = v1.logistics.supply_lines[v1.logistics.supply_lines.length - 1];
@@ -1132,23 +1276,41 @@
         }
       }
 
-      const pathInfo = this._findShortestPath(st, originId, targetId);
+      // 禁止「自甲奔袭甲」：起点与目标相同则改从最近友方基地出发
+      let fromId = originId;
+      if (!fromId || fromId === targetId) {
+        fromId = faction === "han" ? "dun_huang" : "youxian_wang";
+        if (fromId === targetId) fromId = faction === "han" ? "jiu_quan" : "chanyu_ting";
+      }
+      const fromNode = st.nodes[fromId] || on;
+      const pathInfo = this._findShortestPath(st, fromId, targetId);
       const arriveTick = clamp(Math.ceil((pathInfo.days || 15) / 10), 2, 8);
       const beaconBonus = tn.has_beacon && faction === "xiongnu" ? 1.08 : 1.0;
       const remountBonus = faction === "xiongnu" && (opts.remountMode === 3 || (st.v1 && st.v1.steppe && st.v1.steppe.remount_mode === 3)) ? 1.12 : 1.0;
       const forgeBonus = isForged || (st.v1 && st.v1.court && st.v1.court.forged_bonus_ticks > 0 && faction === "han") ? 1.16 : 1.0;
       const cmdStatBonus = cm ? 1.0 + (cm.cmd - 80) * 0.008 : 1.0;
-      const enemyTroops = Math.round(Math.max(1200, (tn.militia || 1500) + (tn.armies && tn.armies[0] ? tn.armies[0].soldiers : 800)) * beaconBonus);
+      const garrisonTroops = (tn.armies || []).reduce((s, a) => s + (a.soldiers || 0), 0);
+      const enemyTroops = Math.round(Math.max(800, (tn.militia || 1200) + garrisonTroops) * beaconBonus);
       const hasSupply =
         faction === "xiongnu" ||
         (st.v1 && st.v1.logistics.supply_lines && st.v1.logistics.supply_lines.some((s) => s.to === targetId || s.to === "lou_lan")) ||
         (tn.relation && tn.relation.forage && tn.relation.forage.tier === "WELCOME");
 
-      const myLoss = Math.round(enemyTroops * (0.12 + this.rng() * 0.08));
-      const enemyLoss = Math.round(effectiveSoldiers * forgeBonus * remountBonus * cmdStatBonus * (0.35 + this.rng() * 0.18));
+      const power = effectiveSoldiers * forgeBonus * remountBonus * cmdStatBonus;
+      const victory = power * 1.15 >= enemyTroops;
+      // 伤亡对账：斩首/溃散不得超过守城兵力；剩余 = 守军 - 战死 - 溃散
+      const myLoss = Math.min(effectiveSoldiers - 200, Math.round(enemyTroops * (0.12 + this.rng() * 0.08)));
+      const rawEnemyHit = Math.round(power * (0.28 + this.rng() * 0.12));
+      const enemyKilled = Math.min(enemyTroops, Math.round(rawEnemyHit * 0.55));
+      const enemyRouted = victory
+        ? Math.min(enemyTroops - enemyKilled, Math.round((enemyTroops - enemyKilled) * (0.55 + this.rng() * 0.25)))
+        : Math.min(enemyTroops - enemyKilled, Math.round(rawEnemyHit * 0.2));
+      const enemyLoss = enemyKilled + enemyRouted;
+      const defenderRemaining = Math.max(0, enemyTroops - enemyLoss);
       const starveLoss = !hasSupply && standingOrder === "aggressive" ? Math.round(effectiveSoldiers * 0.16) : 0;
       const capturedHorses = faction === "han" ? Math.round(250 + this.rng() * 450) : Math.round(180 + this.rng() * 340);
-      const victory = effectiveSoldiers * 1.15 * forgeBonus * remountBonus * cmdStatBonus >= enemyTroops;
+      const survivors = Math.max(500, effectiveSoldiers - myLoss - starveLoss);
+      const onName = fromNode ? fromNode.name : this._nodeName(st, fromId);
 
       st.moving_armies.push({
         id: "mov_" + targetId + "_" + st.meta.turn,
@@ -1156,12 +1318,13 @@
         commander_id: cmdId,
         commander_seal: cm ? cm.seal : faction === "han" ? "汉" : "匈",
         faction,
-        from: originId,
+        from: fromId,
         to: targetId,
         path: pathInfo.path,
         total_days: pathInfo.days,
         arrive_tick: arriveTick,
-        soldiers: Math.max(500, effectiveSoldiers - myLoss - starveLoss),
+        soldiers: survivors,
+        status: victory ? "arrived_victor" : "arrived_held",
       });
 
       if (faction === "han") {
@@ -1197,13 +1360,14 @@
         st.scores.xn_casualties = (st.scores.xn_casualties || 0) + myLoss;
         st.scores.xn_money += 380;
         if (st.v1) {
-          st.v1.tribes.reward_pool += 380;
+          st.v1.tribes.reward_pool = st.scores.xn_money;
           st.v1.victory.xn_perm_weifu = (st.v1.victory.xn_perm_weifu || 0) + (victory ? 4.5 : 1.5);
           if (st.v1.steppe) {
             st.v1.steppe.total_horses = clamp((st.v1.steppe.total_horses || 18500) + capturedHorses - Math.round(myLoss * 0.4), 4000, 28000);
           }
           if (victory && st.v1.tribes.assembly_target === targetId) {
             st.scores.xn_money += 400;
+            st.v1.tribes.reward_pool = st.scores.xn_money;
             st.v1.tribes.chanyu_prestige = clamp(st.v1.tribes.chanyu_prestige + 6.0, 0, 100);
             events.push({ date: d, sub_tick: Math.min(9, arriveTick + 1), kind: "v1", node: targetId, callout: "🏆 兑现盟誓目标 (+400钱)", text: `【蹛林盟誓兑现】匈奴铁骑攻克大会盟誓目标【${tn.name}】，单于威望 +6.0，分获金帛 +400！` });
           }
@@ -1214,6 +1378,31 @@
           if (victory || tn.relation.xn_intimidation >= 52.0) tn.relation.overlord = "xiongnu";
           tn.relation.forage = this._forageTier(tn.relation);
         }
+      }
+
+      // 攻克后削减守军，并挂起「留兵/扶王/撤军」决策
+      if (tn.armies && tn.armies.length) {
+        if (victory) {
+          tn.armies = tn.armies.filter((a) => a.faction === faction);
+        } else if (defenderRemaining > 0 && tn.armies[0]) {
+          tn.armies[0].soldiers = defenderRemaining;
+        }
+      }
+      if (victory) {
+        tn.militia = Math.max(200, Math.round((tn.militia || 800) * 0.25));
+        const nearestEnemy = faction === "han" ? "cheshi_qian" : "dun_huang";
+        const threatPath = this._findShortestPath(st, nearestEnemy, targetId);
+        st.pending_garrison = {
+          node_id: targetId,
+          node_name: tn.name,
+          faction,
+          survivors,
+          local_defense: Math.round(survivors * 0.35) + (tn.militia || 0),
+          enemy_eta_days: threatPath.days || 18,
+          enemy_from: this._nodeName(st, nearestEnemy),
+          tuntian_at_risk: !!(st.v1 && st.v1.logistics && st.v1.logistics.tuntian_nodes && st.v1.logistics.tuntian_nodes[targetId]),
+          turn: st.meta.turn + 1,
+        };
       }
 
       const reportId = "br_" + st.meta.turn + "_" + targetId;
@@ -1230,14 +1419,21 @@
         defender_troops: enemyTroops,
         attacker_combat_loss: myLoss,
         attacker_starve_loss: starveLoss,
+        attacker_remaining: survivors,
+        defender_killed: enemyKilled,
+        defender_routed: enemyRouted,
         defender_loss: enemyLoss,
+        defender_remaining: defenderRemaining,
         captured_horses: capturedHorses,
         standing_order: standingOrder,
         has_supply: hasSupply,
         victory,
         path: pathInfo.path,
         travel_days: pathInfo.days,
-        summary: `${d}，${cmdName}率军 ${effectiveSoldiers.toLocaleString()} 自【${on ? on.name : originId}】历 ${pathInfo.days} 日奔袭【${tn.name}】${kingNote}，${victory ? "大破守军" : "激战退敌"}，斩首 ${enemyLoss.toLocaleString()} 级，获良马 ${capturedHorses} 匹（阵亡 ${myLoss} 人${starveLoss > 0 ? `，断粮饿死 ${starveLoss} 人` : ""}）。`,
+        origin_id: fromId,
+        origin_name: onName,
+        ledger_ok: enemyLoss <= enemyTroops && survivors === effectiveSoldiers - myLoss - starveLoss,
+        summary: `${d}，${cmdName}率军 ${effectiveSoldiers.toLocaleString()} 自【${onName}】历 ${pathInfo.days} 日奔袭【${tn.name}】${kingNote}，${victory ? "大破守军" : "激战未克"}；守军 ${enemyTroops.toLocaleString()} 人中战死 ${enemyKilled.toLocaleString()}、溃散 ${enemyRouted.toLocaleString()}、余 ${defenderRemaining.toLocaleString()}；攻方阵亡 ${myLoss.toLocaleString()}${starveLoss > 0 ? `、断粮 ${starveLoss.toLocaleString()}` : ""}，余 ${survivors.toLocaleString()}，获马 ${capturedHorses} 匹。`,
       };
       st.battle_reports.unshift(report);
       if (st.battle_reports.length > 20) st.battle_reports.pop();
@@ -1248,7 +1444,7 @@
         kind: "battle",
         node: targetId,
         battle_report_id: reportId,
-        callout: `${victory ? "⚔️ 大破" : "🛡️ 激战"}${tn.name} (斩首${enemyLoss}${starveLoss > 0 ? ` / 饥死${starveLoss}` : ""})`,
+        callout: `${victory ? "⚔️ 大破" : "🛡️ 激战"}${tn.name} (死${enemyKilled}/溃${enemyRouted})`,
         text: `【${tn.name}之战】${report.summary}`,
       });
     }
@@ -1293,7 +1489,8 @@
           } else if (st.meta.turn % 2 === 1) {
             v1.tribes.active_tactical_card = st.meta.season === "autumn" ? "feigned_retreat" : "scorched_earth";
             v1.tribes.tactical_card_ticks = 9;
-            appliedOpp.push(`单于王庭召开蹛林大会，发动战术卡【${v1.tribes.active_tactical_card}】`);
+            const cardLbl = (window.XIYU_UX && window.XIYU_UX.localizeId(v1.tribes.active_tactical_card)) || v1.tribes.active_tactical_card;
+            appliedOpp.push(`单于王庭召开蹛林大会，发动战术卡【${cardLbl}】`);
           }
         }
         // 3. 秋高马肥周期性南下攻掠（每 3 季发起一次实战远征）
@@ -1302,9 +1499,11 @@
             (nid) => st.nodes[nid] && (!st.nodes[nid].relation || st.nodes[nid].relation.overlord !== "xiongnu")
           );
           const raidTarget = raidCands[0] || "lou_lan";
+          const raidOrigins = ["youxian_wang", "yan_qi", "chanyu_ting", "hu_jie"].filter((id) => id !== raidTarget && st.nodes[id]);
+          const raidOrigin = raidOrigins[0] || "youxian_wang";
           const raidTroops = botStyle === "aggressive" ? 5200 : 4200;
-          appliedOpp.push(`右贤王率控弦骑 ${raidTroops.toLocaleString()} 奔袭【${this._nodeName(st, raidTarget)}】`);
-          this._resolveCampaignBattle(st, "xiongnu", "cheshi_qian", raidTarget, raidTroops, "standard", false, events);
+          appliedOpp.push(`右贤王率控弦骑 ${raidTroops.toLocaleString()} 自【${this._nodeName(st, raidOrigin)}】奔袭【${this._nodeName(st, raidTarget)}】`);
+          this._resolveCampaignBattle(st, "xiongnu", raidOrigin, raidTarget, raidTroops, "standard", false, events);
         }
       } else {
         // 汉方 AI 对手：精使招抚 + 军屯粮道 + 周期性讨伐
@@ -1578,26 +1777,60 @@
         st.scores.han = v1.victory.han_merit;
         st.scores.xiongnu = v1.victory.xn_weifu;
 
+        const holdNeed = (window.XIYU_UX && window.XIYU_UX.HOLD_MONTHS_REQUIRED) || 12;
+        const shortScen = st.meta.scenario === "lou_lan_gu_shi";
+        const prevMerit = st._prev_han_merit != null ? st._prev_han_merit : v1.victory.han_merit;
+        const prevWeifu = st._prev_xn_weifu != null ? st._prev_xn_weifu : v1.victory.xn_weifu;
         if (v1.victory.han_merit >= 100.0) {
           v1.victory.han_hold_months += 3;
-          if (v1.victory.han_hold_months >= 6 || st.meta.scenario === "lou_lan_gu_shi") {
+          const holdSeasons = Math.floor(v1.victory.han_hold_months / 3);
+          if (shortScen || v1.victory.han_hold_months >= holdNeed) {
             st.meta.winner = "han";
-            st.meta.win_reason = "正式设立西域都护府 [HAN_MAIN__rizhu_window__G1_X4__baizai_rizhu]";
-            v1.victory.han_grade = "G1_FENGHOU (裂土封侯)";
-            v1.victory.xn_grade = "X4_BUHUI (诸部不会)";
-            v1.victory.end_signature = st.meta.win_reason;
+            st.meta.win_reason = shortScen
+              ? "短剧本大捷：功业满百，正式设立西域都护府"
+              : `正式设立西域都护府（功业满百并维持 ${holdSeasons} 季）`;
+            v1.victory.han_grade = "裂土封侯";
+            v1.victory.xn_grade = "诸部不会";
+            v1.victory.end_signature = shortScen ? "SHORT_HAN__merit" : "HAN_MAIN__merit_hold";
+            v1.victory.victory_path = tongpuBonus > 0 ? "event_rizhu_then_hold" : "merit_hold";
           }
+        } else {
+          v1.victory.han_hold_months = Math.max(0, (v1.victory.han_hold_months || 0) - 3);
         }
         if (v1.victory.xn_weifu >= 100.0) {
           v1.victory.xn_weifu_hold_months += 3;
-          if (v1.victory.xn_weifu_hold_months >= 6) {
+          const xHoldSeasons = Math.floor(v1.victory.xn_weifu_hold_months / 3);
+          if (v1.victory.xn_weifu_hold_months >= holdNeed) {
             st.meta.winner = "xiongnu";
-            st.meta.win_reason = "百蛮震服·威服西域 [XN_MAIN_WEIFU__west_hegemony__G4_X1__baizai]";
-            v1.victory.han_grade = "G4_XIAYU (徵系廷尉)";
-            v1.victory.xn_grade = "X1_LONGCHENG (龙城勒铭)";
-            v1.victory.end_signature = st.meta.win_reason;
+            st.meta.win_reason = `百蛮震服·威服西域（威服满百并维持 ${xHoldSeasons} 季）`;
+            v1.victory.han_grade = "徵系廷尉";
+            v1.victory.xn_grade = "龙城勒铭";
+            v1.victory.end_signature = "XN_MAIN_WEIFU__hold";
+            v1.victory.victory_path = "weifu_hold";
+          }
+        } else {
+          v1.victory.xn_weifu_hold_months = Math.max(0, (v1.victory.xn_weifu_hold_months || 0) - 3);
+        }
+        // 河西四郡并列胜利
+        if (!st.meta.winner) {
+          const hexi = ["wu_wei", "zhang_ye", "jiu_quan", "dun_huang"].filter((id) => st.nodes[id] && st.nodes[id].faction === "xiongnu").length;
+          if (hexi >= 4) {
+            v1.victory.xn_hexi_hold_months = (v1.victory.xn_hexi_hold_months || 0) + 3;
+            if (v1.victory.xn_hexi_hold_months >= 6) {
+              st.meta.winner = "xiongnu";
+              st.meta.win_reason = "饮马河西：河西四郡皆入匈奴并维持两季";
+              v1.victory.han_grade = "徵系廷尉";
+              v1.victory.xn_grade = "龙城勒铭";
+              v1.victory.end_signature = "XN_MAIN_HEXI__hold";
+              v1.victory.victory_path = "hexi";
+            }
+          } else {
+            v1.victory.xn_hexi_hold_months = 0;
           }
         }
+        st._prev_han_merit = v1.victory.han_merit;
+        st._prev_xn_weifu = v1.victory.xn_weifu;
+        if (v1.tribes) v1.tribes.reward_pool = st.scores.xn_money;
         if (st.meta.turn >= st.meta.max_turns && !st.meta.winner) {
           st.meta.winner = st.scores.han >= st.scores.xiongnu ? "han" : "xiongnu";
           st.meta.win_reason = `到期连续计分裁决 (${st.scores.han.toFixed(1)} : ${st.scores.xiongnu.toFixed(1)})`;
@@ -1608,15 +1841,19 @@
             win_reason: st.meta.win_reason,
             headline: `终局裁定：${st.meta.win_reason}`,
             biography: `《汉书·西域传》太史公赞曰：历 ${st.meta.turn} 季万里经略，大汉都护功业峰值 ${v1.victory.han_merit_peak.toFixed(1)}（内属 ${hanVas} 国，军屯 ${tuntianCnt} 处），匈奴单于威服峰值 ${v1.victory.xn_weifu_peak.toFixed(1)}。西域三十六国自此${st.meta.winner === "han" ? "凛奉汉正朔，置都护督察乌垒" : "复归控弦铁骑羁縻"}，诚千载未有之大变局也！`,
-            grade_han: v1.victory.han_grade,
-            grade_xn: v1.victory.xn_grade,
-            signature: st.meta.win_reason,
+            grade_han: (window.XIYU_UX && window.XIYU_UX.scrubInternalText(v1.victory.han_grade)) || v1.victory.han_grade,
+            grade_xn: (window.XIYU_UX && window.XIYU_UX.scrubInternalText(v1.victory.xn_grade)) || v1.victory.xn_grade,
+            signature: (window.XIYU_UX && window.XIYU_UX.scrubInternalText(st.meta.win_reason)) || st.meta.win_reason,
+            victory_path: v1.victory.victory_path || "",
           };
         }
       }
     }
 
     _rebuildCommandsAndChronicle(st, events) {
+      const prevBriefMerit = st._brief_merit;
+      const prevBriefWeifu = st._brief_weifu;
+      const prevVassals = st._brief_vassals || {};
       const evTexts = events.map((e) => e.text);
       st.chronicle.classical =
         evTexts.length > 0
@@ -1627,6 +1864,29 @@
           ? `${st.meta.date_text}（第${st.meta.turn + 1}季白话战报摘要）：${evTexts.slice(0, 3).join("；")}。`
           : `${st.meta.date_text}（第${st.meta.turn + 1}季）：本季双方以经营粮道与西域邦交为主。`;
 
+      // 季度简报：自动解释本季变化（无需玩家翻史册）
+      const lastLog = (st.turn_logs && st.turn_logs[st.turn_logs.length - 1]) || {};
+      const flipped = [];
+      for (const nid of Object.keys(st.nodes || {})) {
+        const rel = st.nodes[nid].relation;
+        if (!rel) continue;
+        const prev = prevVassals[nid];
+        if (prev && prev !== rel.overlord) {
+          flipped.push({ id: nid, name: st.nodes[nid].name, from: prev, to: rel.overlord });
+        }
+      }
+      const meritNow = st.v1 ? st.v1.victory.han_merit : 0;
+      const weifuNow = st.v1 ? st.v1.victory.xn_weifu : 0;
+      const meritDelta = prevBriefMerit != null ? Math.round((meritNow - prevBriefMerit) * 10) / 10 : 0;
+      const weifuDelta = prevBriefWeifu != null ? Math.round((weifuNow - prevBriefWeifu) * 10) / 10 : 0;
+      const bd = (st.v1 && st.v1.victory && st.v1.victory.han_merit_breakdown) || {};
+      const meritSources = [
+        { src: "属国", delta: bd.vassal || 0 },
+        { src: "册封", delta: bd.enfeoff || 0 },
+        { src: "枢纽", delta: bd.hub || 0 },
+        { src: "军屯", delta: bd.tuntian || 0 },
+        { src: "罢僮仆/事件勋", delta: (bd.tongpu || 0) + (bd.perm || 0) },
+      ].filter((x) => x.delta);
       // 动态更新季初 3 项待办提醒 (S07-R03)
       const todos = [];
       if (st.meta.side === "han" && st.v1) {
@@ -1643,15 +1903,17 @@
           todos.push({
             level: "urgent",
             title: `【千载良机】匈奴日逐王先贤掸密使请降（余 ${st.v1.tribes.tribes.rizhu.surrender_window} 季）`,
-            detail: `立即在[F3西域诸国]或[乌垒]节点发兵迎降，可立得 +25 都护功业并永久省罢僮仆都尉！`,
+            detail: `请在[F3]亲自审阅后下令迎降（幕僚不会代决）。成功则 +25 功业并罢僮仆；短剧本满百即胜，长剧本仍须维持四季。`,
             jump_tab: "diplomacy",
             jump_node: "wu_lei",
           });
         }
+        const holdS = Math.floor((st.v1.victory.han_hold_months || 0) / 3);
+        const holdNeedS = (window.XIYU_UX && window.XIYU_UX.HOLD_SEASONS_REQUIRED) || 4;
         todos.push({
           level: "normal",
-          title: `【万里粮道与功业】当前都护功业 G = ${st.v1.victory.han_merit.toFixed(1)} / 100`,
-          detail: `在[F3]遣精使/募使招抚楼兰、渠犁、乌垒，或在[F4]开置军屯、延伸补给线以突破功业百点大关。`,
+          title: `【立府进度】功业 G = ${st.v1.victory.han_merit.toFixed(1)} / 100` + (st.meta.scenario === "lou_lan_gu_shi" ? "（短剧本满百即胜）" : ` · 已维持 ${holdS}/${holdNeedS} 季`),
+          detail: `属国、军屯、枢纽与迎降日逐均为功业来源。右侧「本局目标」卡与首页/终局使用同一套规则文案。`,
           jump_tab: "diplomacy",
           jump_node: "lou_lan",
         });
@@ -1682,17 +1944,43 @@
       }
       st.chronicle.todos = todos.slice(0, 3);
 
+      const urgent = todos[0] || null;
+      st.season_brief = {
+        turn: st.meta.turn,
+        date: st.meta.date_text,
+        my_plans: lastLog.applied_mine || [],
+        opp_moves: (lastLog.applied_opp || []).slice(0, 2),
+        flipped,
+        merit_delta: meritDelta,
+        weifu_delta: weifuDelta,
+        merit_now: meritNow,
+        weifu_now: weifuNow,
+        merit_sources: meritSources,
+        battles: (st.battle_reports || []).filter((b) => b.turn === st.meta.turn).slice(0, 3),
+        pending_garrison: st.pending_garrison || null,
+        next_risk: urgent ? urgent.title : "暂无急报",
+        next_risk_detail: urgent ? urgent.detail : "",
+      };
+      st._brief_merit = meritNow;
+      st._brief_weifu = weifuNow;
+      st._brief_vassals = {};
+      for (const nid of Object.keys(st.nodes || {})) {
+        if (st.nodes[nid].relation) st._brief_vassals[nid] = st.nodes[nid].relation.overlord;
+      }
+
       if (st.v1 && st.v1.tribes.tribes.rizhu.surrender_window > 0 && st.meta.side === "han") {
         const hasRz = st.commands.some((c) => c.type === "welcome_rizhu");
         if (!hasRz) {
           st.commands.unshift({
             idx: 1,
             type: "welcome_rizhu",
-            desc: "【历史破局】发兵乌垒迎降匈奴日逐王先贤掸（功业+25，永久罢僮仆都尉）",
+            desc: "【历史破局】发兵乌垒迎降匈奴日逐王先贤掸（功业+25，永久罢僮仆都尉）——须你审阅后下令",
             category: "diplomacy",
-            recommended: true,
+            recommended: false,
+            critical: true,
+            purpose: "抓住日逐请降窗口，一举罢僮仆都尉并大涨功业",
             cost_money: 0,
-            tag: "史诗破局",
+            tag: "史诗破局·须亲决",
             target_node: "wu_lei",
             raw: { type: "welcome_rizhu", faction: "han" },
           });

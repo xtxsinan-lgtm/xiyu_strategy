@@ -94,84 +94,121 @@
   const BUNDLE = window.XIYU_BUNDLE;
   const engine = new window.JSSimEngine(BUNDLE);
 
-  const TUTORIAL_LESSONS = [
+  const HAN_TUTORIAL = [
     {
       idx: 1,
-      title: "一 · 持节出塞",
-      body: "你不是坐镇长安的天子，而是**持节出玉门关的汉使**。先看舆图中央锁钥【楼兰】：左上角「城塞速览卡」与右侧「所选」显示其向背，点击底部 `图籍` 展开卷宗。",
+      title: "一 · 查看楼兰向背",
+      body: "你是持节出玉门的汉使。先点选舆图【楼兰】，看右侧「所选」与城塞卡上的汉影响／匈威吓——这决定它会箪食迎军还是坚壁拒守。",
       btnText: "定位楼兰",
       spotSelector: '.desk-prop[data-panel="inspector"]',
+      completeWhen: (st, g) => g.selectedNodeId === "lou_lan",
       action: () => selectNodeAndPan("lou_lan", "inspector", true),
     },
     {
       idx: 2,
-      title: "二 · 先通粮道",
-      body: "军无辎重则亡。出塞之前先开 `仓廪 (F4)` 查阅粟米瀑布流账本，拉通 **敦煌 → 楼兰** 自动补给线，每旬自动转运粟米。",
-      btnText: "拟令：敦煌 → 楼兰粮道",
-      spotSelector: '.desk-prop[data-panel="logistics"]',
-      action: () => {
-        switchDockPanel("logistics");
-        queueCustomOrder({
-          type: "set_supply_line",
-          desc: "【万里粮道】拉通「敦煌 → 楼兰」自动补给线 (配民夫 2,500 人)",
-          cost_money: 180,
-          target_node: "lou_lan",
-          raw: { from: "dun_huang", to: "lou_lan", laborers: 2500, escort: true },
-        });
-      },
+      title: "二 · 预览遣使效果",
+      body: "打开 `符节 (F3)`，准备向楼兰遣精使。拟令后看军情栏「本季军令」——此时尚未结算，只是计划。",
+      btnText: "打开符节",
+      spotSelector: '.desk-prop[data-panel="diplomacy"]',
+      completeWhen: (st, g) => g.activePanel === "diplomacy" || g.queuedOrders.some((o) => /envoy|使/.test(o.type + o.desc)),
+      action: () => switchDockPanel("diplomacy"),
     },
     {
       idx: 3,
-      title: "三 · 不归点与远征",
-      body: "器物 `虎符 (F5)` 内含 **0—18旬口粮曲线**：若选「见利则进」又无粮道，过了**不归点**便会断粮饿死；选「谨慎保军」则触及返程线自动班师。",
-      btnText: "拟令：赵破奴奔袭楼兰",
-      spotSelector: '.desk-prop[data-panel="military"]',
-      action: () => {
-        switchDockPanel("military");
-        queueCustomOrder({
-          type: "set_plan",
-          desc: "【千里奔袭】遣从票侯·赵破奴率精骑自敦煌进击【楼兰】(常备指令：谨慎保军)",
-          cost_money: 200,
-          target_node: "lou_lan",
-          raw: { origin: "dun_huang", target: "lou_lan", soldiers: 5000, standing_order: "cautious" },
-        });
-      },
-    },
-    {
-      idx: 4,
-      title: "四 · 诸国与四阶宏图",
-      body: "器物 `符节 (F3)` 顶部展示 **西域都护四阶宏图** 与功业 G 来源拆解。点击任意指标卡可弹出**因果拆解与趋势折线**。",
-      btnText: "遣精使抚楼兰",
+      title: "三 · 册封属国",
+      body: "影响力足够后，对楼兰下令「册封」。属国会抬高都护功业，但**守住与经营**还要持续投入粮道与驻军。",
+      btnText: "拟令：册封楼兰",
       spotSelector: '.desk-prop[data-panel="diplomacy"]',
+      completeWhen: (st, g) => g.queuedOrders.some((o) => o.type === "make_vassal") || (st.nodes.lou_lan && st.nodes.lou_lan.relation && st.nodes.lou_lan.relation.overlord === "han"),
       action: () => {
         switchDockPanel("diplomacy");
         queueCustomOrder({
-          type: "dispatch_elite_envoy",
-          desc: "【持节精使】遣博望侯·张骞率精使团赴【楼兰】颁赐金帛 (影响力+18)",
-          cost_money: 300,
+          type: "make_vassal",
+          desc: "【赐印册封】向【楼兰】颁赐大汉金印紫绶册为内属国 (功业+6)",
+          cost_money: 200,
           target_node: "lou_lan",
           raw: { state: "lou_lan" },
         });
       },
     },
     {
-      idx: 5,
-      title: "五 · 诏令、因果网与用印",
-      body: "器物 `诏书 (F2)` 内含 **朝局因果网**、国策方略档位与**持节矫诏**竞速推演。拟令完毕后，点击右下角朱印 **结束本季** 推演九旬。",
-      btnText: "奉诏行事",
+      idx: 4,
+      title: "四 · 看懂本季变化",
+      body: "点右下角朱印结束本季。结算后会弹出**本季简报**：计划成败、对方一步、归属变化与功业涨跌——不必自己翻史册拼接。",
+      btnText: "结束本季（可先休整）",
       spotSelector: "#btn-end-season",
+      completeWhen: (st) => st.meta.turn >= 1,
+      action: () => {},
+    },
+    {
+      idx: 5,
+      title: "五 · 属国需要持续投入",
+      body: "右侧「本局目标」常驻显示胜利条件。属国与迎降日逐都是功业来源；满百后还要**维持四季**（短剧本除外）。匈奴反攻时，攻城只是开始。",
+      btnText: "查看目标卡",
+      spotSelector: "#ol-sec-goal",
+      completeWhen: () => true,
       action: () => {
-        switchDockPanel("court");
-        queueCustomOrder({
-          type: "comply_edict",
-          desc: "【奉诏拜表】奉行天子当季诏书（朝廷信任 +5.0）",
-          cost_money: 0,
-          target_node: "lou_lan",
-          raw: {},
-        });
+        const el = document.getElementById("ol-sec-goal");
+        if (el) el.scrollIntoView({ block: "nearest" });
       },
     },
   ];
+
+  const XN_TUTORIAL = [
+    {
+      idx: 1,
+      title: "一 · 单于庭与四部",
+      body: "你是撑犁孤涂单于。打开 `王庭 (F2)`，看四部忠诚与赏赐池——分赏不均就会有人离心。",
+      btnText: "打开王庭",
+      spotSelector: '.desk-prop[data-panel="court"]',
+      completeWhen: (st, g) => g.activePanel === "court",
+      action: () => switchDockPanel("court"),
+    },
+    {
+      idx: 2,
+      title: "二 · 预览分赏结果",
+      body: "拖动分赏滑条时，界面会即时显示**归一化后的最终份额**与预计忠诚变化，不会拖到结算才揭晓。",
+      btnText: "查看分赏",
+      spotSelector: '.desk-prop[data-panel="court"]',
+      completeWhen: (st, g) => g.activePanel === "court",
+      action: () => switchDockPanel("court"),
+    },
+    {
+      idx: 3,
+      title: "三 · 威压或奔袭",
+      body: "点选汉郡或摇摆城邦，用控弦威压或远征。路线预览里的供粮姿态按**匈奴视角**解释：汉塞是坚壁，属部才是迎军。",
+      btnText: "打开控弦",
+      spotSelector: '.desk-prop[data-panel="military"]',
+      completeWhen: (st, g) => g.activePanel === "military" || g.queuedOrders.length > 0,
+      action: () => switchDockPanel("military"),
+    },
+    {
+      idx: 4,
+      title: "四 · 休整与代拟分开",
+      body: "「结束本季」不会再偷偷代拟关键军令。想观察局势，点**休整观势**；需要建议时再点**幕僚献策**并审阅。",
+      btnText: "了解用印",
+      spotSelector: "#btn-end-season",
+      completeWhen: (st) => st.meta.turn >= 1,
+      action: () => {},
+    },
+    {
+      idx: 5,
+      title: "五 · 威服或河西",
+      body: "目标卡写明两条路线：威服满百维持四季，或夺取河西四郡。日逐王忠诚过低会请降——那是汉使的机会，也是你的危机。",
+      btnText: "查看目标卡",
+      spotSelector: "#ol-sec-goal",
+      completeWhen: () => true,
+      action: () => {
+        const el = document.getElementById("ol-sec-goal");
+        if (el) el.scrollIntoView({ block: "nearest" });
+      },
+    },
+  ];
+
+  function activeTutorialLessons() {
+    const side = (GAME.state && GAME.state.meta && GAME.state.meta.side) || "han";
+    return side === "xiongnu" ? XN_TUTORIAL : HAN_TUTORIAL;
+  }
 
   const GAME = {
     state: null,
@@ -199,7 +236,7 @@
     diploFilter: "all", // all | hub | han | xn | swing
     logFilter: "all", // all | battle | court | diplomacy | logistics
     useClassical: true,
-    autoPopupSummary: false,
+    autoPopupSummary: true,
     tutorialOpen: true,
     tutorialIdx: 0,
     replaying: false,
@@ -329,6 +366,9 @@
       seed,
     });
     GAME.queuedOrders = [];
+    GAME.tutorialIdx = 0;
+    GAME.tutorialOpen = side === "han" ? true : true;
+    if (window.XIYU_UX && window.XIYU_UX.isShortScenario(scenario)) GAME.tutorialOpen = true;
     GAME.selectedNodeId = side === "han" ? "lou_lan" : "dun_huang";
     GAME.inspectorCardClosed = false;
     GAME.contextMenuOpen = false;
@@ -346,6 +386,9 @@
 
     applyFactionChrome(side);
     renderCompassRose();
+    GAME.mapCam = side === "han"
+      ? { x: 80, y: 40, w: 860, h: 520, dragging: false, startX: 0, startY: 0 }
+      : { x: 120, y: 20, w: 820, h: 500, dragging: false, startX: 0, startY: 0 };
     refreshAllUI();
     saveToSlot("autosave");
   }
@@ -403,6 +446,228 @@
 
     const cartTitle = document.querySelector("#map-cartouche .cartouche-title");
     if (cartTitle) cartTitle.textContent = isHan ? "西域都护舆图" : "大漠西域控弦图";
+  }
+
+  function viewerForage(rel, node) {
+    const side = GAME.state ? GAME.state.meta.side : "han";
+    if (window.XIYU_UX) return window.XIYU_UX.forageForViewer(rel, side, node);
+    return rel && rel.forage ? rel.forage : { label: "供粮未明", color: "#c9b98a" };
+  }
+
+  function renderGoalCard() {
+    const el = document.getElementById("outliner-goal");
+    const routeEl = document.getElementById("ol-goal-route");
+    if (!el || !GAME.state || !window.XIYU_UX) return;
+    const vs = window.XIYU_UX.buildVictoryStatus(GAME.state);
+    if (routeEl) routeEl.textContent = vs.short ? "短剧本" : "主路线";
+    const primary = vs.routes[0];
+    const alt = vs.routes[1];
+    el.innerHTML = `
+      <div class="goal-card">
+        <div>${vs.blurbInGame}</div>
+        <div class="goal-progress">${primary.progress}</div>
+        <ul class="goal-check">
+          ${primary.checklist
+            .map(
+              (c) => `<li class="${c.done ? "done" : ""}"><span class="mark">${c.done ? "✓" : "·"}</span><span>${c.label}${c.detail ? ` <b>${c.detail}</b>` : ""}</span></li>`
+            )
+            .join("")}
+        </ul>
+        ${
+          alt
+            ? `<div class="goal-alt"><b>另一条路线 · ${alt.title}</b><br/>${alt.progress}<br/>${alt.summary}</div>`
+            : ""
+        }
+      </div>`;
+  }
+
+  function buildAdvisorPlans() {
+    const st = GAME.state;
+    if (!st) return [];
+    const side = st.meta.side;
+    const plans = [];
+    const cmds = st.commands || [];
+    const safeRecs = cmds.filter((c) => c.recommended && !(window.XIYU_UX && window.XIYU_UX.isCriticalOrder(c.type))).slice(0, 3);
+    if (side === "han") {
+      const lou = st.nodes.lou_lan;
+      const needLou = lou && lou.relation && lou.relation.overlord !== "han";
+      plans.push({
+        id: "stabilize",
+        title: "稳住南道",
+        purpose: needLou ? "先通楼兰向背，避免粮道悬空" : "巩固已有属国与粮道",
+        cost: needLou ? 480 : 180,
+        orders: needLou
+          ? [
+              { type: "dispatch_elite_envoy", desc: "【幕僚·稳住楼兰】遣精使抚谕楼兰", cost_money: 300, target_node: "lou_lan", raw: { state: "lou_lan" } },
+              { type: "set_supply_line", desc: "【幕僚·粮道】敦煌→楼兰补给线", cost_money: 180, target_node: "lou_lan", raw: { from: "dun_huang", to: "lou_lan", laborers: 2500, escort: true } },
+            ]
+          : [
+              { type: "set_supply_line", desc: "【幕僚·粮道】加固敦煌→楼兰", cost_money: 180, target_node: "lou_lan", raw: { from: "dun_huang", to: "lou_lan", laborers: 2500, escort: true } },
+            ],
+      });
+      if (st.v1 && st.v1.court.active_edict && !st.v1.court.active_edict.complied) {
+        const ed = st.v1.court.active_edict;
+        const bargained = (ed.bargain_count || 0) >= 1;
+        plans.push({
+          id: "edict",
+          title: bargained ? "奉诏了结" : "争取诏令宽限",
+          purpose: bargained ? "本道诏令已宽过，宜奉诏或推进目标" : "陈情宽期一次以换军资，再择机奉诏",
+          cost: 0,
+          orders: bargained
+            ? [{ type: "comply_edict", desc: `【幕僚·奉诏】奉行《${ed.title}》`, cost_money: 0, target_node: ed.target, raw: {} }]
+            : [
+                { type: "bargain_edict", desc: `【幕僚·宽期】陈情《${ed.title}》+2季/+500钱`, cost_money: 0, target_node: ed.target, raw: { add_turns: 2, ask_money: 500 } },
+              ],
+        });
+      }
+      if (st.v1 && st.v1.tribes.tribes.rizhu && st.v1.tribes.tribes.rizhu.surrender_window > 0) {
+        plans.push({
+          id: "rizhu",
+          title: "迎降日逐王（须亲决）",
+          purpose: "事件路线：+25功业并罢僮仆——关键行动，采纳后仍可在军令栏撤回",
+          cost: 0,
+          critical: true,
+          orders: [
+            {
+              type: "welcome_rizhu",
+              desc: "【史诗破局·待审】迎降日逐王先贤掸 (功业+25，罢僮仆)",
+              cost_money: 0,
+              target_node: "wu_lei",
+              raw: { type: "welcome_rizhu", faction: "han" },
+              critical: true,
+            },
+          ],
+        });
+      }
+      plans.push({
+        id: "rest",
+        title: "休整观势",
+        purpose: "本季不发攻伐，只观察匈奴与城邦向背",
+        cost: 0,
+        orders: [{ type: "rest_season", desc: "【休整观势】本季不发新令，屯戍自守", cost_money: 0, target_node: "dun_huang", raw: {} }],
+      });
+    } else {
+      plans.push({
+        id: "reward",
+        title: "按诉求分赏安四部",
+        purpose: "依各部当前诉求（钱/休整/主攻权）配平，避免机械一键",
+        cost: 200,
+        orders: [
+          {
+            type: "distribute_rewards",
+            desc: "【幕僚·分赏】按当前诉求份额颁赐",
+            cost_money: 200,
+            target_node: "chanyu_ting",
+            raw: {
+              ratios: window.XIYU_UX
+                ? Object.fromEntries(
+                    Object.entries(window.XIYU_UX.tribeDemands(st)).map(([k, v]) => [k, v.expect])
+                  )
+                : { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 },
+            },
+          },
+        ],
+      });
+      plans.push({
+        id: "pressure",
+        title: "威压楼兰",
+        purpose: "以游骑抬高威吓，逼南道转向",
+        cost: 120,
+        orders: [
+          { type: "intimidate_city", desc: "【幕僚·威压】控弦巡行楼兰", cost_money: 120, target_node: "lou_lan", raw: { state: "lou_lan" } },
+        ],
+      });
+      plans.push({
+        id: "rest",
+        title: "休整观势",
+        purpose: "本季不发控弦，静观汉使",
+        cost: 0,
+        orders: [{ type: "rest_season", desc: "【休整观势】四部就水草牧马", cost_money: 0, target_node: "chanyu_ting", raw: {} }],
+      });
+    }
+    // merge engine safe recommendations as a plan if present
+    if (safeRecs.length) {
+      plans.unshift({
+        id: "engine_rec",
+        title: "长史例行条陈",
+        purpose: "推进当前最稳妥的经营项（不含迎降/矫诏/刺王）",
+        cost: safeRecs.reduce((s, c) => s + (c.cost_money || 0), 0),
+        orders: safeRecs.map((r) => ({
+          type: r.type,
+          desc: r.desc,
+          cost_money: r.cost_money || 0,
+          target_node: r.target_node || "lou_lan",
+          raw: r.raw || {},
+        })),
+      });
+    }
+    return plans.slice(0, 4);
+  }
+
+  function applyAdvisorPlan(plan) {
+    if (!plan) return;
+    GAME.queuedOrders = [];
+    for (const o of plan.orders || []) {
+      GAME.queuedOrders.push({
+        id: "adv_" + plan.id + "_" + Math.random().toString(36).slice(2, 6),
+        ...o,
+      });
+    }
+    renderTopHUD();
+    renderBottomOrderQueue();
+    renderStrategicMap();
+    renderOutliner();
+  }
+
+  function renderGarrisonPrompt(container) {
+    const pg = GAME.state && GAME.state.pending_garrison;
+    if (!pg || !container) return "";
+    return `<div class="garrison-banner">
+      <b>攻克【${pg.node_name}】之后</b> — 远征军余 ${pg.survivors.toLocaleString()} 人。
+      当地预估防御约 ${pg.local_defense.toLocaleString()} 人；近敌自【${pg.enemy_from}】约 ${pg.enemy_eta_days} 日可至。
+      ${pg.tuntian_at_risk ? "本地军屯若失守将一并毁损。" : "尚未开屯，失守损失以驻军与影响力为主。"}
+      <div class="gb-acts">
+        <button class="btn btn-sm btn-gold" data-gar="hold">留兵守城</button>
+        ${GAME.state.meta.side === "han" ? '<button class="btn btn-sm" data-gar="enfeoff">扶立亲汉王</button>' : ""}
+        <button class="btn btn-sm" data-gar="withdraw">撤军保持羁縻</button>
+      </div>
+    </div>`;
+  }
+
+  function bindGarrisonButtons(root) {
+    if (!root) return;
+    root.querySelectorAll("[data-gar]").forEach((btn) => {
+      btn.onclick = () => {
+        const pg = GAME.state.pending_garrison;
+        if (!pg) return;
+        const kind = btn.getAttribute("data-gar");
+        if (kind === "hold") {
+          queueCustomOrder({
+            type: "garrison_hold",
+            desc: `【留兵守城】抽兵戍守【${pg.node_name}】`,
+            cost_money: 0,
+            target_node: pg.node_id,
+            raw: { node: pg.node_id, leave_soldiers: Math.round(pg.survivors * 0.4) },
+          });
+        } else if (kind === "enfeoff") {
+          queueCustomOrder({
+            type: "garrison_enfeoff",
+            desc: `【扶立亲汉王】羁縻【${pg.node_name}】(-120钱)`,
+            cost_money: 120,
+            target_node: pg.node_id,
+            raw: { node: pg.node_id },
+          });
+        } else {
+          queueCustomOrder({
+            type: "garrison_withdraw",
+            desc: `【撤军羁縻】自【${pg.node_name}】班师`,
+            cost_money: 0,
+            target_node: pg.node_id,
+            raw: { node: pg.node_id },
+          });
+        }
+      };
+    });
   }
 
   function refreshAllUI() {
@@ -848,8 +1113,8 @@
       return;
     }
     card.style.display = "block";
-    const lesson = TUTORIAL_LESSONS[GAME.tutorialIdx] || TUTORIAL_LESSONS[0];
-    document.getElementById("tut-title").textContent = `新手教学 ${GAME.tutorialIdx + 1}/${TUTORIAL_LESSONS.length} · ${lesson.title.replace(/^.\s·\s/, "")}`;
+    const lesson = activeTutorialLessons()[GAME.tutorialIdx] || activeTutorialLessons()[0];
+    document.getElementById("tut-title").textContent = `新手教学 ${GAME.tutorialIdx + 1}/${activeTutorialLessons().length} · ${lesson.title.replace(/^.\s·\s/, "")}`;
     document.getElementById("tut-body").innerHTML = lesson.body
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       .replace(/`([^`]+)`/g, "<code>$1</code>");
@@ -857,8 +1122,34 @@
     actBar.innerHTML = `<button class="btn btn-sm btn-gold" id="btn-tut-do-action">${lesson.btnText}</button>`;
     document.getElementById("btn-tut-do-action").addEventListener("click", () => {
       lesson.action();
+      maybeAdvanceTutorial();
     });
+    maybeAdvanceTutorial();
     updateSpotlight();
+  }
+
+  function maybeAdvanceTutorial() {
+    if (!GAME.tutorialOpen || !GAME.state) return;
+    const lessons = activeTutorialLessons();
+    const lesson = lessons[GAME.tutorialIdx];
+    if (!lesson || typeof lesson.completeWhen !== "function") return;
+    if (lesson.completeWhen(GAME.state, GAME) && GAME.tutorialIdx < lessons.length - 1) {
+      GAME.tutorialIdx += 1;
+      // re-render without recursive maybeAdvance on same tick beyond one step
+      const card = document.getElementById("tutorial-card");
+      if (!card) return;
+      const next = lessons[GAME.tutorialIdx];
+      document.getElementById("tut-title").textContent = `新手教学 ${GAME.tutorialIdx + 1}/${lessons.length} · ${next.title.replace(/^.\s·\s/, "")}`;
+      document.getElementById("tut-body").innerHTML = next.body
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>");
+      const actBar = document.getElementById("tut-action-bar");
+      actBar.innerHTML = `<button class="btn btn-sm btn-gold" id="btn-tut-do-action">${next.btnText}</button>`;
+      document.getElementById("btn-tut-do-action").onclick = () => {
+        next.action();
+        maybeAdvanceTutorial();
+      };
+    }
   }
 
   function updateSpotlight() {
@@ -869,7 +1160,7 @@
       spot.classList.remove("show");
       return;
     }
-    const lesson = TUTORIAL_LESSONS[GAME.tutorialIdx] || TUTORIAL_LESSONS[0];
+    const lesson = activeTutorialLessons()[GAME.tutorialIdx] || activeTutorialLessons()[0];
     const targetEl = lesson.spotSelector ? document.querySelector(lesson.spotSelector) : null;
     if (!targetEl) {
       spot.classList.remove("show");
@@ -1236,7 +1527,7 @@
               ${bar("汉影响", rel.han_influence, "#a33a2a")}
               ${bar("匈威吓", rel.xn_intimidation, "#6b4a33")}
               <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:3px;">
-                <span>过境供粮：<strong style="color:${rel.forage ? tone(rel.forage.color) : "var(--ink)"}">${rel.forage ? rel.forage.label.split(/[（(]/)[0] : "平价开市"}</strong></span>
+                <span>过境供粮：<strong style="color:${tone(viewerForage(rel, n).color || "#c9b98a")}">${viewerForage(rel, n).label.split(/[（(]/)[0]}</strong></span>
                 <span style="cursor:pointer;color:var(--cobalt);font-weight:600;" id="btn-mic-causal">因果拆解 ▾</span>
               </div>
             </div>`
@@ -2245,7 +2536,10 @@
           const rel = n.relation;
           const troops = (n.armies || []).reduce((s, a) => s + (a.soldiers || 0), 0);
           let html = `<div class="tt-title">${n.name} · ${ownerLabel(n)}</div><div>人口 ${(n.pop || 0).toLocaleString()} · 储粮 ${((n.grain || 0) / 1000).toFixed(0)}k 石 · 城防 Lv.${n.walls || 1}</div>`;
-          if (rel) html += `<div class="tt-muted">汉影响 ${rel.han_influence.toFixed(0)} · 匈威吓 ${rel.xn_intimidation.toFixed(0)} · 对匈怨恨 ${rel.xn_resentment.toFixed(0)}${rel.forage ? ` · ${rel.forage.label}` : ""}</div>`;
+          if (rel) {
+            const vf = viewerForage(rel, n);
+            html += `<div class="tt-muted">汉影响 ${rel.han_influence.toFixed(0)} · 匈威吓 ${rel.xn_intimidation.toFixed(0)} · 对匈怨恨 ${rel.xn_resentment.toFixed(0)} · ${vf.label}</div>`;
+          }
           if (troops > 0) html += `<div class="tt-muted">野战驻军 ${troops.toLocaleString()} 人（点击城邑弹出竹简捷令单）</div>`;
           showMapTooltip(html, ev);
         });
@@ -2464,7 +2758,8 @@
     const terrainMult = rp.hasDesert ? 1.15 : 1.0;
     const eatPerTick = (soldiers * 1.0 + laborers * 0.8) * 0.9 * terrainMult;
 
-    const forageTier = rel && rel.forage ? rel.forage.tier : targetNode && targetNode.controller === st.meta.side ? "WELCOME" : "HOSTILE";
+    const vfCurve = viewerForage(rel, targetNode);
+    const forageTier = vfCurve.tier || (targetNode && targetNode.controller === st.meta.side ? "WELCOME" : "HOSTILE");
     const forageGain = forageTier === "WELCOME" ? soldiers * 2.4 : forageTier === "MARKET" ? soldiers * 1.2 : 0;
 
     const titleEl = document.getElementById("curve-drawer-title");
@@ -2549,7 +2844,7 @@
         <div class="curve-stats">
           <div class="curve-stat"><div class="k">随军粮</div><div class="v">${(carryCap / 1000).toFixed(1)}k <small style="color:var(--text-faint);font-weight:400">石</small></div></div>
           <div class="curve-stat"><div class="k">古道程期</div><div class="v">${rp.totalDays}日 <small>(第${arrTick}旬抵)</small></div></div>
-          <div class="curve-stat"><div class="k">${tName}供粮</div><div class="v" style="font-size:12.5px;color:${rel && rel.forage ? tone(rel.forage.color) : "var(--green-light)"}">${rel && rel.forage ? rel.forage.label.split(/[（(]/)[0] : "己方粮仓"}</div></div>
+          <div class="curve-stat"><div class="k">${tName}供粮</div><div class="v" style="font-size:12.5px;color:${tone(vfCurve.color || "#a9d4b4")}">${(vfCurve.label || "己方粮仓").split(/[（(]/)[0]}</div></div>
         </div>
         <div style="display:flex; gap:8px; align-items:center;">
           <select id="sel-drawer-standing" style="flex:1;">
@@ -2657,6 +2952,7 @@
   function renderOutliner() {
     const st = GAME.state;
     if (!st) return;
+    renderGoalCard();
     const n = st.nodes[GAME.selectedNodeId];
     const box = document.getElementById("outliner-selected");
     const kindEl = document.getElementById("ol-selected-kind");
@@ -2727,7 +3023,23 @@
           advQuote = `「汉军仰赖万里转粟，每石粮至塞外费数十石。当遣犁汗王轻骑出伊吾袭断其阳关粮道，再命右贤王趁秋高马肥威压楼兰！」`;
         }
       }
-      advEl.innerHTML = `<div class="advisor-box"><div class="advisor-speaker"><span>📜 ${side === "han" ? "长史徐自为进言" : "骨都侯赵信献策"}</span><span class="badge">${st.meta.season === "autumn" ? "秋高马肥" : st.meta.season === "winter" ? "严冬封山" : "春水融雪"}</span></div><div>${advQuote}</div></div>`;
+      const plans = buildAdvisorPlans();
+      const plansHtml = `<div class="advisor-plans">${plans
+        .map(
+          (pl) => `<button type="button" class="advisor-plan ${pl.critical ? "critical" : ""}" data-adv-plan="${pl.id}">
+            <div class="ap-title">${pl.title}</div>
+            <div class="ap-purpose">目的：${pl.purpose}</div>
+            <div class="ap-cost">预估 ${pl.cost.toLocaleString()} 钱 · ${pl.orders.length} 道令${pl.critical ? " · 须审阅" : ""}</div>
+          </button>`
+        )
+        .join("")}</div>`;
+      advEl.innerHTML = `<div class="advisor-box"><div class="advisor-speaker"><span>📜 ${side === "han" ? "长史徐自为进言" : "骨都侯赵信献策"}</span><span class="badge">${st.meta.season === "autumn" ? "秋高马肥" : st.meta.season === "winter" ? "严冬封山" : "春水融雪"}</span></div><div>${advQuote}</div>${plansHtml}</div>`;
+      advEl.querySelectorAll("[data-adv-plan]").forEach((btn) => {
+        btn.onclick = () => {
+          const pl = plans.find((x) => x.id === btn.getAttribute("data-adv-plan"));
+          applyAdvisorPlan(pl);
+        };
+      });
     }
 
     // 在场历史人物与差遣栏
@@ -2788,13 +3100,27 @@
     for (const nd of contested) {
       alerts.push({ level: "calm", title: `${nd.name} · 两属之间`, detail: `汉影响 ${nd.relation.han_influence.toFixed(0)} · 匈威吓 ${nd.relation.xn_intimidation.toFixed(0)}，一使可定向背。`, panel: "diplomacy", node: nd.id });
     }
+    if (st.pending_garrison) {
+      const pg = st.pending_garrison;
+      alerts.unshift({
+        level: "urgent",
+        title: `攻克【${pg.node_name}】待处置`,
+        detail: `余军 ${pg.survivors.toLocaleString()} · 近敌约 ${pg.enemy_eta_days} 日自【${pg.enemy_from}】可至。请留兵、扶王或撤军。`,
+        panel: "military",
+        node: pg.node_id,
+      });
+    }
     const list = document.getElementById("outliner-alerts");
     const cntEl = document.getElementById("ol-alert-count");
     if (cntEl) cntEl.textContent = alerts.length ? `${alerts.length} 条` : "";
     if (list) {
-      list.innerHTML = alerts.length
-        ? alerts.map((a, i) => `<button class="alert-item ${a.level}" data-alert="${i}"><b>${a.title}</b>${a.detail}</button>`).join("")
-        : `<div class="alert-empty">塞下烽燧平安，暂无急报。</div>`;
+      const garHtml = renderGarrisonPrompt(list);
+      list.innerHTML =
+        (garHtml || "") +
+        (alerts.length
+          ? alerts.map((a, i) => `<button class="alert-item ${a.level}" data-alert="${i}"><b>${a.title}</b>${a.detail}</button>`).join("")
+          : `<div class="alert-empty">塞下烽燧平安，暂无急报。</div>`);
+      bindGarrisonButtons(list);
       list.querySelectorAll("[data-alert]").forEach((b) => {
         b.onclick = () => {
           const a = alerts[parseInt(b.getAttribute("data-alert"), 10)];
@@ -3002,7 +3328,7 @@
     const statusBar = `
       <div class="d-status-bar">
         <span>当前宗主：<strong style="color:${n.controller === "han" ? "var(--han)" : n.controller === "xiongnu" ? "var(--xn)" : "var(--ink)"}">${ownerLabel(n)}</strong></span>
-        <span>过境供粮：<strong style="color:${rel && rel.forage ? tone(rel.forage.color) : "var(--jade)"}">${rel && rel.forage ? rel.forage.label : "己方官仓直供"}</strong></span>
+        <span>过境供粮：<strong style="color:${(() => { const f = viewerForage(rel, n); return tone(f.color || "#a9d4b4"); })()}">${viewerForage(rel, n).label}</strong></span>
         <span>直通古道：<strong>${adjRoutes.length} 条干道</strong></span>
       </div>
     `;
@@ -3194,8 +3520,8 @@
           ${dMetricCard("当季天子诏书", ed ? ed.title : "无急诏", ed ? (ed.complied ? "已奉诏 ✓" : `限第 ${ed.deadline_turn} 季`) : "便宜经略", ed && !ed.complied ? "warn" : "good", "trust")}
           ${dMetricCard("少府西域专款", `${st.scores.han_money.toLocaleString()} 钱`, "大司农岁拨+商税", "good", "han_money")}
           ${dMetricCard("太仆官马池", `${(st.scores.han_horse_pool || 5000).toLocaleString()} 匹`, "轻骑与转运驮马", "info", "han_money")}
-          ${dMetricCard("大汉内属国", `${st.scores.han_vassals} / 18 国`, "满 11 国可立都护", "good", "han_vassals")}
-          ${dMetricCard("都护功业 G", `${v1.victory.han_merit.toFixed(1)} / 100`, "满 100 终局大捷", "good", "han_merit")}
+          ${dMetricCard("大汉内属国", `${st.scores.han_vassals} / 18 国`, "属国贡献功业（非单独胜条件）", "good", "han_vassals")}
+          ${dMetricCard("都护功业 G", `${v1.victory.han_merit.toFixed(1)} / 100`, (window.XIYU_UX && window.XIYU_UX.isShortScenario(st.meta.scenario)) ? "短剧本：满 100 即胜" : `满 100 后维持 ${window.XIYU_UX ? window.XIYU_UX.HOLD_SEASONS_REQUIRED : 4} 季`, "good", "han_merit")}
         </div>
       `;
 
@@ -3375,11 +3701,11 @@
       const kpiRow = `
         <div class="d-kpi-grid-6">
           ${dMetricCard("撑犁单于威望", `${v1.tribes.chanyu_prestige.toFixed(0)} / 100`, "王庭号令权威", "good", "xn_prestige")}
-          ${dMetricCard("王庭赏赐池", `${st.scores.xn_money.toLocaleString()} 钱`, "待分赏金帛", "warn", "xn_money")}
+          ${dMetricCard("王庭赏赐池", `${st.scores.xn_money.toLocaleString()} 钱`, (window.XIYU_UX ? window.XIYU_UX.moneyLedger(st, "xiongnu").poolLabel : "账面=可分赏"), "warn", "xn_money")}
           ${dMetricCard("日逐王忠诚", rzDisp, rzMisty ? "⚠️ 称病未赴龙城会" : "奉命守西域", rzMisty ? "bad" : "good", "rizhu_loyalty")}
           ${dMetricCard("焉耆僮仆都尉", v1.tribes.tongpu_active ? "驻节统辖" : "已被罢黜", "西域赋敛总枢", v1.tribes.tongpu_active ? "good" : "bad", "xn_weifu")}
           ${dMetricCard("服属城邦", `${st.scores.xn_vassals} 国`, "岁纳毡马粟米", "info", "xn_weifu")}
-          ${dMetricCard("匈奴威服 W", `${v1.victory.xn_weifu.toFixed(1)} / 100`, "满 100 霸有西域", "good", "xn_weifu")}
+          ${dMetricCard("匈奴威服 W", `${v1.victory.xn_weifu.toFixed(1)} / 100`, `满 100 后维持 ${window.XIYU_UX ? window.XIYU_UX.HOLD_SEASONS_REQUIRED : 4} 季`, "good", "xn_weifu")}
         </div>
       `;
 
@@ -3421,10 +3747,11 @@
         <div class="d-two-col">
           <div class="d-col">
             <div class="d-card">
-              ${dSecHdr("四部王庭分赏配额与到会状态", `赏赐池 ${v1.tribes.reward_pool} 钱`)}
+              ${dSecHdr("四部王庭分赏配额与到会状态", window.XIYU_UX ? window.XIYU_UX.moneyLedger(st, "xiongnu").poolLabel : `赏赐池 ${st.scores.xn_money} 钱`)}
               ${tribeRowsHtml}
+              <div class="reward-preview" id="reward-live-preview"></div>
               <div class="action-grid" style="margin-top:8px;">
-                <button class="btn" id="btn-xn-equalize">按期望份额一键配平</button>
+                <button class="btn" id="btn-xn-equalize">按当前诉求配平</button>
                 <button class="btn btn-gold" id="btn-xn-distribute">颁行本季四部分赏 (200钱)</button>
                 <button class="btn btn-gold span-2" id="btn-xn-pacify-rizhu">遣骨都侯赐良马金帛安抚日逐王先贤掸 (消除迷雾 · 忠诚+15)</button>
               </div>
@@ -3467,13 +3794,27 @@
         </div>
       `;
 
+      function refreshRewardPreview() {
+        const prev = document.getElementById("reward-live-preview");
+        if (!prev || !window.XIYU_UX) return;
+        const preview = window.XIYU_UX.previewLoyaltyDeltas(v1.tribes.reward_ratios, st);
+        const n = preview.norm;
+        const lines = ["zuoxian", "youxian", "rizhu", "lihu"].map((k) => {
+          const d = preview.details[k];
+          const name = { zuoxian: "左贤", youxian: "右贤", rizhu: "日逐", lihu: "犁汗" }[k];
+          return `${name} 拖动${v1.tribes.reward_ratios[k]}% → 最终 <b>${d.share.toFixed(0)}%</b>（期望${d.expect}%）忠 <b>${d.delta >= 0 ? "+" : ""}${d.delta}</b> · ${d.want.label}`;
+        });
+        prev.innerHTML = `<div>拖动即时预览（结算按总和归一化${n.normalized ? "；当前合计 " + n.sum + "% 将折算为 100%" : ""}）</div>${lines.map((l) => `<div>${l}</div>`).join("")}`;
+      }
       container.querySelectorAll("[data-tribe-slider]").forEach((sl) => {
         sl.addEventListener("input", (e) => {
           const k = e.target.getAttribute("data-tribe-slider");
           v1.tribes.reward_ratios[k] = parseInt(e.target.value, 10);
           document.getElementById(`lbl-share-${k}`).textContent = `${e.target.value}%`;
+          refreshRewardPreview();
         });
       });
+      refreshRewardPreview();
 
       document.getElementById("sel-xn-assembly-target").onchange = (e) => {
         GAME.assemblyTarget = e.target.value;
@@ -3489,19 +3830,29 @@
       };
 
       document.getElementById("btn-xn-equalize").onclick = () => {
-        v1.tribes.reward_ratios = { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
+        const demands = window.XIYU_UX ? window.XIYU_UX.tribeDemands(st) : null;
+        v1.tribes.reward_ratios = demands
+          ? {
+              zuoxian: demands.zuoxian.expect,
+              youxian: demands.youxian.expect,
+              rizhu: demands.rizhu.expect,
+              lihu: demands.lihu.expect,
+            }
+          : { zuoxian: 35, youxian: 30, rizhu: 20, lihu: 15 };
         renderPanelCourtOrTribes(container);
         polishPanel(container);
         bindDrawerCausalClicks(container);
       };
-      document.getElementById("btn-xn-distribute").onclick = () =>
+      document.getElementById("btn-xn-distribute").onclick = () => {
+        const norm = window.XIYU_UX ? window.XIYU_UX.normalizeRewardShares(v1.tribes.reward_ratios) : v1.tribes.reward_ratios;
         queueCustomOrder({
           type: "distribute_rewards",
-          desc: `【四部分赏】按 (${v1.tribes.reward_ratios.zuoxian}/${v1.tribes.reward_ratios.youxian}/${v1.tribes.reward_ratios.rizhu}/${v1.tribes.reward_ratios.lihu}) 颁赐王庭金帛`,
+          desc: `【四部分赏】拖动(${v1.tribes.reward_ratios.zuoxian}/${v1.tribes.reward_ratios.youxian}/${v1.tribes.reward_ratios.rizhu}/${v1.tribes.reward_ratios.lihu})→最终(${norm.zuoxian}/${norm.youxian}/${norm.rizhu}/${norm.lihu})`,
           cost_money: 200,
           target_node: "chanyu_ting",
           raw: { ratios: deepClone(v1.tribes.reward_ratios) },
         });
+      };
       document.getElementById("btn-xn-assembly").onclick = () => {
         const tNm = st.nodes[GAME.assemblyTarget] ? st.nodes[GAME.assemblyTarget].name : GAME.assemblyTarget;
         queueCustomOrder({
@@ -3574,7 +3925,7 @@
       side === "han"
         ? `
       <div class="d-kpi-grid-6">
-        ${dMetricCard("都护功业 G", `${merit.toFixed(1)} / 100`, "满 100 可奏立都护府", "good", "han_merit")}
+        ${dMetricCard("都护功业 G", `${merit.toFixed(1)} / 100`, (window.XIYU_UX && window.XIYU_UX.isShortScenario(st.meta.scenario)) ? "短剧本：满 100 即胜" : `满 100 后维持 ${window.XIYU_UX ? window.XIYU_UX.HOLD_SEASONS_REQUIRED : 4} 季`, "good", "han_merit")}
         ${dMetricCard("属国分项", `+${bd.vassal || st.scores.han_vassals * 6}`, `大汉内属 ${st.scores.han_vassals} 国`, "good", "han_vassals")}
         ${dMetricCard("册封印绶", `+${bd.enfeoff || 0}`, "金印紫绶册封", "info", "han_vassals")}
         ${dMetricCard("乌垒/车师枢纽", `+${bd.hub || 0}`, "南北道锁钥控制", "info", "han_merit")}
@@ -3584,7 +3935,7 @@
     `
         : `
       <div class="d-kpi-grid-6">
-        ${dMetricCard("单于威服 W", `${weifu.toFixed(1)} / 100`, "满 100 漠北独尊西域", "good", "xn_weifu")}
+        ${dMetricCard("单于威服 W", `${weifu.toFixed(1)} / 100`, `满 100 后维持 ${window.XIYU_UX ? window.XIYU_UX.HOLD_SEASONS_REQUIRED : 4} 季（或夺河西）`, "good", "xn_weifu")}
         ${dMetricCard("服属城邦分项", `+${(xbd.vassal ?? st.scores.xn_vassals * 6.5).toFixed(1)}`, `匈奴服属 ${st.scores.xn_vassals} 国`, "good", "xn_weifu")}
         ${dMetricCard("焉耆僮仆都尉", v1.tribes.tongpu_active ? `+${xbd.tongpu || 18} (统辖)` : "+0 (已失)", v1.tribes.tongpu_active ? "西域岁币赋敛总枢" : "日逐王已畔降汉", v1.tribes.tongpu_active ? "good" : "bad", "xn_weifu")}
         ${dMetricCard("单于威望折算", `+${(xbd.prestige ?? v1.tribes.chanyu_prestige * 0.16).toFixed(1)}`, `王庭威望 ${v1.tribes.chanyu_prestige.toFixed(0)}`, "info", "xn_prestige")}
@@ -3678,7 +4029,7 @@
                   <td class="num" style="color:var(--han-light);font-weight:700">${r.han_influence.toFixed(0)}</td>
                   <td class="num" style="color:var(--xn-light);font-weight:700">${r.xn_intimidation.toFixed(0)}</td>
                   <td class="num" style="color:${r.xn_resentment >= 30 ? "var(--cobalt)" : "var(--muted)"}">${r.xn_resentment.toFixed(0)}</td>
-                  <td><span style="color:${r.forage ? tone(r.forage.color) : "var(--gold-light)"}; font-weight:600;">${r.forage ? r.forage.label.split(/[（(]/)[0] : "平价开市"}</span></td>
+                  <td><span style="color:${tone(viewerForage(r, n).color || "#c9b98a")}; font-weight:600;">${viewerForage(r, n).label.split(/[（(]/)[0]}</span></td>
                   <td class="num">${((n.grain || 0) / 1000).toFixed(0)}k 石</td>
                   <td style="text-align:right">
                     ${
@@ -4379,17 +4730,14 @@
         const isOasisSupply =
           (side === "han" && (nd.owner === "han" || (rel && rel.overlord === "han") || (nd.tuntian_lv || 0) > 0)) ||
           (side === "xiongnu" && (nd.owner === "xiongnu" || (rel && rel.overlord === "xiongnu")));
+        const vf = viewerForage(rel, nd);
         const forageLbl = isOasisSupply
           ? side === "han"
             ? "★ 就食城仓/军屯补给"
-            : "★ 属国草场换马饮水"
-          : rel && rel.forage
-          ? rel.forage.label.split(/[（(]/)[0]
-          : side === "xiongnu"
-          ? "掠野打草谷就食"
-          : "平价开市";
-        const forageCol = isOasisSupply ? "var(--jade)" : rel && rel.forage ? tone(rel.forage.color) : "var(--gold-light)";
-        const lossRate = idx === 0 ? "起点" : isOasisSupply ? "0.6% / 旬" : rel && rel.forage && rel.forage.attrition_mult > 1.2 ? "4.6% / 旬" : "1.8% / 旬";
+            : "★ 属部草场换马饮水"
+          : (vf.label || "供粮未明").split(/[（(]/)[0];
+        const forageCol = isOasisSupply ? "var(--jade)" : tone(vf.color || "#c9b98a");
+        const lossRate = idx === 0 ? "起点" : isOasisSupply ? "0.6% / 旬" : vf.tier === "HOSTILE" || vf.tier === "REFUSE" ? "4.6% / 旬" : "1.8% / 旬";
         return `<tr style="cursor:pointer" data-mil-jump="${nid}">
           <td>第 ${idx + 1} 驿 · <strong>${nd.name}</strong></td>
           <td>${ownerLabel(nd)}</td>
@@ -4710,7 +5058,7 @@
     if (!bar) return;
     const total = GAME.queuedOrders.reduce((acc, o) => acc + (o.cost_money || 0), 0);
     const sealSub = document.getElementById("seal-sub");
-    if (sealSub) sealSub.textContent = GAME.queuedOrders.length ? `Space · 已拟 ${GAME.queuedOrders.length} 令` : "Space · 未拟令则幕僚代拟";
+    if (sealSub) sealSub.textContent = GAME.queuedOrders.length ? `Space · 已拟 ${GAME.queuedOrders.length} 令` : "Space · 未拟令则休整观势";
     if (GAME.queuedOrders.length === 0) {
       bar.innerHTML = `
         <div class="queue-head"><span class="title">本季军令</span><span style="color:var(--text-faint)">0 道</span></div>
@@ -4760,22 +5108,27 @@
   }
 
   function fillAdvisorOrders() {
-    const st = GAME.state;
-    GAME.queuedOrders = [];
-    const recs = (st.commands || []).filter((c) => c.recommended).slice(0, 3);
-    for (const r of recs) {
-      GAME.queuedOrders.push({
-        id: "adv_" + r.idx,
-        type: r.type,
-        desc: r.desc,
-        cost_money: r.cost_money || 0,
-        target_node: r.target_node || "lou_lan",
-        raw: r.raw || {},
-      });
+    const plans = buildAdvisorPlans();
+    const pick = plans.find((p) => !p.critical) || plans[0];
+    if (!pick) {
+      GAME.queuedOrders = [
+        {
+          id: "adv_rest",
+          type: "rest_season",
+          desc: "【休整观势】本季不发新令",
+          cost_money: 0,
+          target_node: GAME.state.meta.side === "han" ? "dun_huang" : "chanyu_ting",
+          raw: {},
+        },
+      ];
+      renderTopHUD();
+      renderBottomOrderQueue();
+      renderStrategicMap();
+      return;
     }
-    renderTopHUD();
-    renderBottomOrderQueue();
-    renderStrategicMap();
+    applyAdvisorPlan(pick);
+    // 展开军情幕僚栏，便于改选其他方案
+    renderOutliner();
   }
 
   // ==================== 8. 90日 (9旬) WEGO 动画回放与舆图行军演出 ====================
@@ -4881,7 +5234,17 @@
     closeMapContextMenu();
 
     if (GAME.queuedOrders.length === 0) {
-      fillAdvisorOrders();
+      // 空军令 = 明确休整，不再偷偷代拟迎降等关键剧情
+      GAME.queuedOrders = [
+        {
+          id: "rest_auto",
+          type: "rest_season",
+          desc: "【休整观势】未拟令，本季屯戍自守",
+          cost_money: 0,
+          target_node: GAME.state.meta.side === "han" ? "dun_huang" : "chanyu_ting",
+          raw: {},
+        },
+      ];
     }
 
     const ordersToRun = deepClone(GAME.queuedOrders);
@@ -4992,15 +5355,57 @@
   function openSeasonSummaryModal() {
     const st = GAME.state;
     const modal = document.getElementById("modal-season-summary");
+    const scrub = (t) => (window.XIYU_UX ? window.XIYU_UX.scrubInternalText(t) : t);
+    const vs = window.XIYU_UX ? window.XIYU_UX.buildVictoryStatus(st) : null;
     document.getElementById("sum-modal-title").textContent = st.ending
-      ? `终局 · ${st.ending.headline}`
+      ? `终局 · ${scrub(st.ending.headline || st.meta.win_reason || "")}`
       : `${st.meta.date_text} · 第 ${st.meta.turn + 1} 季纪事`;
 
+    const briefEl = document.getElementById("sum-modal-brief");
+    if (briefEl) {
+      const b = st.season_brief;
+      if (st.ending) {
+        briefEl.innerHTML = `<div class="sb-title">终局裁定</div>
+          <div class="sb-row"><b>${scrub(st.meta.win_reason || st.ending.win_reason || "")}</b></div>
+          <div class="sb-row">${vs ? vs.blurbEnd : ""}</div>
+          <div class="sb-row">汉评定 ${scrub(st.ending.grade_han)} · 匈评定 ${scrub(st.ending.grade_xn)}</div>`;
+      } else if (b) {
+        const md = b.merit_delta || 0;
+        const wd = b.weifu_delta || 0;
+        const deltaCls = (d) => (d > 0 ? "sb-delta-up" : d < 0 ? "sb-delta-down" : "");
+        const side = st.meta.side;
+        const scoreLine =
+          side === "han"
+            ? `功业 ${b.merit_now.toFixed(1)}（<span class="${deltaCls(md)}">${md >= 0 ? "+" : ""}${md}</span>）`
+            : `威服 ${b.weifu_now.toFixed(1)}（<span class="${deltaCls(wd)}">${wd >= 0 ? "+" : ""}${wd}</span>）`;
+        briefEl.innerHTML = `
+          <div class="sb-title">本季简报</div>
+          <div class="sb-row"><b>我方计划：</b>${(b.my_plans || []).length ? b.my_plans.map(scrub).join("；") : "休整观势"}</div>
+          <div class="sb-row"><b>对方要步：</b>${(b.opp_moves || []).length ? b.opp_moves.map(scrub).join("；") : "未见大动作"}</div>
+          <div class="sb-row"><b>归属变化：</b>${
+            (b.flipped || []).length
+              ? b.flipped.map((f) => `${f.name}（${f.from || "无"}→${f.to || "无"}）`).join("、")
+              : "无城邦易主"
+          }</div>
+          <div class="sb-row"><b>功业/威服：</b>${scoreLine}${
+            side === "han" && (b.merit_sources || []).length
+              ? " · 分项 " + b.merit_sources.map((s) => `${s.src}${s.delta}`).join("、")
+              : ""
+          }</div>
+          <div class="sb-row"><b>下一季风险：</b>${scrub(b.next_risk || "")}</div>
+          ${vs ? `<div class="sb-row"><b>胜利进度：</b>${vs.blurbInGame}</div>` : ""}
+          ${st.pending_garrison ? `<div class="sb-row"><b>待决：</b>攻克【${st.pending_garrison.node_name}】后的留兵/扶王/撤军</div>` : ""}
+        `;
+      } else {
+        briefEl.innerHTML = vs ? `<div class="sb-row">${vs.blurbInGame}</div>` : "";
+      }
+    }
+
     const chText = st.ending
-      ? `${st.ending.biography}（汉评定：${st.ending.grade_han} | 匈奴评定：${st.ending.grade_xn}）`
+      ? `${scrub(st.ending.biography)}（汉评定：${scrub(st.ending.grade_han)} | 匈奴评定：${scrub(st.ending.grade_xn)}）`
       : GAME.useClassical
-      ? st.chronicle.classical
-      : st.chronicle.vernacular;
+      ? scrub(st.chronicle.classical)
+      : scrub(st.chronicle.vernacular);
     document.getElementById("sum-modal-chronicle").textContent = String(chText || "").replace(/。{2,}/g, "。");
 
     const todosEl = document.getElementById("sum-modal-todos");
@@ -5037,21 +5442,31 @@
     const modal = document.getElementById("modal-battle-detail");
     document.getElementById("battle-modal-title").textContent = `第 ${br.turn} 季 · ${br.node_name}之战`;
     const row = (k, v, style) => `<div class="battle-row"><span class="k">${k}</span><strong style="${style || ""}">${v}</strong></div>`;
+    const killed = br.defender_killed != null ? br.defender_killed : Math.round((br.defender_loss || 0) * 0.55);
+    const routed = br.defender_routed != null ? br.defender_routed : (br.defender_loss || 0) - killed;
+    const defRem = br.defender_remaining != null ? br.defender_remaining : Math.max(0, (br.defender_troops || 0) - (br.defender_loss || 0));
+    const atkRem = br.attacker_remaining != null ? br.attacker_remaining : Math.max(0, (br.attacker_troops || 0) - (br.attacker_combat_loss || 0) - (br.attacker_starve_loss || 0));
+    const fromLbl = br.origin_name || br.origin_id || "出发地";
     document.getElementById("battle-modal-body").innerHTML = `
-      <div class="chronicle-quote">${br.summary}</div>
+      <div class="chronicle-quote">${(window.XIYU_UX ? window.XIYU_UX.scrubInternalText(br.summary) : br.summary)}</div>
       <div class="battle-grid">
         <div class="game-card">
           <div class="card-head"><span>攻方 · ${br.commander}</span></div>
+          ${row("出发", `自【${fromLbl}】`)}
           ${row("参战兵力", `${br.attacker_troops.toLocaleString()} 人`)}
           ${row("阵亡", `${br.attacker_combat_loss.toLocaleString()} 人`)}
-          ${row("断粮饿死", `${br.attacker_starve_loss.toLocaleString()} 人`, "color:var(--han-light)")}
+          ${row("断粮饿死", `${(br.attacker_starve_loss || 0).toLocaleString()} 人`, "color:var(--han-light)")}
+          ${row("剩余兵力", `${atkRem.toLocaleString()} 人`, "color:var(--jade)")}
           ${row("常备指令", br.standing_order === "cautious" ? "谨慎保军" : "强攻")}
         </div>
         <div class="game-card">
           <div class="card-head"><span>守方 · ${br.node_name}</span></div>
           ${row("守城兵力", `${br.defender_troops.toLocaleString()} 人`)}
-          ${row("斩首 / 溃散", `${br.defender_loss.toLocaleString()} 人`)}
+          ${row("战死", `${killed.toLocaleString()} 人`)}
+          ${row("溃散", `${routed.toLocaleString()} 人`)}
+          ${row("剩余守军", `${defRem.toLocaleString()} 人`)}
           ${row("俘获马匹", `+${br.captured_horses} 匹`, "color:var(--green-light)")}
+          ${row("对账", (killed + routed) <= br.defender_troops && (br.ledger_ok !== false) ? "战死+溃散 ≤ 守军 ✓" : "需复核", (killed + routed) <= br.defender_troops ? "color:var(--jade)" : "color:var(--cinnabar)")}
           ${row("结局", br.victory ? "城破" : "相持")}
         </div>
       </div>
@@ -5233,11 +5648,11 @@
       document.getElementById("modal-help").classList.remove("open");
     };
     document.getElementById("btn-tut-prev").onclick = () => {
-      GAME.tutorialIdx = (GAME.tutorialIdx - 1 + TUTORIAL_LESSONS.length) % TUTORIAL_LESSONS.length;
+      GAME.tutorialIdx = (GAME.tutorialIdx - 1 + activeTutorialLessons().length) % activeTutorialLessons().length;
       renderTutorialCard();
     };
     document.getElementById("btn-tut-next").onclick = () => {
-      GAME.tutorialIdx = (GAME.tutorialIdx + 1) % TUTORIAL_LESSONS.length;
+      GAME.tutorialIdx = (GAME.tutorialIdx + 1) % activeTutorialLessons().length;
       renderTutorialCard();
     };
     document.getElementById("btn-tut-close").onclick = () => {
@@ -5393,12 +5808,39 @@
       card.addEventListener("click", () => {
         document.querySelectorAll("#scenario-cards .scen-card").forEach((c) => c.classList.remove("active"));
         card.classList.add("active");
-        document.getElementById("modal-sel-scenario").value = card.getAttribute("data-scen");
+        const scen = card.getAttribute("data-scen");
+        document.getElementById("modal-sel-scenario").value = scen;
+        const hanGoal = document.getElementById("choice-goal-han");
+        const xnGoal = document.getElementById("choice-goal-xn");
+        if (hanGoal) {
+          hanGoal.textContent =
+            scen === "lou_lan_gu_shi"
+              ? "短剧本：功业 G ≥ 100 即胜（无需维持）"
+              : "功业 G ≥ 100，并维持四季（迎降日逐为事件路线）";
+        }
+        if (xnGoal) xnGoal.textContent = "威服 W ≥ 100 维持四季，或夺取河西四郡";
       });
     });
 
     // 顶栏按钮：幕僚代拟、悔棋、结束本季
     document.getElementById("btn-advisor-fill").onclick = fillAdvisorOrders;
+    const restBtn = document.getElementById("btn-rest-season");
+    if (restBtn) {
+      restBtn.onclick = () => {
+        GAME.queuedOrders = [
+          {
+            id: "rest_btn",
+            type: "rest_season",
+            desc: "【休整观势】本季明确休整，不发攻伐",
+            cost_money: 0,
+            target_node: GAME.state.meta.side === "han" ? "dun_huang" : "chanyu_ting",
+            raw: {},
+          },
+        ];
+        renderTopHUD();
+        renderBottomOrderQueue();
+      };
+    }
     document.getElementById("btn-undo-season").onclick = () => {
       GAME.state = engine.undoTurn();
       GAME.queuedOrders = [];

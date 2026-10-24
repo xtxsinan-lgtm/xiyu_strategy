@@ -212,6 +212,10 @@
 
   <!-- ==================== 军情栏 Outliner（宽 300） ==================== -->
   <aside class="outliner" id="outliner">
+    <section class="ol-sec ol-goal" id="ol-sec-goal">
+      <div class="ol-head"><span>本局目标</span><small id="ol-goal-route">主路线</small></div>
+      <div id="outliner-goal"></div>
+    </section>
     <section class="ol-sec">
       <div class="ol-head"><span>所选</span><small id="ol-selected-kind">城邑</small></div>
       <div id="outliner-selected"></div>
@@ -246,7 +250,8 @@
     <section class="ol-sec ol-queue">
       <div class="dock-footer-queue" id="dock-order-bar"></div>
       <div class="ol-tools">
-        <button class="btn btn-sm btn-gold" id="btn-advisor-fill" title="由幕僚拟定本季推荐军令">幕僚代拟</button>
+        <button class="btn btn-sm btn-gold" id="btn-advisor-fill" title="由幕僚给出两三种有代价差异的方案供你审阅">幕僚献策</button>
+        <button class="btn btn-sm" id="btn-rest-season" title="明确休整：空军令结束本季">休整观势</button>
         <button class="btn btn-sm" id="btn-undo-season" title="回退至上一季初">悔棋</button>
       </div>
     </section>
@@ -330,6 +335,7 @@
           <button class="btn btn-sm btn-ghost" id="btn-sum-close" title="关闭">×</button>
         </div>
       </div>
+      <div id="sum-modal-brief" class="season-brief"></div>
       <div class="chronicle-quote" id="sum-modal-chronicle"></div>
       <div class="section-label">本季要务</div>
       <div id="sum-modal-todos"></div>
@@ -361,7 +367,7 @@
           <div class="choice-body">
             <div class="choice-title">大汉 · 持节使臣</div>
             <div class="choice-desc">经营万里粮道，周旋长安诏令，遣使抚谕西域诸国，迎降日逐王，奏立西域都护府。</div>
-            <div class="choice-goal">胜利：都护功业 G ≥ 100</div>
+            <div class="choice-goal" id="choice-goal-han">胜利：功业 G ≥ 100，维持四季</div>
           </div>
         </label>
         <label class="choice-card side-xn">
@@ -370,7 +376,7 @@
           <div class="choice-body">
             <div class="choice-title">匈奴 · 撑犁孤涂单于</div>
             <div class="choice-desc">均分赏赐以安四部，三会诸王于龙城蹛林，令僮仆都尉赋敛西域，伺机南下河西。</div>
-            <div class="choice-goal">胜利：威服 W ≥ 100 或夺取河西</div>
+            <div class="choice-goal" id="choice-goal-xn">胜利：威服 W ≥ 100 维持四季，或夺河西</div>
           </div>
         </label>
       </div>
@@ -381,17 +387,17 @@
         <button type="button" class="scen-card" data-scen="lou_lan_gu_shi">
           <div class="scen-year">前108年 · 12季</div>
           <div class="scen-name">楼兰姑师</div>
-          <div class="scen-desc">赵破奴轻骑破楼兰。短局，附五课教学。</div>
+          <div class="scen-desc">赵破奴轻骑破楼兰。短局：功业满百即胜（无需维持）。附教学。</div>
         </button>
         <button type="button" class="scen-card active" data-scen="mo_bei_zhi_hou">
           <div class="scen-year">前119年 · 40季</div>
           <div class="scen-name">漠北之后</div>
-          <div class="scen-desc">张骞再使西域。主剧本，完整沙盘。</div>
+          <div class="scen-desc">张骞再使西域。功业满百后须维持四季方立都护。</div>
         </button>
         <button type="button" class="scen-card" data-scen="du_hu_fu">
           <div class="scen-year">前68年 · 36季</div>
           <div class="scen-name">西域都护府</div>
-          <div class="scen-desc">郑吉五争车师，日逐王来降。</div>
+          <div class="scen-desc">郑吉五争车师。迎降日逐是事件路线，仍须功业破百并维持。</div>
         </button>
       </div>
 
@@ -435,6 +441,7 @@
 
   <!-- 静态数据包与可玩游戏主控制器 -->
   <script src="assets/bundle_data.js"></script>
+  <script src="assets/play_ux.js"></script>
   <script src="assets/js_engine.js"></script>
   <script src="assets/game_play.js"></script>
 </body>
