@@ -263,7 +263,10 @@ func node_mode_color(id: String, n: Dictionary) -> Color:
 			return Color("4668b5")
 		return Color("7a7468")
 	elif map_mode == "military":
-		var troops := int(n.get("militia", 0))
+		var troops := 0
+		var mil_dict: Dictionary = n.get("militia", {})
+		for ut in mil_dict:
+			troops += int(mil_dict[ut])
 		for aid in state.armies:
 			if state.armies[aid]["loc"].get("node", "") == id:
 				troops += state.army_size(state.armies[aid])
@@ -713,7 +716,7 @@ func _draw_cartouche() -> void:
 	var sub_w := _font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
 	var mode_str := "舆图视角：%s" % MAP_MODE_LABELS.get(map_mode, "疆域臣属")
 	var card := Rect2(inner.position + Vector2(14, 14), Vector2(maxf(title_w, sub_w) + 42, 86))
-	draw_rect(card + Rect2(2, 3, 0, 0), Color(0, 0, 0, 0.16))
+	draw_rect(Rect2(card.position + Vector2(2, 3), card.size), Color(0, 0, 0, 0.16))
 	draw_rect(card, Desk.SILK)
 	draw_rect(card, Desk.INK, false, 1.5)
 	draw_rect(card.grow(-3), Color(Desk.CINNABAR, 0.55), false, 1.0)

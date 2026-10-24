@@ -134,7 +134,7 @@
       if (!st.battle_reports) st.battle_reports = [];
       if (!st.envoys_in_transit) st.envoys_in_transit = [];
       if (st.v1) {
-        if (!st.v1.logistics.supply_lines) {
+        if (!Array.isArray(st.v1.logistics.supply_lines) || st.v1.logistics.supply_lines.length === 0) {
           st.v1.logistics.supply_lines = [
             {
               id: "sl_hexi_main",
@@ -149,6 +149,26 @@
               status: "active", // active | throttled | paused_danger
             },
           ];
+        } else {
+          st.v1.logistics.supply_lines = st.v1.logistics.supply_lines.map((sl, idx) => {
+            if (typeof sl === "string") {
+              const targetId = sl;
+              const fromId = targetId === "dun_huang" ? "jiu_quan" : "dun_huang";
+              return {
+                id: "sl_init_" + idx + "_" + targetId,
+                name: targetId === "dun_huang" ? "河西—阳关主粮道" : `敦煌—${this._nodeName(st, targetId)}粮道`,
+                from: fromId,
+                to: targetId,
+                via: [fromId, targetId],
+                laborers: 2000,
+                priority: 2,
+                escort: true,
+                delivered_30d: 18000,
+                status: "active",
+              };
+            }
+            return sl;
+          });
         }
         if (!st.v1.court.in_transit_docs) {
           st.v1.court.in_transit_docs = [

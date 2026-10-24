@@ -41,6 +41,12 @@ class _RulesetAwareBot:
 
 
 def make_bot(faction, name="baseline", ruleset=None):
+    alias_map = {
+        "balanced": "baseline",
+        "diplomatic": "conservative",
+        "opportunist": "greedy",
+    }
+    name = alias_map.get(name, name)
     table = HAN_BOTS if faction == "han" else XIONGNU_BOTS
     if name not in table:
         raise ValueError("未知的 %s AI 策略: %s（可选：%s）" % (faction, name, ", ".join(sorted(table.keys()))))

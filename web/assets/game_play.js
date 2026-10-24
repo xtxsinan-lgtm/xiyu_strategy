@@ -1814,7 +1814,8 @@
       b.classList.toggle("open", GAME.drawerOpen && b.getAttribute("data-panel") === GAME.activePanel);
     });
     document.querySelectorAll("#drawer-tabs .drawer-tab").forEach((t) => {
-      t.classList.toggle("active", t.getAttribute("data-drawer-tab") === GAME.activePanel);
+      const tabPanel = t.getAttribute("data-drawer-tab") || t.getAttribute("data-tab-panel");
+      t.classList.toggle("active", tabPanel === GAME.activePanel);
     });
     const curve = document.getElementById("plan-curve-drawer");
     if (curve) curve.classList.toggle("show", GAME.activePanel === "military");
@@ -1879,8 +1880,13 @@
     }
 
     const alerts = [];
+    const fKeyNames = { F1: "图籍", F2: st.meta.side === "han" ? "诏书" : "王庭", F3: "符节", F4: "仓廪", F5: "虎符", F6: "史册" };
     for (const t of (st.chronicle && st.chronicle.todos) || []) {
-      alerts.push({ level: t.level === "urgent" ? "urgent" : "", title: t.title.replace(/^【([^】]+)】/, "$1 · "), detail: t.detail.replace(/\[F\d([^\]]*)\]/g, "「$1」"), panel: t.jump_tab, node: t.jump_node });
+      const cleanDetail = (t.detail || "").replace(/\[(F\d)([^\]]*)\]/g, (_, fk, rest) => {
+        const label = rest && rest.trim() ? rest.trim() : fKeyNames[fk] || fk;
+        return `「${label}」`;
+      });
+      alerts.push({ level: t.level === "urgent" ? "urgent" : "", title: t.title.replace(/^【([^】]+)】/, "$1 · "), detail: cleanDetail, panel: t.jump_tab, node: t.jump_node });
     }
     for (const nd of Object.values(st.nodes)) {
       if (nd.under_siege_by) alerts.push({ level: "urgent", title: `${nd.name} 被围`, detail: "城下有敌，速遣援军或补给。", panel: "inspector", node: nd.id });
@@ -3597,19 +3603,19 @@
     });
     document.querySelectorAll("#drawer-tabs .drawer-tab").forEach((tab) => {
       tab.addEventListener("click", () => {
-        const p = tab.getAttribute("data-drawer-tab");
+        const p = tab.getAttribute("data-drawer-tab") || tab.getAttribute("data-tab-panel");
         if (p) openDrawer(p);
       });
     });
     document.getElementById("btn-drawer-close").onclick = closeDrawer;
 
     // 舆图五种专题视角切换 (疆域臣属 / 汉匈倾侧 / 仓廪粮道 / 烽燧视野 / 兵力态势)
-    document.querySelectorAll("#map-mode-pills .mode-pill").forEach((pill) => {
+    document.querySelectorAll("#map-mode-pills .map-mode-pill, #map-mode-pills .mode-pill").forEach((pill) => {
       pill.addEventListener("click", () => {
         const mode = pill.getAttribute("data-map-mode");
         if (!mode || !MAP_MODES[mode]) return;
         GAME.mapMode = mode;
-        document.querySelectorAll("#map-mode-pills .mode-pill").forEach((p) => p.classList.toggle("active", p === pill));
+        document.querySelectorAll("#map-mode-pills .map-mode-pill, #map-mode-pills .mode-pill").forEach((p) => p.classList.toggle("active", p === pill));
         const cartMode = document.getElementById("map-cartouche-mode");
         if (cartMode) cartMode.textContent = `舆图视角：${MAP_MODES[mode].label}`;
         renderStrategicMap();
@@ -3948,7 +3954,9 @@
     }
     if (qs.get("mode") && MAP_MODES[qs.get("mode")]) {
       GAME.mapMode = qs.get("mode");
-      document.querySelectorAll("#map-mode-pills .mode-pill").forEach((p) => p.classList.toggle("active", p.getAttribute("data-map-mode") === GAME.mapMode));
+      document.querySelectorAll("#map-mode-pills .map-mode-pill, #map-mode-pills .mode-pill").forEach((p) => p.classList.toggle("active", p.getAttribute("data-map-mode") === GAME.mapMode));
+      const cartMode = document.getElementById("map-cartouche-mode");
+      if (cartMode) cartMode.textContent = `舆图视角：${MAP_MODES[GAME.mapMode].label}`;
       renderStrategicMap();
     }
     if (qs.get("explain")) {
