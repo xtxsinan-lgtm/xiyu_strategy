@@ -15,7 +15,12 @@ window/size/window_height_override=900
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[gui]
+
+timers/tooltip_delay_sec=0.15
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.909804, 0.87451, 0.819608, 1)

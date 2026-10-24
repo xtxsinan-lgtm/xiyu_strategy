@@ -30,6 +30,7 @@ var flash: Dictionary = {}     # node id -> 剩余帧
 var show_trade := true
 var show_grid := true          # 「计里画方」墨线
 var show_regions := true       # 区域地名
+var map_mode := "political"    # political | influence | supply | intel | military
 var zoom := 1.0
 var pan := Vector2.ZERO
 var _drag := false
@@ -37,6 +38,33 @@ var _drag_moved := false
 var _army_rects: Array = []    # [{rect, id}]
 var _font: Font
 var _title_font: Font
+
+const MAP_MODE_LABELS = {
+	"political": "疆域臣属",
+	"influence": "汉匈倾侧",
+	"supply": "仓廪粮道",
+	"intel": "烽燧视野",
+	"military": "兵力态势",
+}
+
+const HYDRO_RIVERS = [
+	{"name": "塔里木河", "pts": [[225, 380], [310, 332], [420, 305], [535, 310], [615, 335], [676, 374]], "w": 2.2},
+	{"name": "和田河", "pts": [[355, 485], [368, 415], [390, 322]], "w": 1.5},
+	{"name": "叶尔羌河", "pts": [[248, 438], [285, 378], [322, 332]], "w": 1.5},
+	{"name": "伊犁水", "pts": [[425, 165], [320, 152], [215, 138]], "w": 1.8},
+	{"name": "疏勒河", "pts": [[835, 442], [765, 422], [688, 382]], "w": 1.5},
+	{"name": "弱水", "pts": [[895, 435], [880, 320], [865, 205]], "w": 1.5},
+	{"name": "药杀水", "pts": [[192, 272], [122, 235], [52, 208]], "w": 1.9},
+	{"name": "妫水", "pts": [[185, 478], [110, 432], [35, 395]], "w": 2.0},
+]
+
+const HYDRO_LAKES = [
+	{"name": "盐泽", "pos": [678, 376], "rx": 24.0, "ry": 11.5, "rot": -0.21},
+	{"name": "居延泽", "pos": [862, 192], "rx": 18.0, "ry": 9.0, "rot": 0.14},
+	{"name": "敦薨泽", "pos": [590, 256], "rx": 15.0, "ry": 8.0, "rot": -0.14},
+	{"name": "热海", "pos": [292, 198], "rx": 22.0, "ry": 9.0, "rot": -0.09},
+	{"name": "夷播海", "pos": [195, 128], "rx": 32.0, "ry": 11.0, "rot": -0.26},
+]
 
 const C_HAN = Color("c0392b")
 const C_XN = Color("5d4037")
@@ -170,6 +198,11 @@ func _route_at(p: Vector2) -> int:
 				closest = i
 	return closest
 
+func set_map_mode(mode: String) -> void:
+	if MAP_MODE_LABELS.has(mode):
+		map_mode = mode
+		queue_redraw()
+
 func node_color(n: Dictionary) -> Color:
 	var f: String = n["faction"]
 	if f == "han":
@@ -190,6 +223,165 @@ func node_color(n: Dictionary) -> Color:
 	# 新增国家或旧存档中的额外势力也有稳定颜色，不依赖遍历顺序或 RNG。
 	var hue := float(f.sha256_buffer().decode_u16(0)) / 65536.0
 	return Color.from_hsv(hue, 0.6, 0.72)
+
+func node_mode_color(id: String, n: Dictionary) -> Color:
+	if map_mode == "political":
+		return node_color(n)
+	var f: String = n["faction"]
+	var rel: Dictionary = state.relations.get(f, {})
+	if map_mode == "influence":
+		if f == "han":
+			return Color("a33a2a")
+		if f == "xiongnu":
+			return Color("5d4037")
+		if rel.is_empty():
+			return Color("9c8b70")
+		var net := float(rel.get("han_influence", 0.0)) - float(rel.get("xn_intimidation", 0.0))
+		if net >= 20.0:
+			return Color("b83b2b")
+		if net >= 5.0:
+			return Color("d97a54")
+		if net <= -20.0:
+			return Color("5d4037")
+		if net <= -5.0:
+			return Color("8d6e63")
+		return Color("c9a654")
+	elif map_mode == "supply":
+		var g := float(n.get("grain", 0.0))
+		if g >= 200000.0:
+			return Color("1f6f50")
+		if g >= 80000.0:
+			return Color("3d9970")
+		if g >= 25000.0:
+			return Color("b8893c")
+		return Color("9c7a54")
+	elif map_mode == "intel":
+		var ctl: String = state.controller(n)
+		if ctl == "han" or float(rel.get("han_influence", 0.0)) >= 55.0:
+			return Color("1a4b8c")
+		if float(rel.get("han_influence", 0.0)) >= 25.0:
+			return Color("4668b5")
+		return Color("7a7468")
+	elif map_mode == "military":
+		var troops := int(n.get("militia", 0))
+		for aid in state.armies:
+			if state.armies[aid]["loc"].get("node", "") == id:
+				troops += state.army_size(state.armies[aid])
+		if troops >= 5000:
+			return Color("a33a2a")
+		if troops >= 2000:
+			return Color("c96a3b")
+		return Color("8a7b65")
+	return node_color(n)
+
+func _build_territory_polygon(id: String, base_r: float) -> PackedVector2Array:
+	var c := node_world_pos(id)
+	var num_angles := 12
+	var poly := PackedVector2Array()
+	for i in num_angles:
+		var ang := TAU * float(i) / float(num_angles)
+		var dir := Vector2.from_angle(ang)
+		var r := base_r
+		for oid in state.nodes:
+			if oid == id:
+				continue
+			var v := node_world_pos(oid) - c
+			var d2 := v.length_squared()
+			if d2 < 4.0:
+				continue
+			var proj := v.dot(dir)
+			if proj > 0.0:
+				var half_dist := (d2 / (2.0 * proj)) * 0.86
+				if half_dist < r:
+					r = maxf(16.0, half_dist)
+		var wave := 1.0 + 0.06 * sin(float(i) * 3.0 + c.x * 0.05)
+		poly.append(to_screen(c + dir * (r * wave)))
+	return poly
+
+func _draw_polygon_hachures(poly: PackedVector2Array, col: Color, step: float = 8.0) -> void:
+	if poly.size() < 3:
+		return
+	var min_p := poly[0]
+	var max_p := poly[0]
+	for p in poly:
+		min_p.x = minf(min_p.x, p.x)
+		min_p.y = minf(min_p.y, p.y)
+		max_p.x = maxf(max_p.x, p.x)
+		max_p.y = maxf(max_p.y, p.y)
+	var diag := (max_p.x - min_p.x) + (max_p.y - min_p.y)
+	var d := -diag
+	while d <= diag:
+		var a := Vector2(min_p.x + d, min_p.y)
+		var b := Vector2(min_p.x + d + (max_p.y - min_p.y), max_p.y)
+		var clipped := Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([a, b]), poly)
+		for seg in clipped:
+			if seg.size() >= 2:
+				draw_line(seg[0], seg[seg.size() - 1], col, 1.2, true)
+		d += step
+
+func _draw_hydrography(s: float) -> void:
+	for rv in HYDRO_RIVERS:
+		var curve := Curve2D.new()
+		curve.bake_interval = 4.0
+		var pts: Array = rv["pts"]
+		for i in pts.size():
+			var p := Vector2(pts[i][0], pts[i][1])
+			var tangent := Vector2.ZERO
+			if i > 0 and i < pts.size() - 1:
+				tangent = (Vector2(pts[i + 1][0], pts[i + 1][1]) - Vector2(pts[i - 1][0], pts[i - 1][1])) * 0.22
+			curve.add_point(p, -tangent, tangent)
+		var scr := PackedVector2Array()
+		for bp in curve.get_baked_points():
+			scr.append(to_screen(bp))
+		if scr.size() >= 2:
+			var w: float = float(rv["w"]) * clampf(s, 0.8, 1.5)
+			draw_polyline(scr, Color(0.92, 0.88, 0.78, 0.52), w + 1.8, true)
+			draw_polyline(scr, Color(0.29, 0.46, 0.53, 0.65), w, true)
+	for lk in HYDRO_LAKES:
+		var center := to_screen(Vector2(lk["pos"][0], lk["pos"][1]))
+		var rx: float = float(lk["rx"]) * s
+		var ry: float = float(lk["ry"]) * s
+		var rot: float = float(lk["rot"])
+		var outer_pts := PackedVector2Array()
+		var inner_pts := PackedVector2Array()
+		for i in 25:
+			var ang := TAU * float(i) / 24.0
+			var p1 := Vector2(cos(ang) * rx, sin(ang) * ry).rotated(rot)
+			var p2 := Vector2(cos(ang) * rx * 0.70, sin(ang) * ry * 0.70).rotated(rot)
+			outer_pts.append(center + p1)
+			inner_pts.append(center + p2)
+		draw_colored_polygon(outer_pts, Color(0.36, 0.54, 0.60, 0.42))
+		draw_polyline(outer_pts, Color(0.21, 0.36, 0.42, 0.70), 1.1, true)
+		draw_polyline(inner_pts, Color(0.93, 0.91, 0.83, 0.52), 0.8, true)
+		if _font != null:
+			var fs := int(clampf(10.0 * sqrt(zoom), 9.0, 14.0))
+			_text_centered(_font, center - Vector2(0, ry + 6.0), lk["name"], fs, Color(0.19, 0.32, 0.38, 0.86))
+
+func _draw_territories() -> void:
+	for id in state.nodes:
+		var n: Dictionary = state.nodes[id]
+		var ntype: String = n["type"]
+		if ntype == "junction":
+			continue
+		var base_r := 40.0
+		if ntype in ["source", "nomad"]:
+			base_r = 50.0
+		elif ntype == "pass":
+			base_r = 28.0
+		var poly := _build_territory_polygon(id, base_r)
+		if poly.size() < 3:
+			continue
+		var col := node_mode_color(id, n)
+		var is_sel := (id == selected_node)
+		var fill_a := 0.28 if is_sel else (0.16 if map_mode == "political" else 0.22)
+		draw_colored_polygon(poly, Color(col, fill_a))
+		var closed := poly.duplicate()
+		closed.append(poly[0])
+		draw_polyline(closed, Color(col, 0.72 if is_sel else 0.38), 1.6 if is_sel else 1.0, true)
+		var ctl: String = state.controller(n)
+		if n["under_siege_by"] != "" or (map_mode == "political" and n["faction"] not in ["han", "xiongnu"] and ctl in ["han", "xiongnu"]):
+			var hcol := Color(0.36, 0.25, 0.22, 0.28) if ctl == "xiongnu" else Color(0.64, 0.23, 0.16, 0.28)
+			_draw_polygon_hachures(poly, hcol, 9.0)
 
 func _process(_dt: float) -> void:
 	if not flash.is_empty():
@@ -212,10 +404,14 @@ func _draw() -> void:
 	_draw_frame()
 	_draw_cartouche()
 	_draw_compass()
+	_draw_scale_bar()
 
 func _draw_world() -> void:
 	_army_rects.clear()
 	var s := _base_scale() * zoom
+	# 仿古水系湖泽与疆域多边形色晕
+	_draw_hydrography(s)
+	_draw_territories()
 	# 区域地名
 	if show_regions:
 		_draw_region_labels(s)
@@ -286,7 +482,7 @@ func _draw_world() -> void:
 			draw_arc(p, rad + 4.0, 0, TAU, 24, Color("ffffff"), 3.0)
 		draw_circle(p + Vector2(0, 2), rad + 2, Color(0.15, 0.11, 0.08, 0.25))
 		draw_circle(p, rad + 1.5, Color("eed4a0"))
-		draw_circle(p, rad, node_color(n))
+		draw_circle(p, rad, node_mode_color(id, n))
 		draw_arc(p, rad, 0, TAU, 20, Color("2a1d10"), 1.5)
 		if n["type"] not in ["pass", "junction"]:
 			draw_texture_rect(NOMAD_ICON if n["type"] == "nomad" else CITY_ICON, Rect2(p - Vector2(6, 6), Vector2(12, 12)), false)
@@ -425,7 +621,29 @@ func _text_centered(font: Font, center: Vector2, t: String, fs: int, col: Color)
 	var baseline := center.y + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5
 	draw_string(font, Vector2(center.x - w * 0.5, baseline), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
-## 画框带：外线（距边 8px）+ 22px 绢色框带 + 内线；框带上按当前视图标注天干（列）与地支（行）。
+func _draw_zebra_neatline(r: Rect2) -> void:
+	var seg := 24.0
+	var bw := 3.5
+	var x := r.position.x
+	var idx := 0
+	while x < r.end.x:
+		var w := minf(seg, r.end.x - x)
+		var col := Desk.INK if idx % 2 == 0 else Desk.SILK_3
+		draw_rect(Rect2(x, r.position.y - bw, w, bw), col)
+		draw_rect(Rect2(x, r.end.y, w, bw), col)
+		x += seg
+		idx += 1
+	var y := r.position.y
+	idx = 0
+	while y < r.end.y:
+		var h := minf(seg, r.end.y - y)
+		var col := Desk.INK if idx % 2 == 0 else Desk.SILK_3
+		draw_rect(Rect2(r.position.x - bw, y, bw, h), col)
+		draw_rect(Rect2(r.end.x, y, bw, h), col)
+		y += seg
+		idx += 1
+
+## 画框带：外线（距边 8px）+ 22px 绢色框带 + 内侧黑白相间比例尺界格 + 天干（列）/ 地支（行）及长安里数。
 func _draw_frame() -> void:
 	var outer := Rect2(Vector2.ZERO, size).grow(-FRAME_INSET)
 	var inner := inner_rect()
@@ -440,18 +658,19 @@ func _draw_frame() -> void:
 	draw_rect(Rect2(Vector2(outer.position.x, inner.end.y), Vector2(outer.size.x, FRAME_BAND)), Desk.SILK_2)
 	draw_rect(Rect2(Vector2(outer.position.x, inner.position.y), Vector2(FRAME_BAND, inner.size.y)), Desk.SILK_2)
 	draw_rect(Rect2(Vector2(inner.end.x, inner.position.y), Vector2(FRAME_BAND, inner.size.y)), Desk.SILK_2)
-	draw_rect(outer, Desk.INK, false, 1.0)
+	_draw_zebra_neatline(inner)
+	draw_rect(outer, Desk.INK, false, 1.5)
 	draw_rect(inner, Desk.INK, false, 1.0)
 	if _font == null:
 		return
 	var tick_col := Color(Desk.INK, 0.7)
 	var label_col: Color = Desk.INK_2
 	var fs := 12
-	var band_mid_top := outer.position.y + FRAME_BAND * 0.5
-	var band_mid_bottom := inner.end.y + FRAME_BAND * 0.5
+	var band_mid_top := outer.position.y + FRAME_BAND * 0.5 - 1.0
+	var band_mid_bottom := inner.end.y + FRAME_BAND * 0.5 + 1.0
 	var band_mid_left := outer.position.x + FRAME_BAND * 0.5
 	var band_mid_right := inner.end.x + FRAME_BAND * 0.5
-	# 列：天干
+	# 列：天干 + 距长安里数
 	for i in range(0, _col_count() + 1):
 		var x := _col_x(i)
 		if x >= inner.position.x and x <= inner.end.x:
@@ -461,7 +680,8 @@ func _draw_frame() -> void:
 			var cx := _col_x(i + 0.5)
 			if cx > inner.position.x + 8 and cx < inner.end.x - 8:
 				var stem: String = STEMS[i % STEMS.size()]
-				_text_centered(_font, Vector2(cx, band_mid_top), stem, fs, label_col)
+				var li_txt := "京畿" if (9 - i) * 1200 <= 0 else "%d里" % ((9 - i) * 1200)
+				_text_centered(_font, Vector2(cx, band_mid_top), "%s %s" % [stem, li_txt], 10, label_col)
 				_text_centered(_font, Vector2(cx, band_mid_bottom), stem, fs, label_col)
 	# 行：地支
 	for j in range(0, GRID_ROWS + 1):
@@ -476,38 +696,57 @@ func _draw_frame() -> void:
 				_text_centered(_font, Vector2(band_mid_left, cy), branch, fs, label_col)
 				_text_centered(_font, Vector2(band_mid_right, cy), branch, fs, label_col)
 
-## 题签（左上）：绢卡双线框，「西域诸国图」楷 26、字距 0.3em。
+## 题签（左上）：仿古双线折角框 + 菱形界格，「西域都护舆图」楷 24、附当前舆图视角。
 func _draw_cartouche() -> void:
 	var font := _title_font if _title_font != null else _font
 	if font == null:
 		return
 	var inner := inner_rect()
-	var title := "西域诸国图"
-	var fs := 26
-	var spacing := fs * 0.3
+	var title := "西域都护舆图"
+	var fs := 22
+	var spacing := fs * 0.25
 	var title_w := 0.0
 	for ch in title:
 		title_w += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	title_w += spacing * (title.length() - 1)
 	var sub := "前119年 · 道里据《汉书·西域传》"
-	var sub_w := _font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-	var card := Rect2(inner.position + Vector2(12, 12), Vector2(maxf(title_w, sub_w) + 36, 74))
+	var sub_w := _font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+	var mode_str := "舆图视角：%s" % MAP_MODE_LABELS.get(map_mode, "疆域臣属")
+	var card := Rect2(inner.position + Vector2(14, 14), Vector2(maxf(title_w, sub_w) + 42, 86))
+	draw_rect(card + Rect2(2, 3, 0, 0), Color(0, 0, 0, 0.16))
 	draw_rect(card, Desk.SILK)
-	draw_rect(card, Desk.INK, false, 1.0)
-	draw_rect(card.grow(-3), Desk.INK, false, 1.0)
+	draw_rect(card, Desk.INK, false, 1.5)
+	draw_rect(card.grow(-3), Color(Desk.CINNABAR, 0.55), false, 1.0)
+	# 四角回纹方格点缀
+	for cp in [card.position + Vector2(5, 5), Vector2(card.end.x - 9, card.position.y + 5), Vector2(card.position.x + 5, card.end.y - 9), card.end - Vector2(9, 9)]:
+		draw_rect(Rect2(cp, Vector2(4, 4)), Desk.CINNABAR, false, 1.0)
 	var x := card.position.x + (card.size.x - title_w) * 0.5
 	for ch in title:
-		draw_string(font, Vector2(x, card.position.y + 38), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Desk.INK)
+		draw_string(font, Vector2(x, card.position.y + 32), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Desk.INK)
 		x += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + spacing
-	draw_string(_font, Vector2(card.position.x + (card.size.x - sub_w) * 0.5, card.position.y + 60), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Desk.MUTED)
+	# 菱形中线
+	var rule_y := card.position.y + 41.0
+	draw_line(Vector2(card.position.x + 14, rule_y), Vector2(card.end.x - 14, rule_y), Color(Desk.INK, 0.25), 1.0)
+	var mid_x := card.position.x + card.size.x * 0.5
+	draw_colored_polygon(PackedVector2Array([Vector2(mid_x, rule_y - 3), Vector2(mid_x + 3, rule_y), Vector2(mid_x, rule_y + 3), Vector2(mid_x - 3, rule_y)]), Desk.CINNABAR)
+	draw_string(_font, Vector2(card.position.x + (card.size.x - sub_w) * 0.5, card.position.y + 58), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Desk.MUTED)
+	var mw := _font.get_string_size(mode_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+	draw_string(_font, Vector2(card.position.x + (card.size.x - mw) * 0.5, card.position.y + 75), mode_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Desk.CINNABAR)
 
-## 指北（右上）：直径 64 的圆 + 八角星，顶端「北」。
+## 指北（右上）：72 刻度罗盘环 + 八角方位花，四正「北/南/西/东」。
 func _draw_compass() -> void:
 	var inner := inner_rect()
-	var c := Vector2(inner.end.x - 12 - 32, inner.position.y + 24 + 32)
-	draw_circle(c, 32, Color(Desk.SILK, 0.88))
-	draw_arc(c, 32, 0, TAU, 48, Desk.INK, 1.0, true)
-	draw_arc(c, 27, 0, TAU, 48, Color(Desk.INK, 0.35), 1.0, true)
+	var c := Vector2(inner.end.x - 16 - 36, inner.position.y + 18 + 36)
+	draw_circle(c, 36, Color(Desk.SILK, 0.92))
+	draw_arc(c, 36, 0, TAU, 64, Desk.INK, 1.3, true)
+	draw_arc(c, 31, 0, TAU, 64, Color(Desk.INK, 0.45), 0.9, true)
+	# 72 刻度线（每 5° 一小格，每 30° 一大格）
+	for deg_i in 72:
+		var ang := deg_to_rad(float(deg_i * 5) - 90.0)
+		var is_major := (deg_i % 6 == 0)
+		var r1 := 30.5 if is_major else 33.0
+		var r2 := 35.5
+		draw_line(c + Vector2.from_angle(ang) * r1, c + Vector2.from_angle(ang) * r2, Color(Desk.INK, 0.78 if is_major else 0.38), 1.1 if is_major else 0.6, true)
 	for k in 8:
 		var ang := -PI * 0.5 + k * PI / 4.0
 		var r := 26.0 if k % 2 == 0 else 15.0
@@ -521,7 +760,25 @@ func _draw_compass() -> void:
 	draw_circle(c, 2.5, Desk.INK)
 	var font := _title_font if _title_font != null else _font
 	if font != null:
-		_text_centered(font, Vector2(c.x, c.y - 32 - 11), "北", 16, Desk.CINNABAR)
+		_text_centered(font, Vector2(c.x, c.y - 36 - 9), "北", 13, Desk.CINNABAR)
+		_text_centered(font, Vector2(c.x, c.y + 36 + 9), "南", 10, Desk.INK_2)
+		_text_centered(font, Vector2(c.x - 36 - 9, c.y), "西", 10, Desk.INK_2)
+		_text_centered(font, Vector2(c.x + 36 + 9, c.y), "东", 10, Desk.INK_2)
+
+## 比例尺（左下偏右，与图层胶囊并列）：「比例尺 · 五百里 (210 km)」黑白分节尺。
+func _draw_scale_bar() -> void:
+	if _font == null:
+		return
+	var inner := inner_rect()
+	var box_r := Rect2(Vector2(inner.position.x + 14, inner.end.y - 74), Vector2(138, 32))
+	draw_rect(box_r, Color(Desk.SILK, 0.92))
+	draw_rect(box_r, Color(Desk.INK, 0.55), false, 1.0)
+	draw_string(_font, box_r.position + Vector2(8, 13), "比例尺 · 五百里 (210km)", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Desk.INK)
+	var seg_w := 30.0
+	for i in 4:
+		var sr := Rect2(box_r.position + Vector2(8 + i * seg_w, 18), Vector2(seg_w, 5))
+		draw_rect(sr, Desk.INK if i % 2 == 0 else Desk.SILK_3)
+		draw_rect(sr, Desk.INK, false, 0.8)
 
 func _gui_input(ev: InputEvent) -> void:
 	if state == null:

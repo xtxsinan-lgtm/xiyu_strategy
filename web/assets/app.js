@@ -406,6 +406,51 @@ from design_sim import web_bridge as wb
     return true;
   }
 
+  const HYDRO_RIVERS = [
+    { name: "塔里木河", d: "M 225,380 C 310,332 420,305 535,310 C 600,315 645,355 676,374", width: 2.3 },
+    { name: "和田河", d: "M 355,485 C 365,420 375,365 390,322", width: 1.5 },
+    { name: "叶尔羌河", d: "M 248,438 C 275,392 300,355 322,332", width: 1.5 },
+    { name: "伊犁水", d: "M 425,165 C 345,155 275,148 215,138", width: 1.9 },
+    { name: "疏勒河", d: "M 835,442 C 785,432 745,420 688,382", width: 1.6 },
+    { name: "弱水", d: "M 895,435 C 885,350 875,270 865,205", width: 1.6 },
+    { name: "药杀水", d: "M 192,272 C 138,242 92,222 52,208", width: 2.0 },
+    { name: "妫水", d: "M 185,478 C 125,442 78,415 35,395", width: 2.1 },
+  ];
+
+  const HYDRO_LAKES = [
+    { name: "盐泽 (罗布泊)", cx: 678, cy: 376, rx: 24, ry: 12, rot: -12 },
+    { name: "居延泽", cx: 862, cy: 192, rx: 18, ry: 9, rot: 8 },
+    { name: "敦薨泽 (博斯腾湖)", cx: 590, cy: 256, rx: 15, ry: 8, rot: -8 },
+    { name: "热海 (伊塞克湖)", cx: 292, cy: 198, rx: 22, ry: 9, rot: -5 },
+    { name: "夷播海 (巴尔喀什)", cx: 195, cy: 128, rx: 32, ry: 11, rot: -15 },
+  ];
+
+  function buildTerritoryPolygon(cx, cy, allPts, baseRadius) {
+    const numAngles = 12;
+    const pts = [];
+    for (let i = 0; i < numAngles; i++) {
+      const ang = (Math.PI * 2 * i) / numAngles;
+      const dx = Math.cos(ang);
+      const dy = Math.sin(ang);
+      let r = baseRadius;
+      for (const op of allPts) {
+        const vx = op[0] - cx;
+        const vy = op[1] - cy;
+        const d2 = vx * vx + vy * vy;
+        if (d2 < 4) continue;
+        const proj = vx * dx + vy * dy;
+        if (proj > 0) {
+          const halfDist = (d2 / (2 * proj)) * 0.86;
+          if (halfDist < r) r = Math.max(16, halfDist);
+        }
+      }
+      const wave = 1.0 + 0.06 * Math.sin(i * 3.0 + cx * 0.05);
+      const rr = r * wave;
+      pts.push(`${(cx + dx * rr).toFixed(1)},${(cy + dy * rr).toFixed(1)}`);
+    }
+    return pts.join(" ");
+  }
+
   function renderStrategicMap(st) {
     const svg = document.getElementById("map-svg");
     const pos = BUNDLE.map_presentation.positions;
@@ -427,16 +472,62 @@ from design_sim import web_bridge as wb
     });
 
     let html = `
+      <defs>
+        <pattern id="wb-hachure-red" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(163, 58, 42, 0.34)" stroke-width="1.6"/>
+        </pattern>
+        <pattern id="wb-hachure-brown" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+          <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(93, 64, 55, 0.34)" stroke-width="1.6"/>
+        </pattern>
+      </defs>
       <!-- Godot 西域舆图底图与宣纸柔光遮罩 -->
       <rect x="0" y="0" width="1000" height="620" fill="#e9dcc0"/>
       <image href="assets/art/western-regions-atlas-v2.png" x="0" y="0" width="1000" height="620" preserveAspectRatio="none"/>
-      <rect x="0" y="0" width="1000" height="620" fill="rgba(242, 227, 186, 0.38)"/>
+      <rect x="0" y="0" width="1000" height="620" fill="rgba(242, 227, 186, 0.34)"/>
     `;
+
+    // 0A. 水系湖泽层（仿古水波纹与汉代水名）
+    html += `<g pointer-events="none" opacity="0.88">`;
+    for (const rv of HYDRO_RIVERS) {
+      html += `<path d="${rv.d}" fill="none" stroke="rgba(235, 225, 198, 0.55)" stroke-width="${rv.width + 1.8}" stroke-linecap="round"/>`;
+      html += `<path d="${rv.d}" fill="none" stroke="rgba(74, 118, 136, 0.62)" stroke-width="${rv.width}" stroke-linecap="round"/>`;
+    }
+    for (const lk of HYDRO_LAKES) {
+      const tr = `rotate(${lk.rot} ${lk.cx} ${lk.cy})`;
+      html += `<ellipse cx="${lk.cx}" cy="${lk.cy}" rx="${lk.rx}" ry="${lk.ry}" transform="${tr}" fill="rgba(92, 138, 154, 0.42)" stroke="rgba(54, 92, 108, 0.68)" stroke-width="1.1"/>`;
+      html += `<ellipse cx="${lk.cx}" cy="${lk.cy}" rx="${(lk.rx * 0.72).toFixed(1)}" ry="${(lk.ry * 0.72).toFixed(1)}" transform="${tr}" fill="none" stroke="rgba(238, 232, 212, 0.52)" stroke-width="0.7" stroke-dasharray="4,2"/>`;
+      html += `<text x="${lk.cx}" y="${lk.cy - lk.ry - 3}" text-anchor="middle" font-size="9" fill="rgba(48, 82, 96, 0.85)" font-style="italic">${lk.name}</text>`;
+    }
+    html += `</g>`;
+
+    // 0B. 政区疆域多边形晕染与斜线阴影层
+    const allNodePts = Object.keys(st.nodes)
+      .map((nid) => pos[nid])
+      .filter(Boolean);
+    html += `<g pointer-events="none">`;
+    for (const [nid, n] of Object.entries(st.nodes)) {
+      const pt = pos[nid];
+      if (!pt) continue;
+      const meta = MVP_NODE_META[nid] || {};
+      const nodeType = meta.type || n.type || "city";
+      if (nodeType === "junction") continue;
+      const baseR = nodeType === "source" || nodeType === "nomad" ? 50 : nodeType === "pass" ? 28 : 40;
+      const polyPts = buildTerritoryPolygon(pt[0], pt[1], allNodePts, baseR);
+      const col = getGodotNodeColor(nid, n);
+      const isSel = nid === APP.selectedNodeId;
+      const ctl = n.relation && n.relation.overlord ? n.relation.overlord : n.controller;
+      html += `<polygon points="${polyPts}" fill="${col}" fill-opacity="${isSel ? "0.26" : "0.14"}" stroke="${col}" stroke-opacity="${isSel ? "0.68" : "0.34"}" stroke-width="${isSel ? "1.6" : "0.9"}" stroke-dasharray="${ctl === "independent" ? "3,2" : "none"}"/>`;
+      if (nid === edTarget || (n.relation && n.relation.embargo_han)) {
+        const pat = ctl === "xiongnu" ? "url(#wb-hachure-brown)" : "url(#wb-hachure-red)";
+        html += `<polygon points="${polyPts}" fill="${pat}"/>`;
+      }
+    }
+    html += `</g>`;
 
     // 地理大区底纹标注 (`layout["regions"]`)
     html += `<g pointer-events="none">`;
     for (const reg of regions) {
-      html += `<text x="${reg[1][0]}" y="${reg[1][1]}" font-size="21" font-weight="700" fill="rgba(77, 71, 56, 0.72)" stroke="rgba(245, 235, 204, 0.65)" stroke-width="3" paint-order="stroke">${reg[0]}</text>`;
+      html += `<text x="${reg[1][0]}" y="${reg[1][1]}" font-size="20" font-weight="700" letter-spacing="4" fill="rgba(77, 71, 56, 0.65)" stroke="rgba(245, 235, 204, 0.65)" stroke-width="3" paint-order="stroke">${reg[0]}</text>`;
     }
     html += `</g>`;
 
@@ -451,7 +542,7 @@ from design_sim import web_bridge as wb
       for (let i = 1; i < openPrefix.length; i++) {
         const rIdx = routeByPair[`${openPrefix[i - 1]}|${openPrefix[i]}`];
         if (rIdx !== undefined && routeCurveD[rIdx]) {
-          html += `<path d="${routeCurveD[rIdx]}" fill="none" stroke="rgba(232, 179, 64, 0.85)" stroke-width="6.0" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`;
+          html += `<path d="${routeCurveD[rIdx]}" fill="none" stroke="rgba(232, 179, 64, 0.85)" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>`;
         }
       }
     }
@@ -493,41 +584,41 @@ from design_sim import web_bridge as wb
       const [x, y] = pt;
       const meta = MVP_NODE_META[nid] || {};
       const nodeType = meta.type || n.type || "city";
-      let rad = 9.0;
-      if (nodeType === "source") rad = 12.0;
+      let rad = 8.5;
+      if (nodeType === "source") rad = 11.5;
       else if (nodeType === "pass") rad = 6.0;
       else if (nodeType === "junction") rad = 4.0;
-      else if (nodeType === "nomad") rad = 10.0;
+      else if (nodeType === "nomad") rad = 9.5;
 
       const fillCol = getGodotNodeColor(nid, n);
       const isSelected = nid === APP.selectedNodeId;
       const isEdictTarget = nid === edTarget;
       const iconHref = nodeType === "nomad" ? "assets/icons/nomad.svg" : "assets/icons/city.svg";
       const label = n.name || meta.name || nid;
-      const fs = nodeType === "junction" ? 11 : 13;
-      const tw = Math.max(28, label.length * (fs + 0.5));
+      const fs = nodeType === "junction" ? 10.5 : 12.5;
+      const tw = Math.max(26, label.length * (fs + 0.4));
       const boxW = tw + 10;
-      const boxH = fs + 7;
+      const boxH = fs + 6;
       const boxX = x - boxW * 0.5;
       const boxY = y + rad + 3;
-      const labelBoxFill = isSelected ? "rgba(245, 232, 199, 0.96)" : "rgba(245, 232, 199, 0.85)";
-      const labelBoxStroke = isSelected ? `stroke="#9b742f" stroke-width="1.4"` : `stroke="rgba(120, 100, 62, 0.35)" stroke-width="0.8"`;
+      const labelBoxFill = isSelected ? "rgba(252, 246, 229, 0.96)" : "rgba(245, 232, 199, 0.88)";
+      const labelBoxStroke = isSelected ? `stroke="#a33a2a" stroke-width="1.4"` : `stroke="rgba(120, 100, 62, 0.38)" stroke-width="0.8"`;
 
       html += `<g class="map-node" data-node="${nid}" style="cursor:pointer">`;
       if (isEdictTarget) {
-        html += `<circle cx="${x}" cy="${y}" r="${rad + 7}" fill="none" stroke="#d02020" stroke-width="2.5"/>`;
+        html += `<circle cx="${x}" cy="${y}" r="${rad + 7}" fill="none" stroke="#d02020" stroke-width="2.2" stroke-dasharray="4,2"/>`;
       }
       if (isSelected) {
-        html += `<circle cx="${x}" cy="${y}" r="${rad + 4}" fill="none" stroke="#ffffff" stroke-width="3.0"/>`;
+        html += `<circle cx="${x}" cy="${y}" r="${rad + 4}" fill="none" stroke="#ffffff" stroke-width="2.8"/>`;
       }
       html += `<circle cx="${x}" cy="${y + 2}" r="${rad + 2}" fill="rgba(38, 28, 20, 0.25)"/>`;
       html += `<circle cx="${x}" cy="${y}" r="${rad + 1.5}" fill="#eed4a0"/>`;
-      html += `<circle cx="${x}" cy="${y}" r="${rad}" fill="${fillCol}" stroke="#2a1d10" stroke-width="1.5"/>`;
+      html += `<circle cx="${x}" cy="${y}" r="${rad}" fill="${fillCol}" stroke="#2a1d10" stroke-width="1.4"/>`;
       if (nodeType !== "pass" && nodeType !== "junction") {
-        html += `<image href="${iconHref}" x="${x - 6}" y="${y - 6}" width="12" height="12" pointer-events="none"/>`;
+        html += `<image href="${iconHref}" x="${x - 5.5}" y="${y - 5.5}" width="11" height="11" pointer-events="none"/>`;
       }
-      html += `<rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH}" rx="3" fill="${labelBoxFill}" ${labelBoxStroke}/>`;
-      html += `<text x="${x}" y="${(boxY + fs + 1.5).toFixed(1)}" text-anchor="middle" fill="#251c13" font-size="${fs}" font-weight="${isSelected ? "700" : "600"}">${label}</text>`;
+      html += `<rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH}" rx="2.5" fill="${labelBoxFill}" ${labelBoxStroke}/>`;
+      html += `<text x="${x}" y="${(boxY + fs + 1.2).toFixed(1)}" text-anchor="middle" fill="#251c13" font-size="${fs}" font-weight="${isSelected ? "700" : "600"}">${label}</text>`;
       html += `</g>`;
     }
 
@@ -538,32 +629,38 @@ from design_sim import web_bridge as wb
       n.armies.forEach((a, k) => {
         const cnt = (a.soldiers || 0) + (a.is_convoy ? a.laborers || 0 : 0);
         if (cnt <= 0) return;
-        const anchorX = pt[0] + 19 + (k % 3) * 42;
-        const anchorY = pt[1] - Math.floor(k / 3) * 45;
+        const anchorX = pt[0] + 18 + (k % 3) * 38;
+        const anchorY = pt[1] - Math.floor(k / 3) * 40;
         const posX = anchorX;
-        const posY = anchorY - 24;
+        const posY = anchorY - 22;
         const baseCol = a.faction === "han" ? GODOT_C_HAN : GODOT_C_XN;
         const boxCol = a.is_convoy ? (a.faction === "han" ? "#cd854c" : "#9f8853") : baseCol;
         const txt = cnt >= 10000 ? `${(cnt / 10000).toFixed(1)}万` : `${cnt}`;
         const iconPath = a.is_convoy ? "assets/icons/convoy.svg" : "assets/icons/standard.svg";
         html += `
           <g class="map-node" data-node="${nid}" style="cursor:pointer;">
-            <line x1="${anchorX}" y1="${anchorY}" x2="${posX}" y2="${posY + 16}" stroke="#6b4f2a" stroke-width="1.2"/>
-            <circle cx="${anchorX}" cy="${anchorY}" r="3.0" fill="${baseCol}"/>
-            <rect x="${posX - 16}" y="${posY - 20}" width="32" height="40" rx="3" fill="${boxCol}" stroke="#fff3d0" stroke-width="1"/>
-            <image href="${iconPath}" x="${posX - 13}" y="${posY - 18}" width="26" height="26" pointer-events="none"/>
-            <text x="${posX}" y="${posY + 17}" fill="#ffffff" font-size="10.5" font-weight="700" text-anchor="middle">${txt}</text>
+            <line x1="${anchorX}" y1="${anchorY}" x2="${posX}" y2="${posY + 14}" stroke="#6b4f2a" stroke-width="1.2"/>
+            <circle cx="${anchorX}" cy="${anchorY}" r="2.6" fill="${baseCol}"/>
+            <rect x="${posX - 14}" y="${posY - 18}" width="28" height="34" rx="2.5" fill="${boxCol}" stroke="#fff3d0" stroke-width="1"/>
+            <image href="${iconPath}" x="${posX - 11}" y="${posY - 16}" width="22" height="22" pointer-events="none"/>
+            <text x="${posX}" y="${posY + 14}" fill="#ffffff" font-size="9.5" font-weight="700" text-anchor="middle">${txt}</text>
           </g>
         `;
       });
     }
 
-    // 5. 左上角题签
+    // 5. 左上角仿古题签与左下角比例尺
     html += `
       <g pointer-events="none">
-        <rect x="14" y="14" width="290" height="50" rx="3" fill="rgba(245, 232, 199, 0.88)" stroke="rgba(155, 116, 47, 0.45)" stroke-width="1"/>
-        <text x="26" y="35" fill="#37291a" font-size="14.5" font-weight="700">西域舆图  /  前119年战略示意</text>
-        <text x="26" y="53" fill="#66523a" font-size="11.5">点击城邦检视 · 金色：商路 · 虚线：险道</text>
+        <rect x="14" y="14" width="300" height="54" rx="2" fill="rgba(246, 241, 229, 0.94)" stroke="#1e1c1a" stroke-width="1.5"/>
+        <rect x="17" y="17" width="294" height="48" fill="none" stroke="rgba(163, 58, 42, 0.45)" stroke-width="0.8"/>
+        <text x="28" y="36" fill="#1e1c1a" font-size="14.5" font-weight="700" letter-spacing="2">西域都护军政舆图 · 沙盘推演</text>
+        <text x="28" y="54" fill="#6b5e4c" font-size="11">点击城邦检视 · 金色：丝路商道 · 色晕：宗主疆域 · 斜纹：诏令/封锁</text>
+        <rect x="16" y="586" width="136" height="22" rx="2" fill="rgba(246, 241, 229, 0.9)" stroke="rgba(30, 28, 26, 0.35)" stroke-width="0.9"/>
+        <rect x="24" y="592" width="18" height="4" fill="#1e1c1a"/>
+        <rect x="42" y="592" width="18" height="4" fill="#f6f1e5" stroke="#1e1c1a" stroke-width="0.7"/>
+        <rect x="60" y="592" width="18" height="4" fill="#1e1c1a"/>
+        <text x="86" y="600" fill="#3a332a" font-size="9.5" font-weight="600">五百里 (210km)</text>
       </g>
     `;
 

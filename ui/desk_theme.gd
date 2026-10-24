@@ -19,6 +19,8 @@ const CINNABAR_HI = Color("c2513b")
 const BRONZE = Color("b48c4e")
 const BRONZE_HI = Color("d9b877")
 const PATINA = Color("3e6b5a")
+const JADE = Color("1f6f50")
+const COBALT = Color("1a4b8c")
 const AMBER = Color("b9822d")
 const XN = Color("6b4a33")
 const ON_LACQUER = Color("efe4cc")
@@ -39,6 +41,63 @@ const FS_DRAWER = 21
 const FS_METRIC = 20
 
 static var _title: Font
+
+
+## 六维 KPI 指标卡样式（带顶部 3px 语义色条，对标网页版 `.d-metric-card`）。
+static func make_kpi_card_box(tone: String = "") -> StyleBoxFlat:
+	var b = StyleBoxFlat.new()
+	b.bg_color = SILK_3
+	b.border_color = CARD_EDGE
+	b.set_border_width_all(1)
+	b.border_width_top = 3
+	if tone == "good":
+		b.border_color = Color(JADE, 0.65)
+	elif tone == "warn":
+		b.border_color = Color(AMBER, 0.65)
+	elif tone == "bad":
+		b.border_color = Color(CINNABAR, 0.72)
+	elif tone == "info":
+		b.border_color = Color(COBALT, 0.65)
+	else:
+		b.border_color = Color(BRONZE, 0.65)
+	b.set_corner_radius_all(2)
+	b.content_margin_left = 10.0
+	b.content_margin_right = 10.0
+	b.content_margin_top = 7.0
+	b.content_margin_bottom = 7.0
+	return b
+
+
+## 抽屉顶部紧凑摘要横幅样式（左 3px 朱砂竖条，对标 `.d-compact-summary`）。
+static func make_summary_banner_box() -> StyleBoxFlat:
+	var b = StyleBoxFlat.new()
+	b.bg_color = Color(SILK_3, 0.92)
+	b.border_color = CINNABAR
+	b.set_border_width_all(1)
+	b.border_width_left = 3
+	b.set_corner_radius_all(2)
+	b.content_margin_left = 12.0
+	b.content_margin_right = 12.0
+	b.content_margin_top = 7.0
+	b.content_margin_bottom = 7.0
+	return b
+
+
+## 可锁定因果拆解浮卡样式（对标 `.causal-card`）。
+static func make_causal_card_box(locked: bool = false) -> StyleBoxFlat:
+	var b = StyleBoxFlat.new()
+	b.bg_color = Color("fbf6ea")
+	b.border_color = CINNABAR if locked else INK
+	b.set_border_width_all(1)
+	b.border_width_top = 3
+	b.set_corner_radius_all(2)
+	b.shadow_color = Color(0, 0, 0, 0.22)
+	b.shadow_size = 6
+	b.content_margin_left = 10.0
+	b.content_margin_right = 10.0
+	b.content_margin_top = 8.0
+	b.content_margin_bottom = 8.0
+	return b
 
 
 ## 楷体标题字体；无窗口验证时退回正文字体，避免依赖系统字体服务。

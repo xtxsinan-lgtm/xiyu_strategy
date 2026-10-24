@@ -27,8 +27,8 @@ const RED = Color("a33a2a")
 const TOP_H := 60.0
 const BAR_H := 96.0
 const SIDE_W := 300.0
-const DRAWER_W := 880.0
-const DRAWER_LABEL_W := 760.0
+const DRAWER_W := 940.0
+const DRAWER_LABEL_W := 820.0
 const SIDE_LABEL_W := 232.0
 
 # 案上器物（与网页版同一顺序、同一快捷键）。key 为抽屉名；speed 切换回放速度。
@@ -117,6 +117,14 @@ var toast_cancel: Button
 var status_timer: Timer
 var end_sub: Label
 var _icons := {}
+var map_mode_buttons := {}      # mode -> Button
+var drawer_tab_buttons := {}    # key -> Button
+var map_inspector_card: PanelContainer
+var map_inspector_body: VBoxContainer
+var causal_stack_box: VBoxContainer
+var locked_causal_keys: Array = []
+var transient_causal_key := ""
+var metric_history := {}        # key -> Array[float]
 
 func _ready() -> void:
 	_build_theme()
@@ -254,17 +262,27 @@ func _build_top_bar() -> void:
 	who.add_child(top_leader)
 	top_sub = _text("", 12, D.ON_LACQUER_MUTED)
 	who.add_child(top_sub)
+	var metric_keys := ["money", "military", "victory"]
 	for i in 3:
 		row.add_child(_lacquer_divider())
 		var m = VBoxContainer.new()
 		m.add_theme_constant_override("separation", 0)
 		m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		m.custom_minimum_size.x = 120
+		m.custom_minimum_size.x = 136
+		var top_r = HBoxContainer.new()
 		var ml = _text("", 11, D.ON_LACQUER_MUTED)
+		ml.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var mhint = _text("因果 ▾", 10, D.BRONZE)
+		top_r.add_child(ml)
+		top_r.add_child(mhint)
 		var mv = _text("", 20, D.BRONZE_HI)
-		m.mouse_filter = Control.MOUSE_FILTER_PASS
-		mv.mouse_filter = Control.MOUSE_FILTER_PASS
-		m.add_child(ml)
+		m.mouse_filter = Control.MOUSE_FILTER_STOP
+		m.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var mkey: String = metric_keys[i]
+		m.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
+				_explain_metric(mkey))
+		m.add_child(top_r)
 		m.add_child(mv)
 		row.add_child(m)
 		top_metrics.append([ml, mv])
@@ -358,7 +376,7 @@ func _build_newgame_panel() -> void:
 	col.add_child(buttons)
 	replay_controls.append_array([side_opt, iv, nb])
 
-# ---- 舆图（画框 + 镜头 + 图层 + 回放横幅 + 抽屉）----
+# ---- 舆图（画框 + 镜头 + 图层 + 图上速览卡 + 因果浮卡栈 + 回放横幅 + 抽屉）----
 func _build_map_desk() -> void:
 	map_desk = Control.new()
 	map_desk.clip_contents = true
@@ -372,8 +390,11 @@ func _build_map_desk() -> void:
 	map_desk.add_child(map_view)
 	_build_camera_controls()
 	_build_layer_controls()
-	# 抽屉之后再加提示条与回放横幅，保证它们浮在抽屉之上。
+	_build_map_mode_pills()
+	_build_map_inspector_card()
+	# 抽屉之后再加因果浮卡栈、提示条与回放横幅，保证它们浮在抽屉之上。
 	_build_drawer()
+	_build_causal_stack()
 	_build_toast()
 	_build_replay_bar()
 
@@ -460,6 +481,56 @@ func _build_layer_controls() -> void:
 	col.add_child(legend)
 	col.add_child(_text("滚轮缩放 · 拖动平移 · 悬停道路查看里程", 11, MUTED))
 
+func _build_map_mode_pills() -> void:
+	var hb = HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 4)
+	_place(hb, 0, 1, 0, 1, 134, -80, 620, -42)
+	hb.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	map_desk.add_child(hb)
+	for mode in ["political", "influence", "supply", "intel", "military"]:
+		var mkey: String = mode
+		var label: String = MapView.MAP_MODE_LABELS[mkey]
+		var b = _btn(label, func():
+			map_view.set_map_mode(mkey)
+			_refresh_map_mode_pills())
+		b.custom_minimum_size = Vector2(78, 34)
+		b.add_theme_font_size_override("font_size", 12)
+		hb.add_child(b)
+		map_mode_buttons[mkey] = b
+	_refresh_map_mode_pills()
+
+func _refresh_map_mode_pills() -> void:
+	for mkey in map_mode_buttons:
+		var b: Button = map_mode_buttons[mkey]
+		var active: bool = (map_view.map_mode == mkey)
+		if active:
+			b.add_theme_stylebox_override("normal", D.margins(D.box(D.LACQUER, D.BRONZE, 1, 0.0, 2), 8, 2))
+			b.add_theme_color_override("font_color", D.ON_LACQUER)
+		else:
+			b.add_theme_stylebox_override("normal", D.margins(D.box(Color(D.SILK_3, 0.94), D.BTN_EDGE, 1, 0.0, 2), 8, 2))
+			b.add_theme_color_override("font_color", D.INK)
+
+func _build_map_inspector_card() -> void:
+	map_inspector_card = PanelContainer.new()
+	var st = D.box(Color(D.SILK_3, 0.96), D.INK, 1, 10.0, 2)
+	st.border_width_top = 3
+	st.border_color = D.CINNABAR
+	st.shadow_color = Color(0, 0, 0, 0.18)
+	st.shadow_size = 6
+	map_inspector_card.add_theme_stylebox_override("panel", st)
+	_place(map_inspector_card, 0, 0, 0, 0, 44, 136, 304, 340)
+	map_desk.add_child(map_inspector_card)
+	map_inspector_body = VBoxContainer.new()
+	map_inspector_body.add_theme_constant_override("separation", 6)
+	map_inspector_card.add_child(map_inspector_body)
+
+func _build_causal_stack() -> void:
+	causal_stack_box = VBoxContainer.new()
+	causal_stack_box.add_theme_constant_override("separation", 8)
+	causal_stack_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(causal_stack_box, 1, 0, 1, 0, -346, 118, -36, 620)
+	map_desk.add_child(causal_stack_box)
+
 func _build_toast() -> void:
 	toast = PanelContainer.new()
 	var st = D.margins(D.box(D.SILK_3, D.CINNABAR, 1, 0.0, 2), 14, 8)
@@ -534,6 +605,31 @@ func _build_drawer() -> void:
 	var col = VBoxContainer.new()
 	col.add_theme_constant_override("separation", 0)
 	drawer.add_child(col)
+	# 顶部快切页签栏（对标网页版 `.drawer-tabs` F1..F6）
+	var tab_bar = PanelContainer.new()
+	var tbs = D.margins(D.box(D.LACQUER_2), 8, 4)
+	tbs.border_color = D.BRONZE
+	tbs.border_width_bottom = 1
+	tab_bar.add_theme_stylebox_override("panel", tbs)
+	col.add_child(tab_bar)
+	var trow = HBoxContainer.new()
+	trow.add_theme_constant_override("separation", 6)
+	tab_bar.add_child(trow)
+	var tab_specs := [
+		["node", "F1 图籍 · 城邑"],
+		["state", "F2 诏书 · 局势"],
+		["states", "F3 符节 · 诸国"],
+		["supply", "F4 仓廪 · 粮道"],
+		["army", "F5 虎符 · 军务"],
+		["log", "F6 史册 · 战报"],
+	]
+	for ts in tab_specs:
+		var tkey: String = ts[0]
+		var tb = _btn(ts[1], func(): _open_drawer(tkey))
+		tb.add_theme_font_size_override("font_size", 12)
+		tb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		trow.add_child(tb)
+		drawer_tab_buttons[tkey] = tb
 	# 页眉（silk_2，高 52）
 	var head = PanelContainer.new()
 	var hs = D.margins(D.box(D.SILK_2), 12, 0)
@@ -798,6 +894,17 @@ func _refresh_drawer_frame() -> void:
 	for key in pages:
 		pages[key].visible = key == drawer_key
 	drawer.visible = drawer_key != ""
+	if map_inspector_card != null:
+		map_inspector_card.visible = (drawer_key == "" and sel_node != "" and state != null and state.nodes.has(sel_node))
+	for tkey in drawer_tab_buttons:
+		var tb: Button = drawer_tab_buttons[tkey]
+		var active: bool = (tkey == drawer_key)
+		if active:
+			tb.add_theme_stylebox_override("normal", D.margins(D.box(D.SILK, D.CINNABAR, 1, 0.0, 2), 8, 3))
+			tb.add_theme_color_override("font_color", D.CINNABAR)
+		else:
+			tb.add_theme_stylebox_override("normal", D.margins(D.box(Color(D.LACQUER, 0.55), D.LACQUER_LINE, 1, 0.0, 2), 8, 3))
+			tb.add_theme_color_override("font_color", D.ON_LACQUER_MUTED)
 	if drawer_key == "":
 		return
 	var meta: Array = DRAWERS[drawer_key]
@@ -881,16 +988,78 @@ func _section_title(t: String, note := "") -> VBoxContainer:
 	v.set_meta("label", l)
 	return v
 
-func _kpi(label: String, value: String, col := INK) -> PanelContainer:
+func _summary_banner(t: String) -> PanelContainer:
 	var p = PanelContainer.new()
-	p.add_theme_stylebox_override("panel", D.margins(D.box(D.SILK_3, D.CARD_EDGE, 1), 10, 6))
-	p.custom_minimum_size = Vector2(124, 0)
+	p.add_theme_stylebox_override("panel", D.make_summary_banner_box())
+	var l = _text(t, 12, D.INK_2)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(DRAWER_LABEL_W, 0)
+	p.add_child(l)
+	return p
+
+func _kpi_card(label: String, value: String, sub := "", tone := "", explain_key := "") -> PanelContainer:
+	var p = PanelContainer.new()
+	p.add_theme_stylebox_override("panel", D.make_kpi_card_box(tone))
+	p.custom_minimum_size = Vector2(138, 0)
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var v = VBoxContainer.new()
-	v.add_theme_constant_override("separation", 0)
-	v.add_child(_text(label, 11, MUTED))
-	v.add_child(_text(value, 20, col))
+	v.add_theme_constant_override("separation", 1)
+	var top_h = HBoxContainer.new()
+	var lbl = _text(label, 11, MUTED)
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_h.add_child(lbl)
+	if explain_key != "":
+		top_h.add_child(_text("因果", 10, D.BRONZE))
+		p.mouse_filter = Control.MOUSE_FILTER_STOP
+		p.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var ek := explain_key
+		p.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and ev.pressed:
+				_explain_metric(ek))
+	v.add_child(top_h)
+	var val_col := INK
+	if tone == "good":
+		val_col = D.JADE
+	elif tone == "warn":
+		val_col = D.AMBER
+	elif tone == "bad":
+		val_col = D.CINNABAR
+	elif tone == "info":
+		val_col = D.COBALT
+	var val_lbl = _text(value, 18, val_col)
+	_kai(val_lbl, 18)
+	v.add_child(val_lbl)
+	if sub != "":
+		v.add_child(_text(sub, 11, MUTED))
 	p.add_child(v)
 	return p
+
+func _waterfall_row(label: String, val_text: String, ratio: float, positive := true) -> Control:
+	var h = HBoxContainer.new()
+	h.add_theme_constant_override("separation", 10)
+	var l = _text(label, 12, D.INK_2)
+	l.custom_minimum_size = Vector2(210, 0)
+	h.add_child(l)
+	var pb = ProgressBar.new()
+	pb.max_value = 100.0
+	pb.value = clampf(ratio * 100.0, 2.0, 100.0)
+	pb.show_percentage = false
+	pb.custom_minimum_size = Vector2(220, 7)
+	pb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var fill = StyleBoxFlat.new()
+	fill.bg_color = D.JADE if positive else D.CINNABAR
+	pb.add_theme_stylebox_override("fill", fill)
+	h.add_child(pb)
+	var r = _text(val_text, 12, D.JADE if positive else D.CINNABAR)
+	r.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	r.custom_minimum_size = Vector2(96, 0)
+	h.add_child(r)
+	return h
+
+func _kpi(label: String, value: String, col := INK) -> PanelContainer:
+	var tone := "bad" if col == RED else ""
+	return _kpi_card(label, value, "", tone, "")
 
 func _kpi_row(cards: Array) -> HFlowContainer:
 	var h = HFlowContainer.new()
@@ -960,6 +1129,10 @@ func new_game(f: String, dt: int, seed_value := -1) -> void:
 	pick = {}
 	sel_node = "dun_huang" if f == "han" else "youxian_wang"
 	sel_army = ""
+	locked_causal_keys.clear()
+	transient_causal_key = ""
+	metric_history = {"money": [], "military": [], "victory": [], "grain": []}
+	_record_metrics()
 	map_view.state = state
 	map_view.fit()
 	log_box.clear()
@@ -1042,6 +1215,7 @@ func end_turn() -> void:
 	pick = {}
 	replaying = false
 	_set_blocked(false)
+	_record_metrics()
 	_set_status("回合结算完成。")
 	refresh()
 	if state.winner != "":
@@ -1246,6 +1420,8 @@ func refresh() -> void:
 	_refresh_pages()
 	_refresh_outliner()
 	_refresh_drawer_frame()
+	_refresh_map_inspector()
+	_refresh_causal_stack()
 	_refresh_props()
 	map_view.selected_node = sel_node
 	map_view.selected_army = sel_army
@@ -1256,6 +1432,223 @@ func refresh() -> void:
 	else:
 		end_btn.text = "结束本季" if decision_ticks == 9 else "结束本月"
 	end_sub.text = "Space · 已拟 %d 令" % orders.size()
+
+func _record_metrics() -> void:
+	if state == null:
+		return
+	var f: Dictionary = state.factions[player]
+	var soldiers := 0
+	for aid in state.armies:
+		var a: Dictionary = state.armies[aid]
+		if a["faction"] == player and not a["is_convoy"]:
+			soldiers += state.army_size(a)
+	var tot_grain := 0.0
+	for nid in state.nodes:
+		var n: Dictionary = state.nodes[nid]
+		if state.controller(n) == player:
+			tot_grain += float(n["grain"])
+	if not metric_history.has("money"):
+		metric_history = {"money": [], "military": [], "victory": [], "grain": []}
+	metric_history["money"].append(float(f["money"]))
+	metric_history["military"].append(float(soldiers))
+	metric_history["victory"].append(Victory.objective_progress(state, player) * 100.0)
+	metric_history["grain"].append(tot_grain)
+
+func _explain_metric(key: String) -> void:
+	if key == "":
+		return
+	if transient_causal_key == key and not locked_causal_keys.has(key):
+		transient_causal_key = ""
+	elif not locked_causal_keys.has(key):
+		transient_causal_key = key
+	_refresh_causal_stack()
+
+func _causal_payload(key: String) -> Dictionary:
+	var f: Dictionary = state.factions[player]
+	var han := (player == "han")
+	if key == "money":
+		return {
+			"title": "少府与国库收支 (Treasury)" if han else "单于庭赏赐金帛 (Tribute)",
+			"val": "%d 钱" % int(f["money"]),
+			"status": "岁入充盈" if f["money"] >= 1500 else "岁计趋紧",
+			"rows": [
+				["大司农/王庭岁拨基数" if han else "属国岁贡金帛", "+600", true],
+				["畅通丝路商税分润", "+%d" % (_vassal_count(player) * 40), true],
+				["使团赏赐与购粮屯田支出", "-%d" % (orders.size() * 150), false],
+			],
+			"series": metric_history.get("money", [float(f["money"])]),
+		}
+	elif key == "military":
+		var soldiers := 0
+		for aid in state.armies:
+			var a: Dictionary = state.armies[aid]
+			if a["faction"] == player and not a["is_convoy"]:
+				soldiers += state.army_size(a)
+		return {
+			"title": "塞外野战军与中央军池 (Forces)",
+			"val": "%s 人" % _fmt(soldiers),
+			"status": "兵威鼎盛" if soldiers >= 8000 else "宜增募边骑",
+			"rows": [
+				["在册野战主力编制", "+%s" % _fmt(soldiers), true],
+				["中央军后备池可调兵额" if han else "控弦牧民后备骑兵", "+%s" % _fmt(state.central.get("infantry", 0) + state.central.get("cavalry", 0)), true],
+				["远征行军与围城折损", "-120/月", false],
+			],
+			"series": metric_history.get("military", [float(soldiers)]),
+		}
+	elif key == "grain":
+		var tot_grain := 0.0
+		for nid in state.nodes:
+			var n: Dictionary = state.nodes[nid]
+			if state.controller(n) == player:
+				tot_grain += float(n["grain"])
+		return {
+			"title": "全境官仓与军屯储粮 (Granaries)",
+			"val": "%s 斛" % _fmt(tot_grain),
+			"status": "仓廪充实" if tot_grain >= 300000.0 else "前线需转运",
+			"rows": [
+				["河西与属国夏秋入仓", "+4.2万", true],
+				["塞外屯田民岁产粟米", "+1.8万", true],
+				["野战军与转运民夫坐食", "-2.6万", false],
+			],
+			"series": metric_history.get("grain", [tot_grain]),
+		}
+	return {
+		"title": "西域都护府设立进度" if han else "河西四郡收复进度",
+		"val": "%.0f%%" % (Victory.objective_progress(state, player) * 100.0),
+		"status": _victory_text(player),
+		"rows": [
+			["已内附属国（需满11国）" if han else "已控河西郡城（需满4郡）", "%d 国" % _vassal_count("han") if han else "%d 郡" % Victory.hexi_held_by_xn(state), true],
+			["乌垒与车师前锁钥控制", "✓ 已控" if (state.relations["wu_lei"]["overlord"] == "han" and state.relations["cheshi_qian"]["overlord"] == "han") else "待招抚", state.relations["wu_lei"]["overlord"] == "han"],
+			["达标连续维持月数", "%d 月" % state.streak[player], true],
+		],
+		"series": metric_history.get("victory", [Victory.objective_progress(state, player) * 100.0]),
+	}
+
+func _refresh_causal_stack() -> void:
+	if causal_stack_box == null or state == null:
+		return
+	_clear(causal_stack_box)
+	var keys: Array = locked_causal_keys.duplicate()
+	if transient_causal_key != "" and not keys.has(transient_causal_key):
+		keys.append(transient_causal_key)
+	for k in keys:
+		var key: String = k
+		var is_locked: bool = locked_causal_keys.has(key)
+		var data := _causal_payload(key)
+		var card = PanelContainer.new()
+		card.add_theme_stylebox_override("panel", D.make_causal_card_box(is_locked))
+		var v = VBoxContainer.new()
+		v.add_theme_constant_override("separation", 4)
+		card.add_child(v)
+		var hdr = HBoxContainer.new()
+		var t_lbl = _text(data["title"], 13, INK)
+		_kai(t_lbl, 13)
+		t_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hdr.add_child(t_lbl)
+		var pin_btn = _btn("已锁定 📌" if is_locked else "锁定", func():
+			if locked_causal_keys.has(key):
+				locked_causal_keys.erase(key)
+			else:
+				if locked_causal_keys.size() >= 3:
+					locked_causal_keys.pop_front()
+				locked_causal_keys.append(key)
+				if transient_causal_key == key:
+					transient_causal_key = ""
+			_refresh_causal_stack())
+		pin_btn.add_theme_font_size_override("font_size", 11)
+		hdr.add_child(pin_btn)
+		var cls_btn = _btn("×", func():
+			locked_causal_keys.erase(key)
+			if transient_causal_key == key:
+				transient_causal_key = ""
+			_refresh_causal_stack())
+		cls_btn.add_theme_font_size_override("font_size", 12)
+		hdr.add_child(cls_btn)
+		v.add_child(hdr)
+		var val_row = HBoxContainer.new()
+		var v_lbl = _text(data["val"], 18, D.CINNABAR)
+		_kai(v_lbl, 18)
+		v_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		val_row.add_child(v_lbl)
+		val_row.add_child(_text(data["status"], 11, MUTED))
+		v.add_child(val_row)
+		for r in data["rows"]:
+			var rh = HBoxContainer.new()
+			var rl = _text(r[0], 11, D.INK_2)
+			rl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			rh.add_child(rl)
+			rh.add_child(_text(r[1], 11, D.JADE if r[2] else D.CINNABAR))
+			v.add_child(rh)
+		# 趋势折线图 (Sparkline)
+		var spark = Control.new()
+		spark.custom_minimum_size = Vector2(280, 44)
+		var series: Array = data["series"]
+		spark.draw.connect(func():
+			var sr := Rect2(Vector2.ZERO, spark.size)
+			spark.draw_rect(sr, Color(D.SILK_2, 0.55))
+			spark.draw_rect(sr, D.CARD_EDGE, false, 1.0)
+			var pts: Array = series.duplicate()
+			if pts.size() == 1:
+				pts = [pts[0] * 0.94, pts[0] * 0.98, pts[0]]
+			var mn := float(pts[0])
+			var mx := float(pts[0])
+			for val in pts:
+				mn = minf(mn, float(val))
+				mx = maxf(mx, float(val))
+			if absf(mx - mn) < 0.01:
+				mx = mn + 1.0
+			var line_pts := PackedVector2Array()
+			for i in pts.size():
+				var px := 6.0 + (sr.size.x - 12.0) * (float(i) / float(maxi(1, pts.size() - 1)))
+				var py := sr.size.y - 6.0 - (sr.size.y - 12.0) * ((float(pts[i]) - mn) / (mx - mn))
+				line_pts.append(Vector2(px, py))
+			if line_pts.size() >= 2:
+				spark.draw_polyline(line_pts, D.COBALT, 1.8, true)
+				spark.draw_circle(line_pts[line_pts.size() - 1], 3.0, D.CINNABAR))
+		v.add_child(spark)
+		causal_stack_box.add_child(card)
+
+func _refresh_map_inspector() -> void:
+	if map_inspector_body == null or state == null:
+		return
+	_clear(map_inspector_body)
+	if drawer_key != "" or sel_node == "" or not state.nodes.has(sel_node):
+		map_inspector_card.visible = false
+		return
+	map_inspector_card.visible = true
+	var n: Dictionary = state.nodes[sel_node]
+	var hdr = HBoxContainer.new()
+	var title = _text("● " + n["name"], 15, INK)
+	_kai(title, 15)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hdr.add_child(title)
+	hdr.add_child(_text(_ctl_text(n), 11, MUTED))
+	map_inspector_body.add_child(hdr)
+	if n["type"] != "junction":
+		var g = GridContainer.new()
+		g.columns = 4
+		g.add_theme_constant_override("h_separation", 8)
+		for pair in [["人口", _fmt(n["pop"])], ["存粮", _fmt(n["grain"])], ["城墙", "%d" % int(n["wall_hp"])], ["屯田", _fmt(n["colonies"])]]:
+			var box = VBoxContainer.new()
+			box.add_child(_text(pair[0], 10, MUTED))
+			box.add_child(_text(pair[1], 12, INK))
+			g.add_child(box)
+		map_inspector_body.add_child(g)
+	var sid: String = n["faction"]
+	if state.relations.has(sid):
+		var rel: Dictionary = state.relations[sid]
+		map_inspector_body.add_child(_bar("汉影响", rel["han_influence"], 100, D.CINNABAR))
+		map_inspector_body.add_child(_bar("匈威吓", rel["xn_intimidation"], 100, D.XN))
+	var acts = HBoxContainer.new()
+	acts.add_theme_constant_override("separation", 6)
+	var b1 = _primary(_btn("展开图籍 F1", func(): _open_drawer("node")))
+	b1.add_theme_font_size_override("font_size", 12)
+	b1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	acts.add_child(b1)
+	var b2 = _btn("粮道 F4", func(): _open_drawer("supply"))
+	b2.add_theme_font_size_override("font_size", 12)
+	acts.add_child(b2)
+	map_inspector_body.add_child(acts)
 
 func _fmt(n: float) -> String:
 	if absf(n) >= 100000.0:
@@ -1538,23 +1931,14 @@ func _build_node_page() -> void:
 	if sel_node == "" or not state.nodes.has(sel_node):
 		_add(_lbl("点选舆图上的城邑以查看概况、外交与征召。", false, MUTED))
 		return
-	_node_section(state.nodes[sel_node])
+	var n: Dictionary = state.nodes[sel_node]
+	_add(_summary_banner("【%s】城塞图籍卷宗 — %s。点击下方带『因果』字样的指标卡可弹出因果拆解与趋势折线。" % [n["name"], _ctl_text(n)]))
+	_node_section(n)
 
 func _build_state_page() -> void:
 	var enemy := "xiongnu" if player == "han" else "han"
-	_add(_section_title("目标", state.factions[player]["name"]))
-	_add(_lbl(_goal_text()))
-	_add(_bar("己方进度", Victory.objective_progress(state, player) * 100.0, 100, D.PATINA))
-	_add(_lbl(_victory_text(player), false, D.INK_2))
-	_add(_bar("对手进度", Victory.objective_progress(state, enemy) * 100.0, 100, D.CINNABAR))
-	_add(_lbl("%s：%s" % [state.factions[enemy]["name"], _victory_text(enemy)], false, D.INK_2))
-	_add(_section_title("国力", "%s · %s季%s" % [state.date_text(), Cal.season_cn(state.season()), " · 山道封闭" if state.is_winter() else ""]))
+	_add(_summary_banner("朝堂国策与战略胜局总览 — %s。点击国力六维指标卡可调阅并锁定因果拆解浮卡。" % _goal_text()))
 	var f: Dictionary = state.factions[player]
-	var cards: Array = [_kpi("国库", "%d 钱" % f["money"])]
-	if player == "han":
-		for t in ["infantry", "crossbow", "cavalry"]:
-			cards.append(_kpi("中央军 " + state.units[t]["name"], _fmt(state.central.get(t, 0))))
-	cards.append(_kpi("属国", "%d 国" % _vassal_count(player)))
 	var soldiers := 0
 	var army_count := 0
 	for aid in state.armies:
@@ -1562,8 +1946,26 @@ func _build_state_page() -> void:
 		if a["faction"] == player and not a["is_convoy"]:
 			soldiers += state.army_size(a)
 			army_count += 1
-	cards.append(_kpi("野战军", "%d 支 · %s" % [army_count, _fmt(soldiers)]))
+	var cards: Array = [
+		_kpi_card("少府国库", "%d 钱" % f["money"], "赏赐·购粮·屯田", "good", "money"),
+		_kpi_card("己方属国", "%d 国" % _vassal_count(player), "西域藩属", "info", "victory"),
+		_kpi_card("在册野战军", "%d 支 · %s" % [army_count, _fmt(soldiers)], "出塞主力", "good", "military"),
+		_kpi_card("胜局进度", "%.0f%%" % (Victory.objective_progress(state, player) * 100.0), _victory_text(player), "warn", "victory"),
+	]
+	if player == "han":
+		for t in ["infantry", "crossbow", "cavalry"]:
+			cards.append(_kpi_card("中央军 " + state.units[t]["name"], _fmt(state.central.get(t, 0)), "郡城可征调", "", "military"))
 	_add(_kpi_row(cards))
+	_add(_section_title("目标", state.factions[player]["name"]))
+	_add(_lbl(_goal_text()))
+	_add(_bar("己方进度", Victory.objective_progress(state, player) * 100.0, 100, D.PATINA))
+	_add(_lbl(_victory_text(player), false, D.INK_2))
+	_add(_bar("对手进度", Victory.objective_progress(state, enemy) * 100.0, 100, D.CINNABAR))
+	_add(_lbl("%s：%s" % [state.factions[enemy]["name"], _victory_text(enemy)], false, D.INK_2))
+	_add(_section_title("国库与军粮收支瀑布流", "%s · %s季%s" % [state.date_text(), Cal.season_cn(state.season()), " · 山道封闭" if state.is_winter() else ""]))
+	_add(_waterfall_row("岁拨基数与属国贡赋", "+600 钱", 0.78, true))
+	_add(_waterfall_row("畅通丝路商税分润", "+%d 钱" % (_vassal_count(player) * 40), clampf(float(_vassal_count(player)) / 12.0, 0.12, 1.0), true))
+	_add(_waterfall_row("本季拟令与军费支出", "-%d 钱" % (orders.size() * 150), clampf(float(orders.size()) * 0.18, 0.08, 1.0), false))
 	_add(_section_title("本%s命令（%d）" % ["季" if decision_ticks == 9 else "月", orders.size()], "可在右侧军情栏撤回"))
 	if orders.is_empty():
 		_add(_lbl("（尚无）", false, MUTED))
@@ -1571,6 +1973,7 @@ func _build_state_page() -> void:
 		_add(_lbl("· " + _order_text(c)))
 
 func _build_states_page() -> void:
+	_add(_summary_banner("西域诸国符节邦交总览 — 汉属国 %d 国 · 匈奴属国 %d 国。点击表中任意一行可直接移步该国主城并打开【图籍 F1】。" % [_vassal_count("han"), _vassal_count("xiongnu")]))
 	var widths := [170, 110, 100, 100, 100, 90, 120]
 	_add(_table_row(["国名", "宗主", "汉影响", "匈威吓", "对匈怨恨", "商路", "意向"], widths))
 	var open_nodes := {}
@@ -1631,6 +2034,23 @@ func _own_army_table() -> void:
 		_add(_lbl("（无在册军队）", false, MUTED))
 
 func _build_supply_page() -> void:
+	var tot_grain := 0.0
+	var tot_colonies := 0
+	for nid in state.nodes:
+		var nd: Dictionary = state.nodes[nid]
+		if state.controller(nd) == player:
+			tot_grain += float(nd["grain"])
+			tot_colonies += int(nd.get("colonies", 0))
+	_add(_summary_banner("仓廪转运与塞外屯田总账 — 全境官仓存粮 %s 斛 · 屯田民 %s 人。点击指标卡可查看粮秣因果拆解。" % [_fmt(tot_grain), _fmt(tot_colonies)]))
+	_add(_kpi_row([
+		_kpi_card("全境官仓总储", "%s 斛" % _fmt(tot_grain), "直辖与属国存粮", "good", "grain"),
+		_kpi_card("塞外屯田民", "%s 人" % _fmt(tot_colonies), "就地生粟", "info", "grain"),
+		_kpi_card("少府购粮预算", "%d 钱" % int(state.factions[player]["money"]), "可就地籴粮", "warn", "money"),
+	]))
+	_add(_section_title("全境粟米收支瀑布流", "月度估算"))
+	_add(_waterfall_row("河西与属国官仓岁入折算", "+4.2万 斛", 0.82, true))
+	_add(_waterfall_row("塞外屯田区秋收折算", "+1.8万 斛", 0.45, true))
+	_add(_waterfall_row("在册野战军与民夫口粮消耗", "-2.6万 斛", 0.58, false))
 	_add(_section_title("各军携粮", "点击一行打开军务"))
 	_own_army_table()
 	if player != "han":
@@ -1646,6 +2066,7 @@ func _build_supply_page() -> void:
 	_convoy_section(n)
 
 func _build_army_page() -> void:
+	_add(_summary_banner("虎符军务与行军预演 — 选择己方军队可编排多步作战计划（移动、围攻、道路设伏、焚田、驻守），金色虚线将在舆图上实时预演路线。"))
 	if sel_army != "" and state.armies.has(sel_army):
 		_army_section(state.armies[sel_army])
 	else:
@@ -1668,21 +2089,21 @@ func _ctl_text(n: Dictionary) -> String:
 func _node_section(n: Dictionary) -> void:
 	var cards: Array = []
 	if n["type"] != "junction":
-		cards.append(_kpi("人口", _fmt(n["pop"])))
-		cards.append(_kpi("存粮", _fmt(n["grain"])))
+		cards.append(_kpi_card("编户人口", _fmt(n["pop"]), "城郭丁口", "info", "victory"))
+		cards.append(_kpi_card("仓廪存粮", _fmt(n["grain"]), "本地储粟", "good", "grain"))
 		if n["depot"].get("han", 0) > 0 and n["faction"] != "han":
-			cards.append(_kpi("汉仓", _fmt(n["depot"]["han"])))
+			cards.append(_kpi_card("前推汉仓", _fmt(n["depot"]["han"]), "军粮转运站", "good", "grain"))
 	if n["pasture_cap"] > 0:
-		cards.append(_kpi("马", "%s/%s" % [_fmt(n["horses"]), _fmt(n["pasture_cap"])]))
+		cards.append(_kpi_card("牧马存栏", "%s/%s" % [_fmt(n["horses"]), _fmt(n["pasture_cap"])], "战马与驮马", "", "military"))
 	if n["walls"] > 0:
-		cards.append(_kpi("城墙", "%d/%d" % [int(n["wall_hp"]), int(n["wall_hp_max"])], RED if n["wall_hp"] < n["wall_hp_max"] * 0.5 else INK))
+		cards.append(_kpi_card("城垣耐久", "%d/%d" % [int(n["wall_hp"]), int(n["wall_hp_max"])], "城防工事", "bad" if n["wall_hp"] < n["wall_hp_max"] * 0.5 else "", "military"))
 	var mil = 0
 	for t in n["militia"]:
 		mil += int(n["militia"][t])
 	if mil > 0:
-		cards.append(_kpi("本地民兵", _fmt(mil)))
+		cards.append(_kpi_card("本地民兵", _fmt(mil), "守城乡兵", "", "military"))
 	if n["colonies"] > 0:
-		cards.append(_kpi("屯田民", _fmt(n["colonies"])))
+		cards.append(_kpi_card("塞外屯田民", _fmt(n["colonies"]), "且耕且戍", "good", "grain"))
 	if cards.is_empty():
 		_add(_lbl(_ctl_text(n), false, MUTED))
 	else:
