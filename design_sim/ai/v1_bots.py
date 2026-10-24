@@ -19,7 +19,7 @@ def perceived_threat_at(state, node_id, enemy_faction, horizon_days):
     if not v1 or raw <= 0:
         return raw
     beacons = v1["logistics"]["beacons"]
-    if node_id in beacons or any(nb in beacons for nb in state.neighbors(node_id)):
+    if node_id in beacons or any(nb in beacons for nb in state.near_neighbors(node_id)):
         err = 0.06  # L1 烽燧覆盖
     elif state.controller(state.nodes[node_id]) != enemy_faction:
         err = 0.16  # L2 属国耳目
@@ -51,29 +51,29 @@ class V1HanAI:
 
         # 性格参数配置（S08 非传递克制环：拓边锐进 aggressive 克 贪利匈奴、持重营田 conservative 克 猛攻匈奴、重商外交 greedy 克 守成匈奴）
         if self.style == "aggressive":
-            reserve = 180.0
-            win_prob_req = 0.50
-            def_ratio = 0.58
-            use_forge = (turn >= 6 and court["trust"] >= 56.0)
-            use_convict = (turn >= 3)
+            reserve = 160.0
+            win_prob_req = 0.49
+            def_ratio = 0.56
+            use_forge = (turn >= 5 and court["trust"] >= 54.0)
+            use_convict = (turn >= 2)
             max_envoys = 3
             tuntian_Focus = 2
         elif self.style == "conservative":
-            reserve = 220.0
-            win_prob_req = 0.55
-            def_ratio = 0.55
-            use_forge = (turn >= 8 and court["trust"] >= 56.0)
-            use_convict = (turn >= 4)
+            reserve = 200.0
+            win_prob_req = 0.56
+            def_ratio = 0.44
+            use_forge = False
+            use_convict = (turn >= 5)
             max_envoys = 3
             tuntian_Focus = 2
         elif self.style == "greedy":
-            reserve = 100.0
-            win_prob_req = 0.62
+            reserve = 90.0
+            win_prob_req = 0.58
             def_ratio = 1.25  # 轻视河西城防（被激进匈奴克制），全力经略西域外交与屯田
             use_forge = False
-            use_convict = False
-            max_envoys = 3
-            tuntian_Focus = 1
+            use_convict = (turn >= 4)
+            max_envoys = 4
+            tuntian_Focus = 2
         elif self.style == "random_legal":
             return self._think_random_legal(state)
         else:  # baseline (S08 三阶段均衡都护 AI)
@@ -103,7 +103,7 @@ class V1HanAI:
             if commands.validate(state, c_cp) == "":
                 cmds.append(c_cp)
 
-        if state.factions["han"]["money"] < 650 and court["trust"] >= 48.0 and self.style != "conservative":
+        if (state.factions["han"]["money"] < 550 or getattr(state, "han_horse_pool", 0) < 2200) and court["trust"] >= 54.0 and self.style != "conservative":
             c_ap = commands.make("request_appropriation", "han")
             if commands.validate(state, c_ap) == "":
                 cmds.append(c_ap)
@@ -115,13 +115,13 @@ class V1HanAI:
                 budget -= 400
 
         # --- 2) S05 烽燧修筑与河西本土防卫 ---
-        if self.style in ("conservative", "baseline", "aggressive") and budget >= 200:
-            for bn in ("ju_yan", "lou_lan", "wu_lei"):
+        if self.style in ("conservative", "baseline", "aggressive") and budget >= 180:
+            for bn in ("ju_yan", "lou_lan", "wu_lei", "cheshi_qian"):
                 if bn not in logi["beacons"]:
                     c_bc = commands.make("build_beacon", "han", {"node": bn})
                     if commands.validate(state, c_bc) == "":
                         cmds.append(c_bc)
-                        budget -= 180
+                        budget -= 160
                         break
 
         budget = self._defense(state, cmds, horizon, budget, def_ratio)
@@ -129,7 +129,16 @@ class V1HanAI:
         # --- 3) S04 外交博弈：内附 / 册封 / 纳两属 / 斩王立新 / 精使与募使 ---
         budget = self._diplomacy_v1(state, cmds, budget, max_envoys, use_forge)
 
-        # --- 4) S05 西域军屯与河西农田扩建 ---
+        # --- 4) S05 西域军屯、驿道粮线与河西农田扩建 ---
+        if budget >= 240 and getattr(state, "han_horse_pool", 0) >= 600:
+            for hub in ("lou_lan", "wu_lei", "wei_li", "cheshi_qian"):
+                if hub not in logi.get("supply_lines", ["dun_huang"]):
+                    c_sl = commands.make("setup_supply_line", "han", {"forward_hub": hub, "priority": 2})
+                    if commands.validate(state, c_sl) == "":
+                        cmds.append(c_sl)
+                        budget -= 220
+                        break
+
         tt_done = 0
         for nid in ("lou_lan", "wu_lei", "wei_li", "cheshi_qian", "dun_huang"):
             if tt_done >= tuntian_Focus or budget < 260:
@@ -148,13 +157,19 @@ class V1HanAI:
                     budget -= state.bal["farm"]["expand_cost_money"]
                     break
 
-        # --- 5) S03/S05 北道破袭僮仆都尉税队 ---
+        # --- 5) S03/S05 北道破袭僮仆都尉税队 & 持节发诸国兵 ---
         if (self.style in ("baseline", "aggressive") and tribes["tongpu_active"] and turn % 2 == 1) or (
             self.style in ("conservative", "greedy") and tribes["tongpu_active"] and turn % 3 == 1
         ):
             c_it = commands.make("intercept_tongpu", "han")
             if commands.validate(state, c_it) == "":
                 cmds.append(c_it)
+
+        if self.style in ("baseline", "aggressive", "greedy") and budget >= 280 and turn >= 5:
+            c_lv = commands.make("levy_vassal_troops", "han")
+            if commands.validate(state, c_lv) == "":
+                cmds.append(c_lv)
+                budget -= 260
 
         # --- 6) S05 粮道转输与西域远征（含断粮红灯硬拦截 S08-T04） ---
         self._logistics_v1(state, cmds)
@@ -172,31 +187,36 @@ class V1HanAI:
             key=lambda nid: threats[nid] / max(U.garrison_strength(state, nid, "han"), 1.0),
             reverse=True,
         )
+        def_recruited = 0
+        max_def_rec = 2 if self.style == "conservative" else 1
         for nid in cities:
+            if def_recruited >= max_def_rec or budget < 520:
+                break
             node = state.nodes[nid]
             if node["faction"] != "han":
                 continue
             mine = U.garrison_strength(state, nid, "han") * combat.wall_mult(state, node)
-            if threats[nid] < mine * def_ratio or budget < 120:
+            if threats[nid] < mine * def_ratio:
                 continue
             current = sum(state.army_size(a) for a in state.armies_at(nid) if a["faction"] == "han")
             food_room = max(0, int((node["grain"] / 9.0 - node["pop"] * 2.0) / 3.0) - current)
             want = {}
             for ut in ("crossbow", "infantry"):
-                amount = min(int(pool.get(ut, 0)), 3500, food_room)
+                amount = min(int(pool.get(ut, 0)), 2500, food_room)
                 if amount >= 500:
                     want[ut] = amount
                     food_room -= amount
             if not want:
                 continue
             cost = sum(want[ut] / 1000.0 * state.units[ut]["cost_money_per_1000"] for ut in want)
-            if cost <= budget:
+            if cost <= budget - 320:
                 cmds.append(commands.make("recruit", "han", {
                     "node": nid, "source": "central", "units": want, "preset": "garrison"
                 }))
                 for ut in want:
                     pool[ut] -= want[ut]
                 budget -= cost
+                def_recruited += 1
         return budget
 
     def _diplomacy_v1(self, state, cmds, budget, max_envoys, use_forge):
@@ -232,14 +252,14 @@ class V1HanAI:
                 continue
 
         # 奇袭刺王（楼兰/车师/焉耆等有罪之国）
-        if self.style in ("baseline", "aggressive", "greedy") and budget >= 240:
+        if self.style in ("baseline", "aggressive", "greedy") and budget >= 320:
             for sid in ("lou_lan", "cheshi_qian", "wu_lei", "yan_qi"):
                 rel = state.relations.get(sid)
-                if rel and rel["overlord"] != "han" and rel.get("crimes_against_han", 0) > 0 and rel["han_influence"] >= 32.0:
+                if rel and rel["overlord"] != "han" and rel.get("crimes_against_han", 0) > 0 and rel["han_influence"] >= 34.0:
                     c_ak = commands.make("assassinate_king", "han", {"state": sid})
                     if commands.validate(state, c_ak) == "":
                         cmds.append(c_ak)
-                        budget -= 240
+                        budget -= 320
                         break
 
         # 2) 派遣精使团与募使团（兼顾乌孙/大宛大国盟好）
@@ -306,14 +326,41 @@ class V1HanAI:
                     home = cand
                     break
 
-        # 若河西有郡失守，优先收复河西；支持任意节点上的空闲野战军出征
-        army = next((a for a in fields if "node" in a["loc"] and U.is_idle(a)), None)
+        if self.style == "baseline":
+            army = next((a for a in fields if "node" in a["loc"] and U.is_idle(a)), None)
+        else:
+            # 清理残破野战军（兵力不足 2,200 的残部先遣散归池，同城多支空闲野战军自动合编）
+            idle_fields = [a for a in fields if "node" in a["loc"] and U.is_idle(a)]
+            valid_idle = []
+            by_loc = {}
+            for a in idle_fields:
+                sz = state.army_size(a)
+                nid = a["loc"]["node"]
+                if sz < 2200 and state.nodes[nid]["faction"] == "han":
+                    c_db = commands.make("disband", "han", {"army": a["id"]})
+                    if commands.validate(state, c_db) == "":
+                        cmds.append(c_db)
+                        continue
+                by_loc.setdefault(nid, []).append(a)
+            for nid, grp in by_loc.items():
+                grp.sort(key=lambda x: state.army_size(x), reverse=True)
+                leader = grp[0]
+                cur_sz = state.army_size(leader)
+                for other in grp[1:]:
+                    if cur_sz + state.army_size(other) <= 11500:
+                        c_mg = commands.make("merge", "han", {"army": other["id"], "into": leader["id"]})
+                        if commands.validate(state, c_mg) == "":
+                            cmds.append(c_mg)
+                            cur_sz += state.army_size(other)
+                if cur_sz >= 2400:
+                    valid_idle.append(leader)
+            army = valid_idle[0] if valid_idle else None
         moving = [x for x in fields if not U.is_idle(x)]
         if moving:
             return
         if army is None:
             node = state.nodes[home]
-            if use_convict and budget >= 180 and self.style in ("aggressive", "greedy") and state.turn % 2 == 0:
+            if use_convict and budget >= 180 and self.style in ("aggressive", "baseline", "greedy") and state.turn % 3 == 0:
                 c_cv = commands.make("recruit_convict", "han", {"node": home, "count": 2500})
                 if commands.validate(state, c_cv) == "":
                     cmds.append(c_cv)
@@ -323,30 +370,47 @@ class V1HanAI:
                 if p["type"] == "recruit" and p.get("source") == "central":
                     for ut, cnt in p["units"].items():
                         avail[ut] -= cnt
+            cav_want = min(1500, avail.get("cavalry", 0), int(getattr(state, "han_horse_pool", 0)))
             rec_cost = (
                 3.5 * state.units["infantry"]["cost_money_per_1000"]
                 + 2.5 * state.units["crossbow"]["cost_money_per_1000"]
-                + 1.5 * state.units["cavalry"]["cost_money_per_1000"]
+                + (cav_want / 1000.0) * state.units["cavalry"]["cost_money_per_1000"]
             )
             if avail.get("infantry", 0) >= 3500 and avail.get("crossbow", 0) >= 2500 and budget >= rec_cost and node["grain"] > 110000:
-                cmds.append(commands.make("recruit", "han", {
+                units_d = {"infantry": 3500, "crossbow": 2500}
+                if cav_want >= 500:
+                    units_d["cavalry"] = cav_want
+                c_rec = commands.make("recruit", "han", {
                     "node": home,
                     "source": "central",
-                    "units": {"infantry": 3500, "crossbow": 2500, "cavalry": min(1500, avail.get("cavalry", 0))},
+                    "units": units_d,
                     "preset": "balanced",
-                }))
+                })
+                if commands.validate(state, c_rec) == "":
+                    cmds.append(c_rec)
             return
 
         start_node = army["loc"]["node"]
+        mine = combat.merged_units([army])
         # 选择攻击目标（先收复河西，再取楼兰/乌垒/车师前/焉耆）
         target = ""
         for nid in HEXI:
             if state.nodes[nid]["faction"] == "xiongnu":
-                target = nid
-                break
+                if self.style == "baseline":
+                    target = nid
+                    break
+                n = state.nodes[nid]
+                defenders = dict(n["militia"])
+                for e in state.armies_at(nid):
+                    if e["faction"] == "xiongnu":
+                        for ut, cnt in e["units"].items():
+                            defenders[ut] = defenders.get(ut, 0) + cnt
+                p_hexi = combat.expected_p(state, mine, defenders, {"b_def": combat.wall_mult(state, n)})
+                if p_hexi >= max(0.46, win_prob_req - 0.06):
+                    target = nid
+                    break
         if target == "":
             best_sc = -1.0
-            mine = combat.merged_units([army])
             max_hops = 5 if self.style == "aggressive" else (3 if self.style == "conservative" else 4)
             for sid, rel in state.relations.items():
                 if rel["overlord"] == "han":
@@ -373,9 +437,12 @@ class V1HanAI:
         if target == "":
             return
 
-        # S08-T04 远征断粮红灯硬拦截（FoodCurve Preview）
-        m = U.months_between(state, start_node, target, 1.0)
-        months_needed = 2.0 * m * 1.15 + 2.0
+        # S08-T04 远征断粮红灯硬拦截（结合已开通的驿道枢纽与屯田计算实际缺口）
+        v1_logi = state.ext["v1"]["logistics"]
+        supply_hubs = set(v1_logi.get("supply_lines", ["dun_huang"])) | set(k for k, v in v1_logi.get("tuntian_nodes", {}).items() if v > 0)
+        m_raw = U.months_between(state, start_node, target, 1.0)
+        m_hub = min([m_raw] + [U.months_between(state, h, target, 1.0) for h in supply_hubs if h in state.nodes])
+        months_needed = min(3.4, m_hub * 1.15 + 1.6)
         soldiers = state.army_size(army)
         need = U.need_grain(state, soldiers, army["laborers"], army["horses"], months_needed)
         depot = state.nodes[start_node]
@@ -383,16 +450,17 @@ class V1HanAI:
         load_lab = 0
         if state.is_supply_node(depot, "han"):
             lab_avail = max(0, int(depot["pop"] * state.bal["han"]["laborer_levy_ratio"]) - depot["levied_out"])
-            load_lab = max(0, min(int((need - soldiers * 3.0) / 12.0) - army["laborers"], lab_avail))
+            load_lab = max(0, min(2500, int((need - soldiers * 3.0) / 10.0) - army["laborers"], lab_avail))
             carry = soldiers * 3.0 + (army["laborers"] + load_lab) * 15.0
-            load_grain = max(0.0, min(carry - army["grain"], depot["grain"] - depot["pop"] * 8.0))
-            if load_grain > 0 or load_lab > 0:
-                cmds.append(commands.make("load", "han", {"army": army["id"], "grain": load_grain, "laborers": load_lab}))
+            load_grain = max(0.0, min(carry - army["grain"], state.stock(depot, "han") - (depot["pop"] * 6.0 if depot["faction"] == "han" else 0.0)))
         eat = U.need_grain(state, soldiers, army["laborers"] + load_lab, army["horses"], months_needed)
 
-        if army["grain"] + load_grain < eat * 0.70 and target not in HEXI:
-            # 粮道红灯拦截：远征西域若断粮风险高则不出兵送死
+        if army["grain"] + load_grain < eat * 0.62 and target not in HEXI:
+            # 粮道红灯拦截：远征西域若断粮风险高则不出兵送死（且不空发 load 指令）
             return
+
+        if load_grain > 0 or load_lab > 0:
+            cmds.append(commands.make("load", "han", {"army": army["id"], "grain": load_grain, "laborers": load_lab}))
 
         if use_forge and self.style in ("baseline", "aggressive") and target in ("cheshi_qian", "wu_lei") and state.ext["v1"]["court"]["trust"] >= 58.0:
             c_fg = commands.make("forge_edict", "han", {"target": target, "self_impeach": True})
@@ -457,31 +525,31 @@ class V1XiongnuAI:
 
         # 性格参数配置（S08 非传递克制环：雄猜严罚 vs 怀柔守成 vs 贪利秋掠 vs 均衡单于）
         if self.style == "aggressive":
-            # 雄猜严罚 (xn_iron_tyrant)：高压进取、高频威压 -> 强克贪心汉 (greedy) 与随机汉，但易与激进汉两败俱伤
-            max_troops = 34000
-            inf_target = 6000
+            # 雄猜严罚 (xn_iron_tyrant)：高压进取、重兵寇河西 -> 强克贪心汉 (greedy) 与随机汉，但被持重营田汉 (conservative) 克制
+            max_troops = 31500
+            inf_target = 5200
             max_resent = 62
-            min_atk_p = 0.51
-            reward_mode = "equal"
-            reward_freq = 2
-            path_b_focus = (state.turn >= 4)
-        elif self.style == "conservative":
-            # 怀柔守成 (xn_conciliatory_elder)：固守漠北草原、审慎出击 -> 克冒进汉，但易被稳健/重商汉在西域抢先立都护
-            max_troops = 26500
-            inf_target = 4200
-            max_resent = 45
-            min_atk_p = 0.64
+            min_atk_p = 0.56
             reward_mode = "equal"
             reward_freq = 3
             path_b_focus = False
-        elif self.style == "greedy":
-            # 贪利秋掠 (xn_greedy_raider)：搜刮岁币、废立亲匈王子、抢跑路径 B -> 克保守汉 (conservative)
-            max_troops = 31000
-            inf_target = 5000
-            max_resent = 64
-            min_atk_p = 0.54
+        elif self.style == "conservative":
+            # 怀柔守成 (xn_conciliatory_elder)：固守漠北草原、审慎出击 -> 克冒进汉，但易被稳健/重商汉在西域抢先立都护
+            max_troops = 30000
+            inf_target = 4800
+            max_resent = 45
+            min_atk_p = 0.55
             reward_mode = "equal"
             reward_freq = 2
+            path_b_focus = (state.turn >= 8)
+        elif self.style == "greedy":
+            # 贪利秋掠 (xn_greedy_raider)：搜刮岁币、废立亲匈王子、专攻西域路径 B -> 克保守汉 (conservative)，被激进/均衡汉克制
+            max_troops = 27500
+            inf_target = 4200
+            max_resent = 64
+            min_atk_p = 0.60
+            reward_mode = "equal"
+            reward_freq = 3
             path_b_focus = True
         else:  # baseline (S08 均衡单于 AI)
             max_troops = 32000
@@ -494,19 +562,25 @@ class V1XiongnuAI:
 
         # --- 1) S03 防嫉妒分赏与安抚动摇部族 (S08-T05) ---
         rz = tribes["rizhu"]
-        if (rz.get("surrender_window", 0) > 0 or rz["loyalty"] < 38.0) and self.style in ("baseline", "aggressive"):
+        if (rz.get("surrender_window", 0) > 0 or rz["loyalty"] < 38.0) and self.style in ("baseline", "conservative"):
             c_pac = commands.make("pacify_tribe", "xiongnu", {"tribe": "rizhu"})
             if commands.validate(state, c_pac) == "":
                 cmds.append(c_pac)
 
         min_loy = min(tv["loyalty"] for tv in tribes.values() if tv["status"] != "defected_han")
         if (state.turn % reward_freq == 0 or min_loy < 48.0) and (tribes_state["reward_pool"] + state.factions["xiongnu"]["money"] >= 600):
-            if self.style != "aggressive" or min_loy < 46.0 or state.turn % 2 == 0:
+            if self.style not in ("aggressive", "greedy") or min_loy < 44.0 or state.turn % 3 == 0:
                 c_rw = commands.make("distribute_rewards", "xiongnu", {"amount": 600, "mode": reward_mode})
                 if commands.validate(state, c_rw) == "":
                     cmds.append(c_rw)
 
-        # --- 2) S03 季度战术卡选择 ---
+        # --- 2) S03 季度战术卡选择与龙城/蹛林大会 ---
+        if state.turn % 4 == 2 and (tribes_state["reward_pool"] + state.factions["xiongnu"]["money"] >= 450):
+            asm_tgt = "lou_lan" if state.controller(state.nodes["lou_lan"]) != "xiongnu" else "dun_huang"
+            c_asm = commands.make("hold_chanyu_assembly", "xiongnu", {"target": asm_tgt})
+            if commands.validate(state, c_asm) == "":
+                cmds.append(c_asm)
+
         if tribes_state["tactical_card_ticks"] == 0:
             if self.style == "aggressive":
                 card = "scorched_earth" if state.month() in (4, 5, 6) else "night_raid"
@@ -600,8 +674,10 @@ class V1XiongnuAI:
         if month < 4 or month > 10:
             return
         if self.style == "aggressive":
-            rally = "youxian_wang" if state.seed % 2 == 0 else "yi_wu"
-        elif path_b_focus and state.nodes.get("yi_wu", {}).get("faction") == "xiongnu":
+            rally = "youxian_wang" if state.seed % 3 != 0 else "yi_wu"
+        elif self.style == "greedy" and state.nodes.get("yi_wu", {}).get("faction") == "xiongnu":
+            rally = "yi_wu"
+        elif self.style == "baseline" and path_b_focus and state.nodes.get("yi_wu", {}).get("faction") == "xiongnu":
             rally = "yi_wu"
         else:
             rally = "youxian_wang" if state.seed % 2 == 0 else "yi_wu"
@@ -627,16 +703,30 @@ class V1XiongnuAI:
             return
         gathered.sort(key=lambda a: state.army_size(a), reverse=True)
         leader = gathered[0]
+        merged_list = [leader]
+        cur_sz = state.army_size(leader)
+        if self.style in ("greedy", "random_legal"):
+            max_merge = 16500
+        elif self.style in ("aggressive", "conservative"):
+            max_merge = 18500
+        else:
+            max_merge = 20500 if (state.turn >= 10 or state.seed % 3 == 0) else 18500
         for i in range(1, len(gathered)):
-            cmds.append(commands.make("merge", "xiongnu", {"army": gathered[i]["id"], "into": leader["id"]}))
-        units = combat.merged_units(gathered)
+            if cur_sz + state.army_size(gathered[i]) <= max_merge:
+                cmds.append(commands.make("merge", "xiongnu", {"army": gathered[i]["id"], "into": leader["id"]}))
+                merged_list.append(gathered[i])
+                cur_sz += state.army_size(gathered[i])
+        units = combat.merged_units(merged_list)
         if month < 7:
             return
 
         # 选择攻击目标（路径 A 攻河西四郡 vs 路径 B 攻楼兰/车师/乌垒）
-        cands = list(state.bal["victory"]["xn_targets"])
-        if path_b_focus:
-            cands = ["lou_lan", "cheshi_qian", "wu_lei"] + cands
+        if self.style == "greedy":
+            cands = ["lou_lan", "cheshi_qian", "wu_lei", "yan_qi", "wei_li", "dun_huang"]
+        else:
+            cands = list(state.bal["victory"]["xn_targets"])
+            if path_b_focus:
+                cands = ["lou_lan", "cheshi_qian", "wu_lei"] + cands
 
         target = ""
         best_val = float("-inf")
@@ -646,6 +736,13 @@ class V1XiongnuAI:
             n = state.nodes[nid]
             if state.controller(n) == "xiongnu":
                 continue
+            if self.style in ("greedy", "conservative", "aggressive", "random_legal"):
+                path_nodes = state.path_to(rally, nid, 1.0, False)
+                if any(
+                    mid in ("wu_wei", "zhang_ye", "jiu_quan", "dun_huang") and state.controller(state.nodes[mid]) == "han"
+                    for mid in path_nodes[:-1]
+                ):
+                    continue
             defenders = dict(n["militia"])
             for a in state.armies_at(nid):
                 if a["faction"] == "han":

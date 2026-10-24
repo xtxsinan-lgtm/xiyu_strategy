@@ -273,12 +273,12 @@ def build_chronicle_and_todos(state, side, recent_events=None):
 def compute_forage_tier(rel):
     score = rel["han_influence"] * 0.65 - rel["xn_intimidation"] * 0.35 - rel["xn_resentment"] * 0.15
     if rel["overlord"] == "han" or score >= 35.0:
-        return {"tier": "WELCOME", "label": "箪食壶浆（免钱迎军供粮）", "color": "#10b981"}
+        return {"tier": "WELCOME", "label": "箪食壶浆（免钱迎军供粮）", "color": "#a9d4b4"}
     if score >= 12.0:
-        return {"tier": "MARKET", "label": "平价开市（市价购粮 60%）", "color": "#3b82f6"}
+        return {"tier": "MARKET", "label": "平价开市（市价购粮 60%）", "color": "#c9b98a"}
     if score >= -8.0:
-        return {"tier": "REFUSE", "label": "闭籴绝市（仅暗购 15%）", "color": "#f59e0b"}
-    return {"tier": "HOSTILE", "label": "坚壁拒守（零供粮·需强攻）", "color": "#ef4444"}
+        return {"tier": "REFUSE", "label": "闭籴绝市（仅暗购 15%）", "color": "#d6a04a"}
+    return {"tier": "HOSTILE", "label": "坚壁拒守（零供粮·需强攻）", "color": "#e8998a"}
 
 
 def build_ending_biography(state):

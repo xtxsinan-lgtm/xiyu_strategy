@@ -1,5 +1,6 @@
 extends Control
-# 主界面：顶栏（日期/资源/胜利进度/结束回合）+ 节点图地图 + 侧栏（节点/军队/计划编辑）+ 战报。
+# 主界面「漆案舆图」（docs/ui_desk_spec.md）：顶栏 + 舆图画框 + 军情栏 + 案上器物 + 抽屉。
+# 主界面只留舆图与少量常驻信息；城邑、局势、诸国、粮道、军务、战报都收进抽屉。
 # UI 只读 GameState、只写 Command；与 AI 使用同一套命令接口。
 
 const GS = preload("res://core/game_state.gd")
@@ -15,15 +16,42 @@ const Trade = preload("res://core/trade.gd")
 const MapView = preload("res://ui/map_view.gd")
 const HanAI = preload("res://ai/han_ai.gd")
 const XnAI = preload("res://ai/xiongnu_ai.gd")
-const FRONTIER_ART = preload("res://assets/art/frontier-caravan.png")
-const Fonts = preload("res://ui/font_provider.gd")
+const D = preload("res://ui/desk_theme.gd")
 
 const SAVE_PATH := "user://xiyu_save.txt"
-const INK = Color("e8debf")
-const PAPER = Color("111917")
-const PANEL = Color("1c2824")
-const RED = Color("df967c")
-const GOLD = Color("c8aa6a")
+const ICON_DIR := "res://assets/icons/desk/"
+# 本文件内常用色（与 desk_theme.gd 一致，供默认参数使用）。
+const INK = Color("2b2119")
+const MUTED = Color("85745e")
+const RED = Color("a33a2a")
+const TOP_H := 60.0
+const BAR_H := 96.0
+const SIDE_W := 300.0
+const DRAWER_W := 880.0
+const DRAWER_LABEL_W := 760.0
+const SIDE_LABEL_W := 232.0
+
+# 案上器物（与网页版同一顺序、同一快捷键）。key 为抽屉名；speed 切换回放速度。
+const PROPS := [
+	{"key": "node", "icon": "tuji", "name": "图籍", "act": "城邑 · F1"},
+	{"key": "state", "icon": "zhaoshu", "icon_xn": "wangting", "name": "诏书", "name_xn": "王庭", "act": "局势 · F2"},
+	{"key": "states", "icon": "fujie", "name": "符节", "act": "诸国 · F3"},
+	{"key": "speed", "icon": "louke", "name": "漏刻", "act": "回放 ×1"},
+	{"key": "supply", "icon": "canglin", "name": "仓廪", "act": "粮道 · F4"},
+	{"key": "army", "icon": "hufu", "name": "虎符", "act": "军务 · F5"},
+	{"key": "log", "icon": "shice", "name": "史册", "act": "战报 · F6"},
+]
+# 抽屉：[朱印字, 标题, 快捷键]
+const DRAWERS := {
+	"node": ["城", "城邑", "F1"],
+	"state": ["诏", "局势", "F2"],
+	"states": ["节", "诸国", "F3"],
+	"supply": ["仓", "粮道", "F4"],
+	"army": ["符", "军务", "F5"],
+	"log": ["史", "战报", "F6"],
+}
+const PAGE_ORDER := ["node", "state", "states", "supply", "army", "log"]
+const HOTKEYS := {KEY_F1: "node", KEY_F2: "state", KEY_F3: "states", KEY_F4: "supply", KEY_F5: "army", KEY_F6: "log"}
 
 var state
 var player := "han"
@@ -40,9 +68,8 @@ var recruit_amount := 2000
 var convoy := {"laborers": 2000, "grain": 30000, "to": "", "stay": false, "loop": false}
 
 var map_view: Control
-var top_label: RichTextLabel
-var goal_label: Label
 var status_label: Label
+## 全部抽屉页的容器（每页一个 VBox，仅当前页可见）；测试从这里查找控件。
 var side: VBoxContainer
 var log_box: RichTextLabel
 var end_btn: Button
@@ -55,10 +82,41 @@ var replay_speed := 1.0
 var replay_skip := false
 var replay_next_event := false
 var replay_label: Label
-var replay_bar: HBoxContainer
+var replay_bar: PanelContainer
 var replay_pause_btn: Button
 var replay_controls: Array = []
 var side_scroll: ScrollContainer
+
+# 漆案布局
+var map_desk: Control
+var drawer: PanelContainer
+var drawer_key := ""
+var drawer_seal: Label
+var drawer_title: Label
+var drawer_sub: Label
+var drawer_hint: Label
+var pages := {}                 # key -> VBoxContainer
+var _page: VBoxContainer        # 当前正在搭建的抽屉页
+var prop_buttons := {}          # key -> {button, name, act, icon}
+var outliner_sel: VBoxContainer
+var outliner_alerts: VBoxContainer
+var outliner_orders: VBoxContainer
+var orders_title: Label
+var outliner_blocker: Control
+var top_seal: Label
+var top_seal_panel: PanelContainer
+var top_leader: Label
+var top_sub: Label
+var top_date: Label
+var top_season: Label
+var top_metrics: Array = []     # [[label, value], ...]
+var newgame_panel: PanelContainer
+var layer_panel: PanelContainer
+var toast: PanelContainer
+var toast_cancel: Button
+var status_timer: Timer
+var end_sub: Label
+var _icons := {}
 
 func _ready() -> void:
 	_build_theme()
@@ -67,214 +125,821 @@ func _ready() -> void:
 
 # ---------------- 搭建 ----------------
 func _build_theme() -> void:
-	var th = Theme.new()
-	var font = Fonts.body_font()
-	th.default_font = font
-	th.default_font_size = 15
-	th.set_color("font_color", "Label", INK)
-	th.set_color("default_color", "RichTextLabel", INK)
-	th.set_color("font_color", "Button", INK)
-	th.set_color("font_disabled_color", "Button", Color("827d6d"))
-	th.set_color("font_color", "CheckBox", INK)
-	th.set_color("font_color", "OptionButton", INK)
-	th.set_color("font_hover_color", "Button", INK)
-	for st in ["normal", "hover", "pressed", "disabled"]:
-		var b = StyleBoxFlat.new()
-		b.bg_color = {"normal": Color("2b3b32"), "hover": Color("3b5140"), "pressed": Color("4b6148"), "disabled": Color("252e27")}[st]
-		b.set_corner_radius_all(4)
-		b.set_border_width_all(1)
-		b.border_color = Color("78643e")
-		b.content_margin_left = 8
-		b.content_margin_right = 8
-		b.content_margin_top = 6
-		b.content_margin_bottom = 6
-		th.set_stylebox(st, "Button", b)
-		th.set_stylebox(st, "OptionButton", b)
-	var le = StyleBoxFlat.new()
-	le.bg_color = Color("141f1b")
-	le.set_border_width_all(1)
-	le.border_color = Color("78643e")
-	le.content_margin_left = 6
-	le.content_margin_right = 6
-	th.set_stylebox("normal", "LineEdit", le)
-	th.set_stylebox("focus", "LineEdit", le)
-	th.set_color("font_color", "LineEdit", INK)
-	th.set_color("caret_color", "LineEdit", INK)
-	theme = th
+	theme = D.build_theme()
+
+func _place(c: Control, al: float, at: float, ar: float, ab: float, ol: float, ot: float, orr: float, ob: float) -> void:
+	c.anchor_left = al
+	c.anchor_top = at
+	c.anchor_right = ar
+	c.anchor_bottom = ab
+	c.offset_left = ol
+	c.offset_top = ot
+	c.offset_right = orr
+	c.offset_bottom = ob
+
+func _kai(c: Control, fs: int, col := Color(0, 0, 0, 0)) -> Control:
+	c.add_theme_font_override("font", D.title_font())
+	c.add_theme_font_size_override("font_size", fs)
+	if col.a > 0.0:
+		c.add_theme_color_override("font_color", col)
+	return c
+
+func _text(t: String, fs := 14, col := INK) -> Label:
+	var l = Label.new()
+	l.text = t
+	l.add_theme_font_size_override("font_size", fs)
+	l.add_theme_color_override("font_color", col)
+	return l
+
+func _icon(icon_name: String) -> Texture2D:
+	if _icons.has(icon_name):
+		return _icons[icon_name]
+	var tex: Texture2D = null
+	var path := ICON_DIR + icon_name + ".svg"
+	if FileAccess.file_exists(path):
+		var img = Image.new()
+		if img.load_svg_from_string(FileAccess.get_file_as_string(path), 1.0) == OK:
+			tex = ImageTexture.create_from_image(img)
+	_icons[icon_name] = tex
+	return tex
+
+func _ignore_mouse(n: Node) -> void:
+	var c := n as Control
+	if c != null:
+		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in n.get_children():
+		_ignore_mouse(child)
+
+## 漆面幽灵按钮（顶栏菜单、回放横幅）。
+func _ghost(b: Button) -> Button:
+	var n = D.margins(D.box(D.CLEAR, D.LACQUER_LINE, 1, 0.0, 2), 10, 4)
+	var h = D.margins(D.box(D.LACQUER_2, D.BRONZE, 1, 0.0, 2), 10, 4)
+	var dis = D.margins(D.box(D.CLEAR, Color(D.LACQUER_LINE, 0.5), 1, 0.0, 2), 10, 4)
+	b.add_theme_stylebox_override("normal", n)
+	b.add_theme_stylebox_override("hover", h)
+	b.add_theme_stylebox_override("pressed", h)
+	b.add_theme_stylebox_override("hover_pressed", h)
+	b.add_theme_stylebox_override("disabled", dis)
+	b.add_theme_color_override("font_color", D.ON_LACQUER)
+	b.add_theme_color_override("font_focus_color", D.ON_LACQUER)
+	b.add_theme_color_override("font_hover_color", D.BRONZE_HI)
+	b.add_theme_color_override("font_pressed_color", D.BRONZE_HI)
+	b.add_theme_color_override("font_hover_pressed_color", D.BRONZE_HI)
+	b.add_theme_color_override("font_disabled_color", Color(D.ON_LACQUER_MUTED, 0.5))
+	b.focus_mode = Control.FOCUS_NONE
+	return b
+
+## 主按钮：朱底绢字。
+func _primary(b: Button) -> Button:
+	b.add_theme_stylebox_override("normal", D.margins(D.box(D.CINNABAR, D.CINNABAR, 1, 0.0, 2), 12, 5))
+	b.add_theme_stylebox_override("hover", D.margins(D.box(D.CINNABAR_HI, D.CINNABAR_HI, 1, 0.0, 2), 12, 5))
+	b.add_theme_stylebox_override("pressed", D.margins(D.box(D.CINNABAR, D.INK, 1, 0.0, 2), 12, 5))
+	b.add_theme_stylebox_override("disabled", D.margins(D.box(Color(D.CINNABAR, 0.45), D.CLEAR, 0, 0.0, 2), 12, 5))
+	for k in ["font_color", "font_focus_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
+		b.add_theme_color_override(k, D.SILK)
+	b.add_theme_color_override("font_disabled_color", Color(D.SILK, 0.7))
+	return b
 
 func _build_ui() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	var bg = ColorRect.new()
-	bg.color = PAPER
+	bg.color = D.LACQUER
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
-	var root = VBoxContainer.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.add_theme_constant_override("separation", 6)
-	add_child(root)
-	# 顶栏
-	var top = PanelContainer.new()
-	top.add_theme_stylebox_override("panel", _flat(PANEL))
-	root.add_child(top)
-	var top_rows = VBoxContainer.new()
-	top_rows.add_theme_constant_override("separation", 8)
-	top.add_child(top_rows)
-	var th = HBoxContainer.new()
-	th.add_theme_constant_override("separation", 8)
-	top_rows.add_child(th)
-	var brand = Label.new()
-	brand.text = "西 域  ·  汉 匈 争 霸"
-	brand.add_theme_font_size_override("font_size", 24)
-	brand.add_theme_color_override("font_color", GOLD)
-	brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	th.add_child(brand)
-	var era = Label.new()
-	era.text = "边塞 · 商路 · 兵粮"
-	era.add_theme_color_override("font_color", Color("a5ae97"))
-	th.add_child(era)
+	_build_map_desk()
+	_build_outliner()
+	_build_desk_bar()
+	_build_top_bar()
+	_build_newgame_panel()
+	status_timer = Timer.new()
+	status_timer.one_shot = true
+	status_timer.timeout.connect(func():
+		if pick.is_empty():
+			_set_status(""))
+	add_child(status_timer)
+	# 逐日回放控制：结算时禁止改令，地图仍可缩放/拖动。
+	replay_controls.append(end_btn)
+
+# ---- 顶栏（漆面，高 60）----
+func _build_top_bar() -> void:
+	var bar = Panel.new()
+	var st = D.box(D.LACQUER)
+	st.border_color = D.LACQUER_LINE
+	st.border_width_bottom = 1
+	bar.add_theme_stylebox_override("panel", st)
+	_place(bar, 0, 0, 1, 0, 0, 0, 0, TOP_H)
+	add_child(bar)
+	var row = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 16)
+	_place(row, 0, 0, 1, 1, 14, 0, -14, 0)
+	bar.add_child(row)
+	top_seal_panel = PanelContainer.new()
+	top_seal_panel.custom_minimum_size = Vector2(40, 40)
+	top_seal_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top_seal_panel.add_theme_stylebox_override("panel", D.box(D.CINNABAR, D.BRONZE, 1, 0.0, 2))
+	row.add_child(top_seal_panel)
+	top_seal = _text("汉", 24, D.SILK)
+	_kai(top_seal, 24)
+	top_seal.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	top_seal.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	top_seal_panel.add_child(top_seal)
+	var who = VBoxContainer.new()
+	who.add_theme_constant_override("separation", 0)
+	who.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	who.custom_minimum_size.x = 170
+	row.add_child(who)
+	top_leader = _text("", 17, D.ON_LACQUER)
+	_kai(top_leader, 17)
+	who.add_child(top_leader)
+	top_sub = _text("", 12, D.ON_LACQUER_MUTED)
+	who.add_child(top_sub)
+	for i in 3:
+		row.add_child(_lacquer_divider())
+		var m = VBoxContainer.new()
+		m.add_theme_constant_override("separation", 0)
+		m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		m.custom_minimum_size.x = 120
+		var ml = _text("", 11, D.ON_LACQUER_MUTED)
+		var mv = _text("", 20, D.BRONZE_HI)
+		m.mouse_filter = Control.MOUSE_FILTER_PASS
+		mv.mouse_filter = Control.MOUSE_FILTER_PASS
+		m.add_child(ml)
+		m.add_child(mv)
+		row.add_child(m)
+		top_metrics.append([ml, mv])
+	var spacer = Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(spacer)
+	var when = VBoxContainer.new()
+	when.add_theme_constant_override("separation", 0)
+	when.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(when)
+	top_date = _text("", 18, D.ON_LACQUER)
+	_kai(top_date, 18)
+	top_date.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	when.add_child(top_date)
+	top_season = _text("", 12, D.ON_LACQUER_MUTED)
+	top_season.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	when.add_child(top_season)
+	row.add_child(_lacquer_divider())
+	var menu = HBoxContainer.new()
+	menu.add_theme_constant_override("separation", 6)
+	menu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(menu)
+	var chronicle = _ghost(_btn("纪事", func(): _toggle_drawer("log")))
+	chronicle.tooltip_text = "打开战报（F6）"
+	menu.add_child(chronicle)
+	var sb = _ghost(_btn("存档", save_game))
+	menu.add_child(sb)
+	var lb = _ghost(_btn("读档", load_game))
+	menu.add_child(lb)
+	# 「开局」打开新局面板；面板内以「新局」开头的按钮才真正开局。
+	var ng = _ghost(_btn("开局", func():
+		newgame_panel.visible = not newgame_panel.visible))
+	ng.tooltip_text = "选择阵营与节奏，开始新局"
+	menu.add_child(ng)
+	replay_controls.append_array([sb, lb, ng])
+
+func _lacquer_divider() -> Control:
+	var d = ColorRect.new()
+	d.color = D.LACQUER_LINE
+	d.custom_minimum_size = Vector2(1, 34)
+	d.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	d.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return d
+
+func _build_newgame_panel() -> void:
+	newgame_panel = PanelContainer.new()
+	var st = D.box(D.SILK, D.INK, 2, 14.0, 2)
+	st.shadow_color = Color(0.078, 0.055, 0.031, 0.45)
+	st.shadow_size = 16
+	st.shadow_offset = Vector2(0, 10)
+	newgame_panel.add_theme_stylebox_override("panel", st)
+	_place(newgame_panel, 1, 0, 1, 0, -SIDE_W - 60, TOP_H + 6, -14, TOP_H + 6)
+	newgame_panel.visible = false
+	add_child(newgame_panel)
+	var col = VBoxContainer.new()
+	col.add_theme_constant_override("separation", 10)
+	newgame_panel.add_child(col)
+	col.add_child(_section_title("开新局", "前119年剧本"))
 	var side_opt = OptionButton.new()
 	side_opt.add_item("执汉", 0)
 	side_opt.add_item("执匈奴", 1)
 	side_opt.tooltip_text = "选择新局阵营，点击『新局』生效"
-	th.add_child(side_opt)
 	faction_option = side_opt
 	var iv = OptionButton.new()
 	iv.add_item("月制", 0)
 	iv.add_item("季制", 1)
 	iv.tooltip_text = "选择新局节奏，点击『新局』生效"
-	th.add_child(iv)
 	interval_option = iv
-	var nb = Button.new()
-	nb.text = "新局"
-	nb.pressed.connect(func(): new_game("han" if side_opt.selected == 0 else "xiongnu", 3 if iv.selected == 0 else 9))
-	th.add_child(nb)
-	var sb = Button.new()
-	sb.text = "存档"
-	sb.pressed.connect(save_game)
-	th.add_child(sb)
-	var lb = Button.new()
-	lb.text = "读档"
-	lb.pressed.connect(load_game)
-	th.add_child(lb)
-	end_btn = Button.new()
-	end_btn.text = "结束回合 ▶"
-	end_btn.add_theme_font_size_override("font_size", 16)
-	end_btn.pressed.connect(end_turn)
-	th.add_child(end_btn)
-	var info = HBoxContainer.new()
-	info.add_theme_constant_override("separation", 20)
-	top_rows.add_child(info)
-	top_label = RichTextLabel.new()
-	top_label.bbcode_enabled = true
-	top_label.fit_content = true
-	top_label.scroll_active = false
-	top_label.custom_minimum_size = Vector2(550, 25)
-	top_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.add_child(top_label)
-	goal_label = Label.new()
-	goal_label.add_theme_color_override("font_color", GOLD)
-	info.add_child(goal_label)
-	# 逐日回放控制：结算时禁止改令，地图仍可缩放/拖动。
-	replay_controls = [side_opt, iv, nb, sb, lb, end_btn]
-	replay_bar = HBoxContainer.new()
-	replay_bar.visible = false
-	root.add_child(replay_bar)
-	replay_label = Label.new()
-	replay_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	replay_bar.add_child(replay_label)
-	replay_pause_btn = _btn("暂停", func():
-		replay_paused = not replay_paused
-		replay_pause_btn.text = "继续" if replay_paused else "暂停")
-	replay_bar.add_child(replay_pause_btn)
-	for speed in [1.0, 4.0]:
-		var playback_speed: float = speed
-		replay_bar.add_child(_btn("×%d" % int(speed), func(): replay_speed = playback_speed))
-	replay_bar.add_child(_btn("下一事件", func():
-		replay_next_event = true
-		replay_paused = false
-		replay_pause_btn.text = "暂停"))
-	replay_bar.add_child(_btn("跳过回放", func(): replay_skip = true))
-	# 主体
-	var body = HSplitContainer.new()
-	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	root.add_child(body)
+	var grid = GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 10)
+	grid.add_theme_constant_override("v_separation", 8)
+	grid.add_child(_text("阵营", 12, MUTED))
+	side_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_child(side_opt)
+	grid.add_child(_text("节奏", 12, MUTED))
+	iv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_child(iv)
+	col.add_child(grid)
+	col.add_child(_text("月制每月下令一次；季制每季一次、每次结算三个月。", 12, MUTED))
+	var nb = _primary(_btn("新局 · 开始", func():
+		new_game("han" if faction_option.selected == 0 else "xiongnu", 3 if interval_option.selected == 0 else 9)
+		newgame_panel.visible = false))
+	var cancel = _btn("取消", func(): newgame_panel.visible = false)
+	var buttons = HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_END
+	buttons.add_theme_constant_override("separation", 8)
+	buttons.add_child(cancel)
+	buttons.add_child(nb)
+	col.add_child(buttons)
+	replay_controls.append_array([side_opt, iv, nb])
+
+# ---- 舆图（画框 + 镜头 + 图层 + 回放横幅 + 抽屉）----
+func _build_map_desk() -> void:
+	map_desk = Control.new()
+	map_desk.clip_contents = true
+	map_desk.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(map_desk, 0, 0, 1, 1, 0, TOP_H, -SIDE_W, -BAR_H)
+	add_child(map_desk)
 	map_view = MapView.new()
-	map_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	map_view.custom_minimum_size = Vector2(600, 300)
+	_place(map_view, 0, 0, 1, 1, 0, 0, 0, 0)
 	map_view.node_clicked.connect(_on_node_clicked)
 	map_view.army_clicked.connect(_on_army_clicked)
-	body.add_child(map_view)
-	var sp = PanelContainer.new()
-	sp.add_theme_stylebox_override("panel", _flat(PANEL))
-	sp.custom_minimum_size = Vector2(410, 0)
-	body.add_child(sp)
-	var inspector = VBoxContainer.new()
-	inspector.add_theme_constant_override("separation", 12)
-	sp.add_child(inspector)
-	var hero = Control.new()
-	hero.custom_minimum_size = Vector2(360, 104)
-	hero.clip_contents = true
-	inspector.add_child(hero)
-	var art = TextureRect.new()
-	art.texture = FRONTIER_ART
-	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	art.set_anchors_preset(Control.PRESET_FULL_RECT)
-	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hero.add_child(art)
-	var hero_title = Label.new()
-	hero_title.text = "西 域 战 局\n军政与后勤"
-	hero_title.position = Vector2(15, 19)
-	hero_title.add_theme_font_size_override("font_size", 20)
-	hero_title.add_theme_color_override("font_color", Color("f4e7c8"))
-	hero_title.add_theme_color_override("font_shadow_color", Color("151916"))
-	hero_title.add_theme_constant_override("shadow_offset_x", 1)
-	hero_title.add_theme_constant_override("shadow_offset_y", 2)
-	hero.add_child(hero_title)
+	map_desk.add_child(map_view)
+	_build_camera_controls()
+	_build_layer_controls()
+	# 抽屉之后再加提示条与回放横幅，保证它们浮在抽屉之上。
+	_build_drawer()
+	_build_toast()
+	_build_replay_bar()
+
+func _build_camera_controls() -> void:
+	var zb = VBoxContainer.new()
+	zb.add_theme_constant_override("separation", 4)
+	_place(zb, 1, 1, 1, 1, -100, -218, -42, -42)
+	zb.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	zb.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	map_desk.add_child(zb)
+	var items := [
+		["＋", "放大", func(): map_view.zoom_step(1.25)],
+		["－", "缩小", func(): map_view.zoom_step(0.8)],
+		["全图", "显示全图", func(): map_view.fit()],
+		["聚焦", "聚焦所选；未选时聚焦帅帐", _focus_selected],
+	]
+	for it in items:
+		var b = _btn(it[0], it[2])
+		b.tooltip_text = it[1]
+		b.custom_minimum_size = Vector2(58, 38)
+		_kai(b, 16 if it[0].length() > 1 else 20)
+		b.add_theme_stylebox_override("normal", D.margins(D.box(Color(D.SILK_3, 0.94), D.BTN_EDGE, 1, 0.0, 2), 6, 2))
+		zb.add_child(b)
+
+func _build_layer_controls() -> void:
+	var lb = _btn("图层", func():
+		layer_panel.visible = not layer_panel.visible)
+	_kai(lb, 16)
+	lb.tooltip_text = "图层开关与图例"
+	lb.custom_minimum_size = Vector2(84, 38)
+	lb.add_theme_stylebox_override("normal", D.margins(D.box(Color(D.SILK_3, 0.94), D.BTN_EDGE, 1, 0.0, 2), 10, 2))
+	_place(lb, 0, 1, 0, 1, 42, -80, 126, -42)
+	lb.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	map_desk.add_child(lb)
+	layer_panel = PanelContainer.new()
+	layer_panel.add_theme_stylebox_override("panel", D.box(D.SILK, D.INK, 1, 14.0))
+	_place(layer_panel, 0, 1, 0, 1, 42, -88, 362, -88)
+	layer_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	layer_panel.visible = false
+	map_desk.add_child(layer_panel)
+	var col = VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	layer_panel.add_child(col)
+	col.add_child(_section_title("图层"))
+	var toggles = HFlowContainer.new()
+	for spec in [["商路", "show_trade"], ["计里画方", "show_grid"], ["地名", "show_regions"]]:
+		var t = Button.new()
+		t.toggle_mode = true
+		t.button_pressed = bool(map_view.get(spec[1]))
+		t.focus_mode = Control.FOCUS_NONE
+		t.add_theme_stylebox_override("pressed", D.margins(D.box(D.SILK_2, D.CINNABAR, 1, 0.0, 2), 10, 5))
+		var prop: String = spec[1]
+		var label: String = spec[0]
+		t.text = ("● " if t.button_pressed else "○ ") + label
+		t.toggled.connect(func(on: bool):
+			map_view.set(prop, on)
+			t.text = ("● " if on else "○ ") + label
+			map_view.queue_redraw())
+		toggles.add_child(t)
+	col.add_child(toggles)
+	col.add_child(_section_title("图例"))
+	var legend = GridContainer.new()
+	legend.columns = 2
+	legend.add_theme_constant_override("h_separation", 14)
+	legend.add_theme_constant_override("v_separation", 4)
+	var entries := [
+		[MapView.C_HAN, "汉郡（直辖）", false], [MapView.C_HAN_V, "汉属国", false],
+		[MapView.C_XN, "匈奴本部", false], [MapView.C_XN_V, "匈奴属国", false],
+		[MapView.STATE_COLORS["qiu_ci"], "独立城邦（各国本色）", false], [MapView.C_PASS, "关隘 · 小点为路口", false],
+		[Color(0.91, 0.70, 0.25), "商路（畅通）", true], [Color("6b4f2a"), "绿洲道路", true],
+		[Color("5f8f4a"), "草原", true], [Color("b8893c"), "沙漠（虚线）", true],
+		[Color("7a7a7a"), "山道（冬季封闭）", true], [Color("a33a2a"), "悬度险道", true],
+	]
+	for e in entries:
+		var h = HBoxContainer.new()
+		h.add_theme_constant_override("separation", 6)
+		var sw = ColorRect.new()
+		sw.color = e[0]
+		sw.custom_minimum_size = Vector2(18, 4) if e[2] else Vector2(12, 12)
+		sw.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		h.add_child(sw)
+		h.add_child(_text(e[1], 12, D.INK_2))
+		legend.add_child(h)
+	col.add_child(legend)
+	col.add_child(_text("滚轮缩放 · 拖动平移 · 悬停道路查看里程", 11, MUTED))
+
+func _build_toast() -> void:
+	toast = PanelContainer.new()
+	var st = D.margins(D.box(D.SILK_3, D.CINNABAR, 1, 0.0, 2), 14, 8)
+	st.shadow_color = Color(0.078, 0.055, 0.031, 0.3)
+	st.shadow_size = 8
+	toast.add_theme_stylebox_override("panel", st)
+	_place(toast, 0.5, 1, 0.5, 1, -330, -94, 330, -94)
+	toast.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	toast.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	toast.visible = false
+	map_desk.add_child(toast)
+	var row = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	toast.add_child(row)
+	status_label = Label.new()
+	status_label.add_theme_color_override("font_color", D.CINNABAR)
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(status_label)
+	toast_cancel = _btn("取消取点", func():
+		pick = {}
+		_set_status("")
+		refresh())
+	toast_cancel.visible = false
+	row.add_child(toast_cancel)
+
+func _build_replay_bar() -> void:
+	replay_bar = PanelContainer.new()
+	replay_bar.add_theme_stylebox_override("panel", D.margins(D.box(Color(D.LACQUER, 0.94), D.BRONZE, 1, 0.0, 2), 12, 6))
+	_place(replay_bar, 0.5, 0, 0.5, 0, -320, 40, 320, 40)
+	replay_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	replay_bar.visible = false
+	map_desk.add_child(replay_bar)
+	var row = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	replay_bar.add_child(row)
+	replay_label = _text("", 13, D.ON_LACQUER)
+	replay_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	replay_label.clip_text = true
+	replay_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(replay_label)
+	replay_pause_btn = _ghost(_btn("暂停", func():
+		replay_paused = not replay_paused
+		replay_pause_btn.text = "继续" if replay_paused else "暂停"))
+	row.add_child(replay_pause_btn)
+	for speed in [1.0, 4.0]:
+		var playback_speed: float = speed
+		row.add_child(_ghost(_btn("×%d" % int(speed), func(): _set_replay_speed(playback_speed))))
+	row.add_child(_ghost(_btn("下一事件", func():
+		replay_next_event = true
+		replay_paused = false
+		replay_pause_btn.text = "暂停")))
+	row.add_child(_ghost(_btn("跳过回放", func(): replay_skip = true)))
+	for b in row.get_children():
+		if b is Button:
+			b.add_theme_font_size_override("font_size", 13)
+
+func _build_drawer() -> void:
+	drawer = PanelContainer.new()
+	var st = D.box(D.SILK, D.INK, 2, 6.0)
+	st.shadow_color = Color(0.078, 0.055, 0.031, 0.45)
+	st.shadow_size = 16
+	st.shadow_offset = Vector2(0, 12)
+	drawer.add_theme_stylebox_override("panel", st)
+	_place(drawer, 0, 0, 0, 1, 14, 14, 14 + DRAWER_W, -14)
+	drawer.visible = false
+	# 装裱：2px 墨框内缩 3px 的 1px 铜线。
+	drawer.draw.connect(func():
+		drawer.draw_rect(Rect2(Vector2.ZERO, drawer.size).grow(-5.0), D.BRONZE, false, 1.0))
+	map_desk.add_child(drawer)
+	var col = VBoxContainer.new()
+	col.add_theme_constant_override("separation", 0)
+	drawer.add_child(col)
+	# 页眉（silk_2，高 52）
+	var head = PanelContainer.new()
+	var hs = D.margins(D.box(D.SILK_2), 12, 0)
+	hs.border_color = D.RULE
+	hs.border_width_bottom = 1
+	head.add_theme_stylebox_override("panel", hs)
+	head.custom_minimum_size.y = 52
+	col.add_child(head)
+	var hrow = HBoxContainer.new()
+	hrow.add_theme_constant_override("separation", 12)
+	head.add_child(hrow)
+	var seal = PanelContainer.new()
+	seal.custom_minimum_size = Vector2(30, 30)
+	seal.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	seal.add_theme_stylebox_override("panel", D.box(D.CINNABAR, D.CLEAR, 0, 0.0, 2))
+	hrow.add_child(seal)
+	drawer_seal = _text("城", 18, Color.WHITE)
+	_kai(drawer_seal, 18)
+	drawer_seal.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	drawer_seal.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	seal.add_child(drawer_seal)
+	drawer_title = _text("", 21, INK)
+	_kai(drawer_title, 21)
+	drawer_title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hrow.add_child(drawer_title)
+	drawer_sub = _text("", 12, MUTED)
+	drawer_sub.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	drawer_sub.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	drawer_sub.clip_text = true
+	hrow.add_child(drawer_sub)
+	drawer_hint = _text("", 11, MUTED)
+	drawer_hint.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	hrow.add_child(drawer_hint)
+	var close = _btn("×", _close_drawer)
+	close.tooltip_text = "收起（Esc）"
+	close.custom_minimum_size = Vector2(30, 30)
+	close.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close.add_theme_font_size_override("font_size", 18)
+	close.add_theme_stylebox_override("normal", D.box(D.CLEAR))
+	hrow.add_child(close)
+	# 正文（滚动）
 	side_scroll = ScrollContainer.new()
 	side_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	side_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	inspector.add_child(side_scroll)
-	side_blocker = Control.new()
-	side_blocker.set_anchors_preset(Control.PRESET_FULL_RECT)
-	side_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
-	side_blocker.visible = false
-	sp.add_child(side_blocker)
+	col.add_child(side_scroll)
+	var pad = MarginContainer.new()
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for k in ["margin_left", "margin_right"]:
+		pad.add_theme_constant_override(k, 18)
+	pad.add_theme_constant_override("margin_top", 14)
+	pad.add_theme_constant_override("margin_bottom", 18)
+	side_scroll.add_child(pad)
 	side = VBoxContainer.new()
 	side.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	side.add_theme_constant_override("separation", 9)
-	side_scroll.add_child(side)
-	# 状态行 + 战报
-	status_label = Label.new()
-	status_label.add_theme_color_override("font_color", RED)
-	root.add_child(status_label)
-	var lp = PanelContainer.new()
-	lp.add_theme_stylebox_override("panel", _flat(PANEL))
-	lp.custom_minimum_size = Vector2(0, 122)
-	root.add_child(lp)
+	side.add_theme_constant_override("separation", 0)
+	pad.add_child(side)
+	for key in PAGE_ORDER:
+		var p = VBoxContainer.new()
+		p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		p.add_theme_constant_override("separation", 9)
+		p.visible = false
+		side.add_child(p)
+		pages[key] = p
 	log_box = RichTextLabel.new()
 	log_box.bbcode_enabled = true
 	log_box.scroll_following = true
-	var log_rows = VBoxContainer.new()
-	lp.add_child(log_rows)
-	var log_title = Label.new()
-	log_title.text = "军 情  ·  本 回 合 战 报"
-	log_title.add_theme_color_override("font_color", GOLD)
-	log_title.add_theme_font_size_override("font_size", 13)
-	log_rows.add_child(log_title)
-	log_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	log_rows.add_child(log_box)
+	log_box.selection_enabled = true
+	log_box.custom_minimum_size = Vector2(0, 720)
+	log_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pages["log"].add_child(log_box)
+	# 回放时遮住抽屉，禁止改令。
+	side_blocker = Control.new()
+	side_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	side_blocker.visible = false
+	drawer.add_child(side_blocker)
 
-func _flat(c: Color) -> StyleBoxFlat:
-	var b = StyleBoxFlat.new()
-	b.bg_color = c
-	b.content_margin_left = 12
-	b.content_margin_right = 12
-	b.content_margin_top = 10
-	b.content_margin_bottom = 10
-	b.border_color = Color("65583b")
-	b.set_border_width_all(1)
-	b.set_corner_radius_all(4)
+# ---- 军情栏（右，宽 300）----
+func _build_outliner() -> void:
+	var ol = PanelContainer.new()
+	var st = D.margins(D.box(D.SILK_2), 14, 12)
+	st.border_color = D.LACQUER_LINE
+	st.border_width_left = 1
+	ol.add_theme_stylebox_override("panel", st)
+	_place(ol, 1, 0, 1, 1, -SIDE_W, TOP_H, 0, -BAR_H)
+	add_child(ol)
+	var col = VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	ol.add_child(col)
+	col.add_child(_section_title("所选"))
+	var card = PanelContainer.new()
+	card.add_theme_stylebox_override("panel", D.box(D.SILK_3, D.CARD_EDGE, 1, 10.0))
+	col.add_child(card)
+	outliner_sel = VBoxContainer.new()
+	outliner_sel.add_theme_constant_override("separation", 4)
+	card.add_child(outliner_sel)
+	col.add_child(_section_title("急报", "点击定位"))
+	outliner_alerts = VBoxContainer.new()
+	outliner_alerts.add_theme_constant_override("separation", 4)
+	col.add_child(outliner_alerts)
+	var oh = _section_title("本季军令")
+	orders_title = oh.get_meta("label")
+	col.add_child(oh)
+	var sc = ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(sc)
+	outliner_orders = VBoxContainer.new()
+	outliner_orders.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outliner_orders.add_theme_constant_override("separation", 4)
+	sc.add_child(outliner_orders)
+	outliner_blocker = Control.new()
+	outliner_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	outliner_blocker.visible = false
+	ol.add_child(outliner_blocker)
+
+# ---- 案上器物（漆面，高 96）+ 用印 ----
+func _build_desk_bar() -> void:
+	var bar = Panel.new()
+	var st = D.box(D.LACQUER)
+	st.border_color = D.BRONZE
+	st.border_width_top = 1
+	bar.add_theme_stylebox_override("panel", st)
+	_place(bar, 0, 1, 1, 1, 0, -BAR_H, 0, 0)
+	add_child(bar)
+	var props = HBoxContainer.new()
+	props.add_theme_constant_override("separation", 10)
+	_place(props, 0, 0, 1, 1, 14, 12, -SIDE_W - 6, -12)
+	bar.add_child(props)
+	for p in PROPS:
+		props.add_child(_make_prop(p))
+	end_btn = Button.new()
+	end_btn.text = "结束本月"
+	end_btn.focus_mode = Control.FOCUS_NONE
+	_kai(end_btn, 24)
+	var normal = D.box(D.CINNABAR, D.CLEAR, 0, 0.0, 2)
+	normal.content_margin_bottom = 22
+	var hover = D.box(D.CINNABAR_HI, D.CLEAR, 0, 0.0, 2)
+	hover.content_margin_bottom = 22
+	var pressed = D.box(Color("8e3122"), D.CLEAR, 0, 0.0, 2)
+	pressed.content_margin_bottom = 22
+	var disabled = D.box(Color(D.CINNABAR, 0.45), D.CLEAR, 0, 0.0, 2)
+	disabled.content_margin_bottom = 22
+	end_btn.add_theme_stylebox_override("normal", normal)
+	end_btn.add_theme_stylebox_override("hover", hover)
+	end_btn.add_theme_stylebox_override("pressed", pressed)
+	end_btn.add_theme_stylebox_override("hover_pressed", pressed)
+	end_btn.add_theme_stylebox_override("disabled", disabled)
+	for k in ["font_color", "font_focus_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
+		end_btn.add_theme_color_override(k, D.SILK)
+	end_btn.add_theme_color_override("font_disabled_color", Color(D.SILK, 0.6))
+	end_btn.tooltip_text = "用印：提交本回合命令并结算（Space）"
+	_place(end_btn, 1, 0, 1, 1, -SIDE_W + 8, 10, -14, -10)
+	end_btn.pressed.connect(end_turn)
+	# 用印：内缩 4px 的 1px bronze_hi 线。
+	end_btn.draw.connect(func():
+		end_btn.draw_rect(Rect2(Vector2.ZERO, end_btn.size).grow(-4.0), D.BRONZE_HI, false, 1.0))
+	bar.add_child(end_btn)
+	end_sub = _text("Space · 已拟 0 令", 12, Color(D.SILK, 0.85))
+	end_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	end_sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(end_sub, 0, 1, 1, 1, 0, -30, 0, -10)
+	end_btn.add_child(end_sub)
+
+func _make_prop(p: Dictionary) -> Button:
+	var b = Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 72)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.tooltip_text = "%s · %s" % [p["name"], p["act"]]
+	var row = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	b.add_child(row)
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 12
+	row.offset_right = -6
+	var icon = TextureRect.new()
+	icon.texture = _icon(p["icon"])
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(34, 34)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(icon)
+	var texts = VBoxContainer.new()
+	texts.add_theme_constant_override("separation", 0)
+	texts.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(texts)
+	var nm = _text(p["name"], 18, INK)
+	_kai(nm, 18)
+	texts.add_child(nm)
+	var act = _text(p["act"], 12, MUTED)
+	act.clip_text = true
+	texts.add_child(act)
+	_ignore_mouse(row)
+	var key: String = p["key"]
+	if key == "speed":
+		b.pressed.connect(func(): _set_replay_speed(1.0 if replay_speed >= 4.0 else 4.0))
+	else:
+		b.pressed.connect(func(): _toggle_drawer(key))
+	prop_buttons[key] = {"button": b, "name": nm, "act": act, "icon": icon, "spec": p}
+	return b
+
+func _prop_style(open: bool, hover: bool) -> StyleBoxFlat:
+	if open:
+		return D.box(D.SILK_2, D.CINNABAR, 2)
+	return D.box(D.SILK, D.CINNABAR if hover else D.RULE, 1)
+
+func _refresh_props() -> void:
+	for key in prop_buttons:
+		var e: Dictionary = prop_buttons[key]
+		var b: Button = e["button"]
+		var open: bool = key == drawer_key
+		b.add_theme_stylebox_override("normal", _prop_style(open, false))
+		b.add_theme_stylebox_override("hover", _prop_style(open, true))
+		b.add_theme_stylebox_override("pressed", _prop_style(true, true))
+		b.add_theme_stylebox_override("hover_pressed", _prop_style(true, true))
+		b.add_theme_stylebox_override("disabled", _prop_style(false, false))
+		var spec: Dictionary = e["spec"]
+		var nm: Label = e["name"]
+		nm.add_theme_color_override("font_color", D.CINNABAR if open else INK)
+		if spec.has("name_xn"):
+			nm.text = spec["name_xn"] if player == "xiongnu" else spec["name"]
+			e["icon"].texture = _icon(spec["icon_xn"] if player == "xiongnu" else spec["icon"])
+		if key == "speed":
+			e["act"].text = "回放 ×%d · 点按切换" % int(replay_speed)
+
+func _set_replay_speed(v: float) -> void:
+	replay_speed = v
+	_refresh_props()
+
+func _focus_selected() -> void:
+	if state == null:
+		return
+	if sel_army != "" and state.armies.has(sel_army):
+		map_view.center_on(map_view.army_world_position(state.armies[sel_army], state.armies), 1.6)
+		return
+	var target := sel_node
+	if target == "" or not state.nodes.has(target):
+		target = "dun_huang" if player == "han" else "youxian_wang"
+	if state.nodes.has(target):
+		map_view.center_on(map_view.node_world_pos(target), 1.6)
+
+# ---- 抽屉 ----
+func _toggle_drawer(key: String) -> void:
+	if drawer_key == key:
+		_close_drawer()
+	else:
+		_open_drawer(key)
+
+func _open_drawer(key: String) -> void:
+	drawer_key = key
+	_refresh_drawer_frame()
+	_refresh_props()
+	side_scroll.scroll_vertical = 0
+
+func _close_drawer() -> void:
+	drawer_key = ""
+	_refresh_drawer_frame()
+	_refresh_props()
+
+func _refresh_drawer_frame() -> void:
+	for key in pages:
+		pages[key].visible = key == drawer_key
+	drawer.visible = drawer_key != ""
+	if drawer_key == "":
+		return
+	var meta: Array = DRAWERS[drawer_key]
+	drawer_seal.text = meta[0]
+	drawer_title.text = meta[1]
+	drawer_hint.text = "%s 开合 · Esc 收起" % meta[2]
+	drawer_sub.text = _drawer_subtitle(drawer_key) if state != null else ""
+	drawer.queue_redraw()
+
+func _drawer_subtitle(key: String) -> String:
+	var unit := "季" if decision_ticks == 9 else "月"
+	match key:
+		"node":
+			if sel_node != "" and state.nodes.has(sel_node):
+				return "%s · %s" % [state.nodes[sel_node]["name"], _ctl_text(state.nodes[sel_node])]
+			return "未选城邑 · 点击舆图上的城邑"
+		"state":
+			return "胜负进度 · 国力 · 本%s命令" % unit
+		"states":
+			return "西域诸国总览 · 点击一行定位城邑"
+		"supply":
+			if player == "han" and sel_node != "" and state.nodes.has(sel_node) and state.is_supply_node(state.nodes[sel_node], "han"):
+				return "运输队 · 各军携粮 · 自%s发运" % state.nodes[sel_node]["name"]
+			return "运输队 · 各军携粮"
+		"army":
+			if sel_army != "" and state.armies.has(sel_army):
+				return "%s · 作战计划与粮秣预演" % state.armies[sel_army]["name"]
+			return "未选军队 · 点击舆图上的军旗"
+		"log":
+			return "本局事件流"
+	return ""
+
+func _input(ev: InputEvent) -> void:
+	var key_ev := ev as InputEventKey
+	if key_ev == null or not key_ev.pressed or key_ev.echo:
+		return
+	var k: int = key_ev.keycode
+	if HOTKEYS.has(k):
+		_toggle_drawer(HOTKEYS[k])
+	elif k == KEY_ESCAPE:
+		if not pick.is_empty():
+			pick = {}
+			_set_status("已取消选点。")
+		elif newgame_panel.visible:
+			newgame_panel.visible = false
+		elif layer_panel.visible:
+			layer_panel.visible = false
+		elif drawer_key != "":
+			_close_drawer()
+		else:
+			return
+	elif k == KEY_SPACE:
+		var focus = get_viewport().gui_get_focus_owner()
+		if focus is LineEdit or focus is TextEdit:
+			return
+		if not end_btn.disabled and not replaying:
+			call_deferred("end_turn")
+	else:
+		return
+	get_viewport().set_input_as_handled()
+
+# ---- 通用小部件 ----
+func _section_title(t: String, note := "") -> VBoxContainer:
+	var v = VBoxContainer.new()
+	v.add_theme_constant_override("separation", 3)
+	var h = HBoxContainer.new()
+	var l = _text(t, 16, INK)
+	_kai(l, 16)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(l)
+	if note != "":
+		var n = _text(note, 12, MUTED)
+		n.size_flags_vertical = Control.SIZE_SHRINK_END
+		h.add_child(n)
+	v.add_child(h)
+	var rule = ColorRect.new()
+	rule.color = D.RULE
+	rule.custom_minimum_size = Vector2(0, 1)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(rule)
+	v.set_meta("label", l)
+	return v
+
+func _kpi(label: String, value: String, col := INK) -> PanelContainer:
+	var p = PanelContainer.new()
+	p.add_theme_stylebox_override("panel", D.margins(D.box(D.SILK_3, D.CARD_EDGE, 1), 10, 6))
+	p.custom_minimum_size = Vector2(124, 0)
+	var v = VBoxContainer.new()
+	v.add_theme_constant_override("separation", 0)
+	v.add_child(_text(label, 11, MUTED))
+	v.add_child(_text(value, 20, col))
+	p.add_child(v)
+	return p
+
+func _kpi_row(cards: Array) -> HFlowContainer:
+	var h = HFlowContainer.new()
+	h.add_theme_constant_override("h_separation", 8)
+	h.add_theme_constant_override("v_separation", 8)
+	for c in cards:
+		h.add_child(c)
+	return h
+
+## 表格行：cells 为文本或 [文本, 颜色]；cb 为 null 则作为表头。
+func _table_row(cells: Array, widths: Array, cb: Variant = null) -> Control:
+	var header: bool = not (cb is Callable)
+	var h = HBoxContainer.new()
+	h.add_theme_constant_override("separation", 0)
+	for i in cells.size():
+		var cell = cells[i]
+		var txt: String = cell[0] if cell is Array else str(cell)
+		var l = _text(txt, 12 if header else 13, MUTED if header else INK)
+		if cell is Array:
+			l.add_theme_color_override("font_color", cell[1])
+		l.custom_minimum_size = Vector2(widths[i], 0)
+		l.clip_text = true
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		h.add_child(l)
+	if header:
+		var head = PanelContainer.new()
+		var hs = D.margins(D.box(D.SILK_2), 8, 4)
+		hs.border_color = D.RULE
+		hs.border_width_bottom = 1
+		head.add_theme_stylebox_override("panel", hs)
+		head.add_child(h)
+		return head
+	var b = Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 30)
+	var normal = D.box(D.CLEAR)
+	normal.border_color = D.CARD_EDGE
+	normal.border_width_bottom = 1
+	var hover = D.box(D.SILK_3)
+	hover.border_color = D.CINNABAR
+	hover.border_width_bottom = 1
+	b.add_theme_stylebox_override("normal", normal)
+	b.add_theme_stylebox_override("hover", hover)
+	b.add_theme_stylebox_override("pressed", hover)
+	b.add_child(h)
+	h.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	h.offset_left = 8
+	_ignore_mouse(h)
+	b.pressed.connect(cb)
 	return b
 
 # ---------------- 局面 ----------------
@@ -301,6 +966,7 @@ func new_game(f: String, dt: int, seed_value := -1) -> void:
 	_log("[b]西域策略 · 前119年[/b]　你执【%s】。点击地图上的城市或军队开始。红色军旗为汉军，棕色为匈奴；金色粗线是畅通的商路。" % state.factions[f]["name"])
 	_log("目标：" + _goal_text())
 	_log("城市颜色：独立国家各有本国色，同国城市同色；浅红为汉属国、浅棕为匈奴属国，直接占领为宗主国深色。")
+	_log("[color=#85745e]案上器物或 F1–F6 打开抽屉，Esc 收起；Space 用印结束本回合。[/color]")
 	refresh()
 
 func _goal_text() -> String:
@@ -335,6 +1001,14 @@ func load_game() -> void:
 		refresh()
 		_set_status("已读档。")
 
+func _set_blocked(on: bool) -> void:
+	side_blocker.visible = on
+	outliner_blocker.visible = on
+	side.mouse_filter = Control.MOUSE_FILTER_IGNORE if on else Control.MOUSE_FILTER_PASS
+	side_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE if on else Control.MOUSE_FILTER_STOP
+	for control in replay_controls:
+		control.disabled = on
+
 func end_turn() -> void:
 	if state.winner != "" or replaying:
 		return
@@ -344,15 +1018,12 @@ func end_turn() -> void:
 		all["xiongnu"] = ai_xn.think(state)
 	else:
 		all["han"] = ai_han.think(state)
-	var head = "[color=#c8aa6a][b]—— %s ——[/b][/color]" % state.date_text()
+	var head = "[color=#7a5a28][b]—— %s ——[/b][/color]" % state.date_text()
 	var replay_state = GS.new()
 	replay_state.from_save(state.to_save())
 	replaying = true
-	side_blocker.visible = true
-	side.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	side_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for control in replay_controls:
-		control.disabled = true
+	newgame_panel.visible = false
+	_set_blocked(true)
 	var res = TR.resolve(state, all, true)
 	_log(head)
 	map_view.flash.clear()
@@ -365,16 +1036,12 @@ func end_turn() -> void:
 	await _play_days(replay_state, res["frames"])
 	for r in res["rejected"]:
 		if r["cmd"]["faction"] == player:
-			_log("[color=#a5ae97]命令未执行：%s（%s）[/color]" % [r["cmd"]["type"], r["why"]])
+			_log("[color=#85745e]命令未执行：%s（%s）[/color]" % [r["cmd"]["type"], r["why"]])
 	orders.clear()
 	drafts.clear()
 	pick = {}
 	replaying = false
-	side_blocker.visible = false
-	for control in replay_controls:
-		control.disabled = false
-	side.mouse_filter = Control.MOUSE_FILTER_PASS
-	side_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	_set_blocked(false)
 	_set_status("回合结算完成。")
 	refresh()
 	if state.winner != "":
@@ -427,32 +1094,36 @@ func _log(t: String) -> void:
 	log_box.append_text(t + "\n")
 
 func _log_event(e: Dictionary) -> void:
-	var col := "#e8debf"
+	var col := "#2b2119"
 	match e["kind"]:
 		"battle":
-			col = "#edab83"
+			col = "#a33a2a"
 			var w: String = e["report"]["where"]
 			if state.nodes.has(w):
 				map_view.flash[w] = 90
 		"capture":
-			col = "#edab83"
+			col = "#a33a2a"
 			map_view.flash[e["node"]] = 120
 		"defect":
-			col = "#90bdb5"
+			col = "#3e6b5a"
 		"diplomacy":
-			col = "#c5abc9"
+			col = "#6b4a7a"
 		"trigger", "evade":
-			col = "#90bdb5"
+			col = "#3e6b5a"
 		"starve", "rout", "convoy":
-			col = "#dab469"
+			col = "#8f621f"
 		"victory":
-			col = "#edab83"
+			col = "#a33a2a"
 		"ai":
-			col = "#a5ae97"
+			col = "#85745e"
 	_log("[color=%s]%s　%s[/color]" % [col, e["date"], e["text"]])
 
 func _set_status(t: String) -> void:
 	status_label.text = t
+	toast.visible = t != ""
+	toast_cancel.visible = not pick.is_empty()
+	if t != "" and pick.is_empty() and status_timer.is_inside_tree():
+		status_timer.start(4.0)
 
 # ---------------- 交互 ----------------
 func _on_node_clicked(id: String) -> void:
@@ -463,6 +1134,9 @@ func _on_node_clicked(id: String) -> void:
 		return
 	sel_node = id
 	map_view.selected_node = id
+	# 未开抽屉或正看城邑时打开城邑抽屉；其余抽屉保持不动（例如在军务中点选城邑）。
+	if drawer_key == "" or drawer_key == "node":
+		drawer_key = "node"
 	refresh()
 
 func _on_army_clicked(id: String) -> void:
@@ -478,8 +1152,25 @@ func _on_army_clicked(id: String) -> void:
 	if a2["loc"].has("node"):
 		sel_node = a2["loc"]["node"]
 		map_view.selected_node = sel_node
+	drawer_key = "army"
 	refresh()
 	side_scroll.scroll_vertical = 0
+
+func _select_node(id: String, open_node_drawer := false) -> void:
+	if replaying or not state.nodes.has(id):
+		return
+	sel_node = id
+	map_view.selected_node = id
+	if open_node_drawer:
+		drawer_key = "node"
+	refresh()
+	if open_node_drawer:
+		side_scroll.scroll_vertical = 0
+
+func _select_army(id: String) -> void:
+	if replaying or not state.armies.has(id):
+		return
+	_on_army_clicked(id)
 
 func _start_pick(p: Dictionary, hint: String) -> void:
 	if pick == p:
@@ -487,7 +1178,7 @@ func _start_pick(p: Dictionary, hint: String) -> void:
 		_set_status("已取消选点。")
 		return
 	pick = p
-	_set_status("▶ " + hint + "（点击地图上的节点；再次点击同一按钮取消）")
+	_set_status("▶ " + hint + "（点击地图上的节点；再次点击同一按钮或按 Esc 取消）")
 
 func _resolve_pick(node_id: String) -> void:
 	var p = pick
@@ -544,18 +1235,27 @@ func queue(c: Dictionary) -> void:
 	if c["type"] == "set_plan":
 		orders = orders.filter(func(old): return old["type"] != "set_plan" or old["army"] != c["army"])
 	orders.append(c.duplicate(true))
-	_set_status("已加入本回合命令（%d 条）。点击『结束回合』执行。" % orders.size())
+	_set_status("已加入本回合命令（%d 条）。用印（Space）结算。" % orders.size())
 	refresh()
 
 # ---------------- 刷新 ----------------
 func refresh() -> void:
+	if sel_army != "" and not state.armies.has(sel_army):
+		sel_army = ""
 	_refresh_top()
-	_refresh_side()
+	_refresh_pages()
+	_refresh_outliner()
+	_refresh_drawer_frame()
+	_refresh_props()
 	map_view.selected_node = sel_node
 	map_view.selected_army = sel_army
 	map_view.preview_path = _preview_path()
 	map_view.queue_redraw()
-	end_btn.text = ("结束回合 ▶（%s）" % ("季" if decision_ticks == 9 else "月")) if state.winner == "" else "对局结束"
+	if state.winner != "":
+		end_btn.text = "对局结束"
+	else:
+		end_btn.text = "结束本季" if decision_ticks == 9 else "结束本月"
+	end_sub.text = "Space · 已拟 %d 令" % orders.size()
 
 func _fmt(n: float) -> String:
 	if absf(n) >= 100000.0:
@@ -564,20 +1264,44 @@ func _fmt(n: float) -> String:
 		return "%.2f万" % (n / 10000.0)
 	return str(int(n))
 
+func _victory_text(f: String) -> String:
+	if f == "han":
+		return "属国 %d/11　乌垒%s 车师前%s　连续 %d/12 月" % [Victory.han_vassals(state), "✓" if state.relations["wu_lei"]["overlord"] == "han" else "✗", "✓" if state.relations["cheshi_qian"]["overlord"] == "han" else "✗", state.streak["han"]]
+	return "河西四郡 %d/4　连续 %d/6 月" % [Victory.hexi_held_by_xn(state), state.streak["xiongnu"]]
+
+func _vassal_count(f: String) -> int:
+	var n := 0
+	for sid in state.relations:
+		if state.relations[sid]["overlord"] == f:
+			n += 1
+	return n
+
 func _refresh_top() -> void:
 	var f: Dictionary = state.factions[player]
-	var t = "[b]%s[/b]　%s季　" % [state.date_text(), Cal.season_cn(state.season())]
-	if state.is_winter():
-		t += "[color=#90bdb5]（冬：山道封闭）[/color]　"
-	t += "钱 [b]%d[/b]" % f["money"]
-	if player == "han":
-		t += "　中央军池 步%s 弩%s 骑%s" % [_fmt(state.central.get("infantry", 0)), _fmt(state.central.get("crossbow", 0)), _fmt(state.central.get("cavalry", 0))]
-	top_label.text = ""
-	top_label.append_text(t)
-	if player == "han":
-		goal_label.text = "属国 %d/11　乌垒%s 车师前%s　连续 %d/12 月" % [Victory.han_vassals(state), "✓" if state.relations["wu_lei"]["overlord"] == "han" else "✗", "✓" if state.relations["cheshi_qian"]["overlord"] == "han" else "✗", state.streak["han"]]
+	var han := player == "han"
+	top_seal.text = "汉" if han else "匈"
+	top_seal_panel.add_theme_stylebox_override("panel", D.box(D.CINNABAR if han else D.XN, D.BRONZE, 1, 0.0, 2))
+	top_leader.text = "汉武帝 · 刘彻" if han else "伊稚斜单于"
+	top_sub.text = "前119年剧本 · %s · %s" % [f["name"], "季制" if decision_ticks == 9 else "月制"]
+	var m: Array = []
+	m.append(["国库", "%d 钱" % f["money"], "可用于赏赐、购粮、屯田与征召"])
+	if han:
+		m.append(["中央军池", "步%s 弩%s 骑%s" % [_fmt(state.central.get("infantry", 0)), _fmt(state.central.get("crossbow", 0)), _fmt(state.central.get("cavalry", 0))], "可在郡城征召的中央军"])
+		m.append(["都护进度", "属国 %d/11 · %d/12月" % [Victory.han_vassals(state), state.streak["han"]], _victory_text("han")])
 	else:
-		goal_label.text = "河西四郡 %d/4　连续 %d/6 月" % [Victory.hexi_held_by_xn(state), state.streak["xiongnu"]]
+		m.append(["属国", "%d 国" % _vassal_count("xiongnu"), "臣服匈奴的城邦（可征税、征兵）"])
+		m.append(["河西进度", "%d/4 郡 · %d/6月" % [Victory.hexi_held_by_xn(state), state.streak["xiongnu"]], _victory_text("xiongnu")])
+	for i in top_metrics.size():
+		top_metrics[i][0].text = m[i][0]
+		top_metrics[i][1].text = m[i][1]
+		top_metrics[i][1].tooltip_text = m[i][2]
+	top_date.text = state.date_text()
+	if state.is_winter():
+		top_season.text = "%s季 · 山道封闭" % Cal.season_cn(state.season())
+		top_season.add_theme_color_override("font_color", D.BRONZE_HI)
+	else:
+		top_season.text = "%s季" % Cal.season_cn(state.season())
+		top_season.add_theme_color_override("font_color", D.ON_LACQUER_MUTED)
 
 func _preview_path() -> Array:
 	if sel_army == "" or not state.armies.has(sel_army):
@@ -595,11 +1319,167 @@ func _preview_path() -> Array:
 		cur = tgt
 	return path
 
-# ---------------- 侧栏 ----------------
-func _clear_side() -> void:
-	for c in side.get_children():
-		side.remove_child(c)
+# ---------------- 军情栏 ----------------
+func _clear(box: Node) -> void:
+	for c in box.get_children():
+		box.remove_child(c)
 		c.queue_free()
+
+func _side_lbl(t: String, col := INK, fs := 13) -> Label:
+	var l = _text(t, fs, col)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(SIDE_LABEL_W, 0)
+	return l
+
+func _army_at(a: Dictionary) -> String:
+	return a["loc"]["node"] if a["loc"].has("node") else a["loc"]["to"]
+
+func _refresh_outliner() -> void:
+	_clear(outliner_sel)
+	_clear(outliner_alerts)
+	_clear(outliner_orders)
+	var has_army := sel_army != "" and state.armies.has(sel_army)
+	if has_army:
+		var a: Dictionary = state.armies[sel_army]
+		var t = _side_lbl(a["name"] + ("（运输队）" if a["is_convoy"] else ""), D.CINNABAR if a["faction"] == "han" else D.XN, 17)
+		_kai(t, 17)
+		outliner_sel.add_child(t)
+		var tm: float = Supply.t_max(state, a)
+		outliner_sel.add_child(_side_lbl("兵 %s · 民夫 %s · 马 %s" % [_fmt(state.army_size(a)), _fmt(a["laborers"]), _fmt(a["horses"])], D.INK_2))
+		outliner_sel.add_child(_side_lbl("携粮 %s · 可支撑 %.1f 月%s" % [_fmt(a["grain"]), tm, " · 断粮！" if a["starving"] > 0 else ""], RED if (tm < 1.0 and not a["is_convoy"]) or a["starving"] > 0 else D.INK_2))
+	if sel_node != "" and state.nodes.has(sel_node):
+		var n: Dictionary = state.nodes[sel_node]
+		if has_army:
+			outliner_sel.add_child(_side_lbl("所在 · " + n["name"], MUTED, 12))
+		else:
+			var t2 = _side_lbl(n["name"], INK, 17)
+			_kai(t2, 17)
+			outliner_sel.add_child(t2)
+			outliner_sel.add_child(_side_lbl(_ctl_text(n), MUTED, 12))
+			if n["type"] != "junction":
+				outliner_sel.add_child(_side_lbl("人口 %s · 存粮 %s" % [_fmt(n["pop"]), _fmt(n["grain"])], D.INK_2))
+			if n["under_siege_by"] != "":
+				outliner_sel.add_child(_side_lbl("被%s围困" % state.factions[n["under_siege_by"]]["name"], RED))
+	if outliner_sel.get_child_count() == 0:
+		outliner_sel.add_child(_side_lbl("未选择 · 点击舆图上的城邑或军旗", MUTED))
+	else:
+		var detail_key := "army" if has_army else "node"
+		var db = _btn("详情 F5" if has_army else "详情 F1", func(): _open_drawer(detail_key))
+		db.focus_mode = Control.FOCUS_NONE
+		outliner_sel.add_child(db)
+	# 急报
+	var alerts := _alerts()
+	if alerts.is_empty():
+		outliner_alerts.add_child(_side_lbl("暂无急报", MUTED, 12))
+	for i in mini(alerts.size(), 6):
+		outliner_alerts.add_child(_alert_button(alerts[i]))
+	if alerts.size() > 6:
+		outliner_alerts.add_child(_side_lbl("另有 %d 条 · 见诸国与战报" % (alerts.size() - 6), MUTED, 11))
+	# 本季军令
+	orders_title.text = "本%s军令（%d）" % ["季" if decision_ticks == 9 else "月", orders.size()]
+	if orders.is_empty():
+		outliner_orders.add_child(_side_lbl("（尚无）", MUTED, 12))
+	for i in orders.size():
+		var c: Dictionary = orders[i]
+		var h = HBoxContainer.new()
+		var l = _side_lbl(_order_text(c), INK, 12)
+		l.custom_minimum_size.x = SIDE_LABEL_W - 40
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		h.add_child(l)
+		var x = Button.new()
+		x.text = "✕"
+		x.focus_mode = Control.FOCUS_NONE
+		x.tooltip_text = "撤回此令"
+		var idx = i
+		x.pressed.connect(func():
+			orders.remove_at(idx)
+			refresh())
+		h.add_child(x)
+		outliner_orders.add_child(h)
+
+## 急报：围城、断粮、敌军逼近、冬季封路、胜负连月。每条可点击定位。
+func _alerts() -> Array:
+	var out: Array = []
+	var enemy := "xiongnu" if player == "han" else "han"
+	for id in state.nodes:
+		var n: Dictionary = state.nodes[id]
+		if n["under_siege_by"] != "":
+			var mine: bool = state.controller(n) == player
+			out.append({"text": "%s 被%s围困" % [n["name"], state.factions[n["under_siege_by"]]["name"]], "color": D.CINNABAR if mine else D.AMBER, "node": id, "army": ""})
+	for aid in state.armies:
+		var a: Dictionary = state.armies[aid]
+		if a["faction"] == player and a["starving"] > 0:
+			out.append({"text": "%s 断粮" % a["name"], "color": D.CINNABAR, "node": _army_at(a), "army": aid})
+	var threatened := {}
+	for aid in state.armies:
+		var a: Dictionary = state.armies[aid]
+		if a["faction"] != enemy or a["is_convoy"]:
+			continue
+		var at := _army_at(a)
+		var near: Array = [at] + state.near_neighbors(at)
+		for nid in near:
+			var n: Dictionary = state.nodes[nid]
+			if n["type"] == "junction" or threatened.has(nid) or n["under_siege_by"] != "":
+				continue
+			if state.controller(n) == player:
+				threatened[nid] = true
+				out.append({"text": "敌军逼近 %s" % n["name"], "color": D.AMBER, "node": nid, "army": ""})
+	if state.is_winter():
+		out.append({"text": "冬季 · 山道封闭", "color": D.PATINA, "node": "", "army": ""})
+	if state.streak["han"] > 0:
+		out.append({"text": "汉属国达标 · 连续 %d/12 月" % state.streak["han"], "color": D.PATINA if player == "han" else D.CINNABAR, "node": "wu_lei", "army": ""})
+	if state.streak["xiongnu"] > 0:
+		out.append({"text": "匈奴据河西四郡 · 连续 %d/6 月" % state.streak["xiongnu"], "color": D.PATINA if player == "xiongnu" else D.CINNABAR, "node": "dun_huang", "army": ""})
+	return out
+
+func _alert_button(al: Dictionary) -> Button:
+	var b = Button.new()
+	b.text = al["text"]
+	b.tooltip_text = al["text"]
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	b.clip_text = true
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 13)
+	var normal = D.margins(D.box(D.SILK_3), 10, 5)
+	normal.border_color = al["color"]
+	normal.border_width_left = 3
+	var hover = D.margins(D.box(D.SILK), 10, 5)
+	hover.border_color = al["color"]
+	hover.border_width_left = 3
+	b.add_theme_stylebox_override("normal", normal)
+	b.add_theme_stylebox_override("hover", hover)
+	b.add_theme_stylebox_override("pressed", hover)
+	var node_id: String = al["node"]
+	var army_id: String = al["army"]
+	b.pressed.connect(func():
+		if army_id != "":
+			_select_army(army_id)
+		elif node_id != "":
+			_select_node(node_id)
+			map_view.center_on(map_view.node_world_pos(node_id)))
+	return b
+
+# ---------------- 抽屉页 ----------------
+func _add(c: Control) -> void:
+	_page.add_child(c)
+
+## 每次刷新重建五个抽屉页（战报页保留累积的 log_box）；只有当前抽屉可见。
+func _refresh_pages() -> void:
+	for key in PAGE_ORDER:
+		if key != "log":
+			_clear(pages[key])
+	_page = pages["node"]
+	_build_node_page()
+	_page = pages["state"]
+	_build_state_page()
+	_page = pages["states"]
+	_build_states_page()
+	_page = pages["supply"]
+	_build_supply_page()
+	_page = pages["army"]
+	_build_army_page()
+	_page = null
 
 func _lbl(t: String, bold := false, col := INK, wrap := true) -> Label:
 	var l = Label.new()
@@ -607,14 +1487,15 @@ func _lbl(t: String, bold := false, col := INK, wrap := true) -> Label:
 	l.add_theme_color_override("font_color", col)
 	if wrap:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.custom_minimum_size = Vector2(340, 0)
+		l.custom_minimum_size = Vector2(DRAWER_LABEL_W, 0)
 	if bold:
-		l.add_theme_font_size_override("font_size", 17)
+		_kai(l, 17)
 	return l
 
 func _btn(t: String, cb: Callable, why := "") -> Button:
 	var b = Button.new()
 	b.text = t
+	b.focus_mode = Control.FOCUS_NONE
 	b.pressed.connect(cb)
 	if why != "":
 		b.disabled = true
@@ -624,90 +1505,194 @@ func _btn(t: String, cb: Callable, why := "") -> Button:
 
 func _row(items: Array) -> HFlowContainer:
 	var h = HFlowContainer.new()
-	h.add_theme_constant_override("h_separation", 5)
-	h.add_theme_constant_override("v_separation", 4)
+	h.add_theme_constant_override("h_separation", 6)
+	h.add_theme_constant_override("v_separation", 6)
 	for i in items:
 		h.add_child(i)
 	return h
 
 func _bar(label: String, v: float, vmax: float, col: Color) -> Control:
 	var h = HBoxContainer.new()
-	var l = Label.new()
-	l.text = label
-	l.custom_minimum_size = Vector2(62, 0)
+	h.add_theme_constant_override("separation", 10)
+	var l = _text(label, 12, D.INK_2)
+	l.custom_minimum_size = Vector2(76, 0)
 	h.add_child(l)
 	var pb = ProgressBar.new()
 	pb.max_value = vmax
 	pb.value = v
 	pb.show_percentage = false
-	pb.custom_minimum_size = Vector2(190, 16)
+	pb.custom_minimum_size = Vector2(260, 6)
 	pb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var fill = StyleBoxFlat.new()
 	fill.bg_color = col
 	pb.add_theme_stylebox_override("fill", fill)
-	var back = StyleBoxFlat.new()
-	back.bg_color = Color("cbb98c")
-	pb.add_theme_stylebox_override("background", back)
 	h.add_child(pb)
-	var n = Label.new()
-	n.text = " %d" % int(v)
+	var n = _text(" %d" % int(v), 13, INK)
 	h.add_child(n)
 	return h
 
 func _sep() -> HSeparator:
 	return HSeparator.new()
 
-func _refresh_side() -> void:
-	_clear_side()
-	if not pick.is_empty():
-		var cancel = _btn("取消取点", func():
-			pick = {}
-			_set_status("")
-			refresh())
-		side.add_child(cancel)
+func _build_node_page() -> void:
+	if sel_node == "" or not state.nodes.has(sel_node):
+		_add(_lbl("点选舆图上的城邑以查看概况、外交与征召。", false, MUTED))
+		return
+	_node_section(state.nodes[sel_node])
+
+func _build_state_page() -> void:
+	var enemy := "xiongnu" if player == "han" else "han"
+	_add(_section_title("目标", state.factions[player]["name"]))
+	_add(_lbl(_goal_text()))
+	_add(_bar("己方进度", Victory.objective_progress(state, player) * 100.0, 100, D.PATINA))
+	_add(_lbl(_victory_text(player), false, D.INK_2))
+	_add(_bar("对手进度", Victory.objective_progress(state, enemy) * 100.0, 100, D.CINNABAR))
+	_add(_lbl("%s：%s" % [state.factions[enemy]["name"], _victory_text(enemy)], false, D.INK_2))
+	_add(_section_title("国力", "%s · %s季%s" % [state.date_text(), Cal.season_cn(state.season()), " · 山道封闭" if state.is_winter() else ""]))
+	var f: Dictionary = state.factions[player]
+	var cards: Array = [_kpi("国库", "%d 钱" % f["money"])]
+	if player == "han":
+		for t in ["infantry", "crossbow", "cavalry"]:
+			cards.append(_kpi("中央军 " + state.units[t]["name"], _fmt(state.central.get(t, 0))))
+	cards.append(_kpi("属国", "%d 国" % _vassal_count(player)))
+	var soldiers := 0
+	var army_count := 0
+	for aid in state.armies:
+		var a: Dictionary = state.armies[aid]
+		if a["faction"] == player and not a["is_convoy"]:
+			soldiers += state.army_size(a)
+			army_count += 1
+	cards.append(_kpi("野战军", "%d 支 · %s" % [army_count, _fmt(soldiers)]))
+	_add(_kpi_row(cards))
+	_add(_section_title("本%s命令（%d）" % ["季" if decision_ticks == 9 else "月", orders.size()], "可在右侧军情栏撤回"))
+	if orders.is_empty():
+		_add(_lbl("（尚无）", false, MUTED))
+	for c in orders:
+		_add(_lbl("· " + _order_text(c)))
+
+func _build_states_page() -> void:
+	var widths := [170, 110, 100, 100, 100, 90, 120]
+	_add(_table_row(["国名", "宗主", "汉影响", "匈威吓", "对匈怨恨", "商路", "意向"], widths))
+	var open_nodes := {}
+	for tr in state.trade_routes:
+		for nid in Trade.open_prefix(state, tr):
+			open_nodes[nid] = true
+	for sid in state.relations:
+		var rel: Dictionary = state.relations[sid]
+		var target := ""
+		var open_s := false
+		for n in state.nodes_of_state(sid):
+			if open_nodes.has(n["id"]):
+				open_s = true
+			if target == "" and n["type"] != "junction":
+				target = n["id"]
+		var ov: String = rel["overlord"]
+		var ov_col: Color = D.CINNABAR if ov == "han" else (D.XN if ov == "xiongnu" else D.INK_2)
+		var nm: String = state.factions[sid]["name"] + ("（大国）" if state.kind_of(sid) == "great" else "")
+		var intent := ""
+		if rel["han_status"] == "enfeoffed":
+			intent = "已受汉册封"
+		if rel.get("wants_han", false):
+			intent = "有意内附"
+		var tgt := target
+		var cells := [
+			[nm, INK], [state.factions[ov]["name"] if ov != "" else "独立", ov_col],
+			"%d" % int(rel["han_influence"]), "%d" % int(rel["xn_intimidation"]), "%d" % int(rel["xn_resentment"]),
+			["畅通", D.PATINA] if open_s else ["未通", MUTED], [intent, D.PATINA],
+		]
+		_add(_table_row(cells, widths, func():
+			if tgt != "":
+				_select_node(tgt, true)))
+
+func _own_army_table() -> void:
+	var widths := [170, 150, 90, 130, 90, 120]
+	_add(_table_row(["军队", "位置", "兵力", "携粮/容量", "可支撑", "状态"], widths))
+	var status_names := {"idle": "待命", "moving": "行军", "holding": "驻守", "sieging": "围攻", "ambushing": "设伏", "blocked": "道路受阻"}
+	var any := false
+	for aid in state.armies:
+		var a: Dictionary = state.armies[aid]
+		if a["faction"] != player:
+			continue
+		any = true
+		var tm: float = Supply.t_max(state, a)
+		var where: String = state.nodes[a["loc"]["node"]]["name"] if a["loc"].has("node") else "→" + state.nodes[a["loc"]["to"]]["name"]
+		var st: String = status_names.get(a["status"], a["status"])
+		var short: bool = tm < 1.0 and not a["is_convoy"]
+		var cells := [
+			[a["name"] + ("（运）" if a["is_convoy"] else ""), D.CINNABAR if aid == sel_army else INK], where,
+			_fmt(state.army_size(a) + (a["laborers"] if a["is_convoy"] else 0)),
+			"%s/%s" % [_fmt(a["grain"]), _fmt(Supply.carry_cap(state, a))],
+			["%.1f 月" % tm, RED if short else INK],
+			["断粮！" if a["starving"] > 0 else st, RED if a["starving"] > 0 else D.INK_2],
+		]
+		var id: String = aid
+		_add(_table_row(cells, widths, func(): _select_army(id)))
+	if not any:
+		_add(_lbl("（无在册军队）", false, MUTED))
+
+func _build_supply_page() -> void:
+	_add(_section_title("各军携粮", "点击一行打开军务"))
+	_own_army_table()
+	if player != "han":
+		_add(_section_title("运输队"))
+		_add(_lbl("运输队为汉军专属；匈奴军队依靠牧地、属国与劫掠补给。", false, MUTED))
+		return
+	var n: Dictionary = state.nodes.get(sel_node, {})
+	if n.is_empty() or not state.is_supply_node(n, "han"):
+		_add(_section_title("运输队"))
+		_add(_lbl("先在舆图上选择汉的郡城或汉属国，即可从该地征民夫发运粮食。", false, MUTED))
+		return
+	_add(_section_title("自%s发运" % n["name"], "存粮 %s" % _fmt(state.stock(n, "han"))))
+	_convoy_section(n)
+
+func _build_army_page() -> void:
 	if sel_army != "" and state.armies.has(sel_army):
 		_army_section(state.armies[sel_army])
-		side.add_child(_sep())
-	elif sel_army != "":
-		sel_army = ""
-	if sel_node != "":
-		_node_section(state.nodes[sel_node])
-	side.add_child(_sep())
-	_orders_section()
+	else:
+		_add(_lbl("点击舆图上的军旗，或在下表中选择一支己方军队。", false, MUTED))
+	_add(_section_title("己方军队", "点击一行切换"))
+	_own_army_table()
 
+# ---------------- 城邑 ----------------
 func _ctl_text(n: Dictionary) -> String:
+	if n["type"] == "junction":
+		return "路口 · 无主，可在此换路，不可攻占"
 	var ctl: String = state.controller(n)
 	if n["faction"] == "han" or n["faction"] == "xiongnu":
 		return "直辖 · " + state.factions[n["faction"]]["name"]
-	var rel = state.relations.get(n["faction"], {})
 	var k = "大国" if state.kind_of(n["faction"]) == "great" else "城邦"
 	if ctl == "":
 		return "%s（%s）· 独立" % [state.factions[n["faction"]]["name"], k]
 	return "%s（%s）· %s属国" % [state.factions[n["faction"]]["name"], k, state.factions[ctl]["name"]]
 
 func _node_section(n: Dictionary) -> void:
-	side.add_child(_lbl(n["name"], true))
-	side.add_child(_lbl(_ctl_text(n), false, Color("b8b195")))
-	var stock_f: String = state.controller(n) if state.controller(n) != "" else n["faction"]
-	var info = "人口 %s　存粮 %s" % [_fmt(n["pop"]), _fmt(n["grain"])]
-	if n["depot"].get("han", 0) > 0 and n["faction"] != "han":
-		info += "（汉仓 %s）" % _fmt(n["depot"]["han"])
+	var cards: Array = []
+	if n["type"] != "junction":
+		cards.append(_kpi("人口", _fmt(n["pop"])))
+		cards.append(_kpi("存粮", _fmt(n["grain"])))
+		if n["depot"].get("han", 0) > 0 and n["faction"] != "han":
+			cards.append(_kpi("汉仓", _fmt(n["depot"]["han"])))
 	if n["pasture_cap"] > 0:
-		info += "　马 %s/%s" % [_fmt(n["horses"]), _fmt(n["pasture_cap"])]
-	side.add_child(_lbl(info))
-	if n["farm_cap"] > 0:
-		side.add_child(_lbl("农田 %s×开垦 %d%%　年产约 %s" % [_fmt(n["farm_cap"]), int(n["farm_dev"] * 100), _fmt(preload("res://core/economy.gd").farm_output_year(state, n))]))
+		cards.append(_kpi("马", "%s/%s" % [_fmt(n["horses"]), _fmt(n["pasture_cap"])]))
 	if n["walls"] > 0:
-		side.add_child(_bar("城墙", n["wall_hp"], maxf(n["wall_hp_max"], 1.0), Color("7a6a50")))
-	if n["colonies"] > 0:
-		side.add_child(_lbl("屯田民 %s" % _fmt(n["colonies"])))
-	if n["under_siege_by"] != "":
-		side.add_child(_lbl("被%s围困" % state.factions[n["under_siege_by"]]["name"], true, RED))
+		cards.append(_kpi("城墙", "%d/%d" % [int(n["wall_hp"]), int(n["wall_hp_max"])], RED if n["wall_hp"] < n["wall_hp_max"] * 0.5 else INK))
 	var mil = 0
 	for t in n["militia"]:
 		mil += int(n["militia"][t])
 	if mil > 0:
-		side.add_child(_lbl("本地民兵 %s" % _fmt(mil)))
+		cards.append(_kpi("本地民兵", _fmt(mil)))
+	if n["colonies"] > 0:
+		cards.append(_kpi("屯田民", _fmt(n["colonies"])))
+	if cards.is_empty():
+		_add(_lbl(_ctl_text(n), false, MUTED))
+	else:
+		_add(_kpi_row(cards))
+	if n["farm_cap"] > 0:
+		_add(_lbl("农田 %s×开垦 %d%%　年产约 %s" % [_fmt(n["farm_cap"]), int(n["farm_dev"] * 100), _fmt(preload("res://core/economy.gd").farm_output_year(state, n))], false, D.INK_2))
+	if n["walls"] > 0:
+		_add(_bar("城墙", n["wall_hp"], maxf(n["wall_hp_max"], 1.0), D.INK_2))
+	if n["under_siege_by"] != "":
+		_add(_lbl("被%s围困" % state.factions[n["under_siege_by"]]["name"], true, RED))
 	var here = state.armies_at(n["id"])
 	if not here.is_empty():
 		var parts = []
@@ -717,7 +1702,7 @@ func _node_section(n: Dictionary) -> void:
 			totals[label] = totals.get(label, 0) + state.army_size(a) + (a["laborers"] if a["is_convoy"] else 0)
 		for label in totals:
 			parts.append("%s %s" % [label, _fmt(totals[label])])
-		side.add_child(_lbl("驻军：" + "；".join(parts)))
+		_add(_lbl("驻军：" + "；".join(parts)))
 		var army_picker = OptionButton.new()
 		army_picker.add_item("选择本城军队（%d 支）" % here.size())
 		var army_ids: Array[String] = []
@@ -727,13 +1712,15 @@ func _node_section(n: Dictionary) -> void:
 		army_picker.item_selected.connect(func(i):
 			if i > 0:
 				_on_army_clicked(army_ids[i - 1]))
-		side.add_child(army_picker)
+		army_picker.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		_add(army_picker)
 	var sid: String = n["faction"]
 	if state.relations.has(sid):
 		var rel: Dictionary = state.relations[sid]
-		side.add_child(_bar("汉影响力", rel["han_influence"], 100, Color("c67861")))
-		side.add_child(_bar("匈奴威吓", rel["xn_intimidation"], 100, Color("ccad7e")))
-		side.add_child(_bar("对匈怨恨", rel["xn_resentment"], 100, Color("cbaa62")))
+		_add(_section_title("向背", _ctl_text(n)))
+		_add(_bar("汉影响力", rel["han_influence"], 100, D.CINNABAR))
+		_add(_bar("匈奴威吓", rel["xn_intimidation"], 100, D.XN))
+		_add(_bar("对匈怨恨", rel["xn_resentment"], 100, D.AMBER))
 		var st = "宗主：" + (state.factions[rel["overlord"]]["name"] if rel["overlord"] != "" else "无")
 		if rel["han_status"] == "enfeoffed":
 			st += "　已受汉册封"
@@ -741,14 +1728,15 @@ func _node_section(n: Dictionary) -> void:
 			st += "　税率 %d" % rel["tax_level"]
 		if rel.get("wants_han", false):
 			st += "　【有意内附】"
-		side.add_child(_lbl(st))
+		_add(_lbl(st))
 		var open_n := false
 		for tr in state.trade_routes:
 			if n["id"] in Trade.open_prefix(state, tr):
 				open_n = true
-		side.add_child(_lbl("商路：" + ("畅通 +1.5影响力/月" if open_n else "未通"), false, Color("d5bb7b") if open_n else Color("999d8e")))
+		_add(_lbl("商路：" + ("畅通 +1.5影响力/月" if open_n else "未通"), false, D.PATINA if open_n else MUTED))
 		_diplomacy_actions(n, sid)
-	_economy_actions(n)
+	if n["type"] != "junction":
+		_economy_actions(n)
 
 func _can(c: Dictionary) -> String:
 	return Cmd.validate(state, c)
@@ -759,15 +1747,14 @@ func _update_command_button(button: Button, command: Dictionary) -> void:
 	button.tooltip_text = why
 
 func _diplomacy_actions(n: Dictionary, sid: String) -> void:
-	side.add_child(_sep())
-	side.add_child(_lbl("外交", true))
+	_add(_section_title("外交"))
 	if player == "han":
 		var sp = SpinBox.new()
 		sp.min_value = 1
 		sp.max_value = 30
 		sp.value = gift_units
 		sp.suffix = "份（每份100钱）"
-		side.add_child(sp)
+		sp.custom_minimum_size.x = 200
 		var gain = Diplomacy.gift_gain(state, state.relations[sid], gift_units)
 		var gc = Cmd.make("gift", "han", {"state": sid, "units": gift_units})
 		var gift_button = _btn("赏赐 (+%.0f 影响力)" % gain, func(): queue(gc), _can(gc))
@@ -776,13 +1763,14 @@ func _diplomacy_actions(n: Dictionary, sid: String) -> void:
 			gc["units"] = gift_units
 			gift_button.text = "赏赐 (+%.0f 影响力)" % Diplomacy.gift_gain(state, state.relations[sid], gift_units)
 			_update_command_button(gift_button, gc))
-		side.add_child(_row([
+		_add(_row([sp]))
+		_add(_row([
 			gift_button,
 			_btn("册封", func(): queue(Cmd.make("enfeoff", "han", {"state": sid})), Diplomacy.can_enfeoff(state, sid)),
 			_btn("纳为属国", func(): queue(Cmd.make("make_vassal", "han", {"state": sid})), Diplomacy.can_vassal(state, sid)),
 		]))
 		var bg = Cmd.make("buy_grain", "han", {"node": n["id"], "amount": 20000})
-		side.add_child(_row([_btn("购粮 2万斛", func(): queue(bg), _can(bg))]))
+		_add(_row([_btn("购粮 2万斛", func(): queue(bg), _can(bg))]))
 	else:
 		var rel = state.relations[sid]
 		var items = [_btn("令其臣服", func(): queue(Cmd.make("demand_vassal", "xiongnu", {"state": sid})), Diplomacy.can_demand(state, sid))]
@@ -790,22 +1778,21 @@ func _diplomacy_actions(n: Dictionary, sid: String) -> void:
 			for lvl in 4:
 				var tc = Cmd.make("set_tax", "xiongnu", {"state": sid, "level": lvl})
 				items.append(_btn("税率%d%s" % [lvl, "●" if rel["tax_level"] == lvl else ""], func(): queue(tc)))
-		side.add_child(_row(items))
+		_add(_row(items))
 
 func _economy_actions(n: Dictionary) -> void:
-	side.add_child(_sep())
-	side.add_child(_lbl("经济与征召", true))
+	_add(_section_title("经济与征召"))
 	var items = []
 	if player == "han":
 		var ef = Cmd.make("expand_farm", "han", {"node": n["id"]})
 		items.append(_btn("扩大屯田 (200钱)", func(): queue(ef), _can(ef)))
-	side.add_child(_row(items))
 	var sp = SpinBox.new()
 	sp.min_value = 500
 	sp.max_value = 20000
 	sp.step = 500
 	sp.value = recruit_amount
 	sp.suffix = " 人"
+	sp.custom_minimum_size.x = 160
 	var recruit_buttons: Array = []
 	sp.value_changed.connect(func(v):
 		recruit_amount = int(v)
@@ -813,7 +1800,8 @@ func _economy_actions(n: Dictionary) -> void:
 			for unit in entry["command"]["units"]:
 				entry["command"]["units"][unit] = recruit_amount
 			_update_command_button(entry["button"], entry["command"]))
-	side.add_child(sp)
+	items.append(sp)
+	_add(_row(items))
 	var rb = []
 	if player == "han":
 		for t in ["infantry", "crossbow", "cavalry"]:
@@ -834,15 +1822,16 @@ func _economy_actions(n: Dictionary) -> void:
 		var c5 = Cmd.make("recruit", "xiongnu", {"node": n["id"], "source": "vassal", "units": {"infantry": recruit_amount}, "preset": "balanced"})
 		rb.append(_btn("征属国步兵", func(): queue(c5), _can(c5)))
 		recruit_buttons.append({"button": rb.back(), "command": c5})
-	side.add_child(_row(rb))
+	_add(_row(rb))
 	if player == "han" and state.is_supply_node(n, "han"):
-		_convoy_section(n)
+		var go = _btn("组织运输队（粮道 F4）", func(): _open_drawer("supply"))
+		_add(_row([go]))
 
 func _convoy_command(n: Dictionary) -> Dictionary:
 	return Cmd.make("convoy", "han", {"from": n["id"], "to": convoy["to"] if convoy["to"] != "" else n["id"], "grain": convoy["grain"], "laborers": convoy["laborers"], "loop": convoy.get("loop", false), "stay": convoy.get("stay", false)})
 
 func _convoy_section(n: Dictionary) -> void:
-	side.add_child(_lbl("运输队（征民夫，满载可运 %d 斛/人）" % state.bal["food"]["laborer_carry"], false, Color("b8b195")))
+	_add(_lbl("运输队（征民夫，满载可运 %d 斛/人）" % state.bal["food"]["laborer_carry"], false, MUTED))
 	var l1 = SpinBox.new()
 	l1.min_value = 500
 	l1.max_value = 20000
@@ -857,19 +1846,20 @@ func _convoy_section(n: Dictionary) -> void:
 	l2.value = convoy["grain"]
 	l2.suffix = " 斛"
 	l2.custom_minimum_size.x = 170
-	side.add_child(_row([l1, l2]))
+	_add(_row([l1, l2]))
 	var mode = OptionButton.new()
 	for label in ["运达后返回", "循环运输", "运达后留驻（可设屯田区）"]:
 		mode.add_item(label)
 	mode.select(1 if convoy.get("loop", false) else (2 if convoy.get("stay", false) else 0))
-	side.add_child(mode)
+	mode.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	_add(mode)
 	var tname = state.nodes[convoy["to"]]["name"] if convoy["to"] != "" else "（未选）"
-	var send = _btn("发运", func(): queue(_convoy_command(n)))
-	side.add_child(_row([
+	var send = _primary(_btn("发运", func(): queue(_convoy_command(n))))
+	_add(_row([
 		_btn("目的地：" + tname, func(): _start_pick({"kind": "convoy_to"}, "选择运输队目的地")), send,
 	]))
 	var estimate = _lbl("")
-	side.add_child(estimate)
+	_add(estimate)
 	var update = func():
 		var cc = _convoy_command(n)
 		_update_command_button(send, cc)
@@ -904,27 +1894,27 @@ func _convoy_section(n: Dictionary) -> void:
 
 # ---------------- 军队 ----------------
 func _army_section(a: Dictionary) -> void:
-	side.add_child(_lbl("%s%s" % [a["name"], "（运输队）" if a["is_convoy"] else ""], true, RED if a["faction"] == "han" else Color("ccad7e")))
+	_add(_lbl("%s%s" % [a["name"], "（运输队）" if a["is_convoy"] else ""], true, RED if a["faction"] == "han" else D.XN))
 	var u = []
 	for t in a["units"]:
 		if a["units"][t] > 0:
 			u.append("%s %s" % [state.units[t]["name"], _fmt(a["units"][t])])
 	if a["laborers"] > 0:
 		u.append("民夫 %s" % _fmt(a["laborers"]))
-	side.add_child(_lbl("　".join(u) if not u.is_empty() else "（空）"))
+	_add(_lbl("　".join(u) if not u.is_empty() else "（空）"))
 	var tm = Supply.t_max(state, a)
 	var info = "携粮 %s/%s　马 %s　可支撑 %.1f 月" % [_fmt(a["grain"]), _fmt(Supply.carry_cap(state, a)), _fmt(a["horses"]), tm]
-	side.add_child(_lbl(info, false, RED if tm < 1.0 and not a["is_convoy"] else INK))
+	_add(_lbl(info, false, RED if tm < 1.0 and not a["is_convoy"] else INK))
 	var loc = "位于 " + state.nodes[a["loc"]["node"]]["name"] if a["loc"].has("node") else "行军 %s→%s (%d%%)" % [state.nodes[a["loc"]["from"]]["name"], state.nodes[a["loc"]["to"]]["name"], int(a["loc"]["prog"] * 100)]
 	var status_names := {"idle": "待命", "moving": "行军", "holding": "驻守", "sieging": "围攻", "ambushing": "设伏", "blocked": "道路受阻"}
-	side.add_child(_lbl("%s　速度 %.1f　状态 %s%s" % [loc, Combat.army_speed(state, a), status_names.get(a["status"], a["status"]), "　断粮！" if a["starving"] > 0 else ""]))
+	_add(_lbl("%s　速度 %.1f　状态 %s%s" % [loc, Combat.army_speed(state, a), status_names.get(a["status"], a["status"]), "　断粮！" if a["starving"] > 0 else ""]))
 	if a["faction"] != player:
 		return
 	# 计划编辑
 	var d = _draft(a)
-	side.add_child(_lbl("行动计划", true))
+	_add(_section_title("行动计划", "预览路线以金色虚线显示在舆图上"))
 	if d["steps"].is_empty():
-		side.add_child(_lbl("（无：原地待命）", false, Color("999d8e")))
+		_add(_lbl("（无：原地待命）", false, MUTED))
 	for i in d["steps"].size():
 		var s: Dictionary = d["steps"][i]
 		var h = HBoxContainer.new()
@@ -941,7 +1931,7 @@ func _army_section(a: Dictionary) -> void:
 			d["steps"].remove_at(idx)
 			refresh())
 		h.add_child(x)
-		side.add_child(h)
+		_add(h)
 		if s["type"] == "hold":
 			var duration = OptionButton.new()
 			duration.add_item("驻守直到再次改令")
@@ -957,7 +1947,7 @@ func _army_section(a: Dictionary) -> void:
 					s["months"] = month
 					s.erase("until")
 				refresh())
-			side.add_child(duration)
+			_add(duration)
 		elif s["type"] == "siege":
 			var limit = SpinBox.new()
 			limit.min_value = 1
@@ -981,7 +1971,7 @@ func _army_section(a: Dictionary) -> void:
 			threshold.value_changed.connect(func(v):
 				s["assault_when"] = v / 100.0
 				tl.text = "%d. %s" % [idx + 1, _step_text(s)])
-			side.add_child(_row([limit, threshold]))
+			_add(_row([limit, threshold]))
 		if s["type"] == "ambush":
 			var ro = OptionButton.new()
 			var routes: Array = state.adj[s["node"]]
@@ -991,7 +1981,7 @@ func _army_section(a: Dictionary) -> void:
 				if routes[ri] == s["route"]:
 					ro.select(ri)
 			ro.item_selected.connect(func(ri): s["route"] = routes[ri])
-			side.add_child(ro)
+			_add(ro)
 			var duration = SpinBox.new()
 			duration.min_value = 1
 			duration.max_value = 12
@@ -1002,7 +1992,7 @@ func _army_section(a: Dictionary) -> void:
 				s["months"] = int(v)
 				s.erase("days")
 				tl.text = "%d. %s" % [idx + 1, _step_text(s)])
-			side.add_child(duration)
+			_add(duration)
 	var add = []
 	add.append(_btn("移动到…", func(): _start_pick({"kind": "step", "type": "move_to", "army": a["id"]}, "选择移动目标")))
 	if not a["is_convoy"]:
@@ -1013,7 +2003,7 @@ func _army_section(a: Dictionary) -> void:
 	add.append(_btn("返回出发地", func():
 		_append_step(a, {"type": "return_to", "node": a["origin"]})
 		refresh()))
-	side.add_child(_row(add))
+	_add(_row(add))
 	# 预设
 	var po = OptionButton.new()
 	var presets = ["cautious", "balanced", "aggressive", "garrison", "raider", "assault"]
@@ -1025,8 +2015,8 @@ func _army_section(a: Dictionary) -> void:
 	po.item_selected.connect(func(i):
 		d["preset"] = presets[i]
 		refresh())
-	side.add_child(po)
-	side.add_child(_lbl(_preset_text(d["preset"]), false, Color("b8b195")))
+	_add(po)
+	_add(_lbl(_preset_text(d["preset"]), false, MUTED))
 	# 预演
 	var days = 0.0
 	var cur: String = a["loc"]["node"] if a["loc"].has("node") else a["loc"]["to"]
@@ -1047,12 +2037,12 @@ func _army_section(a: Dictionary) -> void:
 	if not d["steps"].is_empty():
 		var months = days / 30.0
 		var ok = tm >= months or a["is_convoy"]
-		side.add_child(_lbl("预演：行军与限时行动最多约 %d 天（%.1f 月）；携粮可支撑 %.1f 月%s" % [ceili(days), months, tm, "" if ok else " —— 粮不足，需沿途补给或加载" ], false, INK if ok else RED))
-		side.add_child(_lbl("含计时驻守、设伏及围攻上限；沿途补给、战斗与冬季封路等待另计。无限驻守将停在该步骤。", false, Color("b8b195")))
-	var apply = _btn("提交计划", func():
+		_add(_lbl("预演：行军与限时行动最多约 %d 天（%.1f 月）；携粮可支撑 %.1f 月%s" % [ceili(days), months, tm, "" if ok else " —— 粮不足，需沿途补给或加载" ], false, INK if ok else RED))
+		_add(_lbl("含计时驻守、设伏及围攻上限；沿途补给、战斗与冬季封路等待另计。无限驻守将停在该步骤。", false, MUTED))
+	var apply = _primary(_btn("提交计划", func():
 		queue(Cmd.make("set_plan", player, {"army": a["id"], "steps": d["steps"].duplicate(true), "preset": d["preset"]}))
-		sel_army = a["id"])
-	side.add_child(apply)
+		sel_army = a["id"]))
+	_add(_row([apply]))
 	# 装载
 	if a["loc"].has("node") and state.is_supply_node(state.nodes[a["loc"]["node"]], player):
 		var lc = Cmd.make("load", player, {"army": a["id"], "grain": Supply.carry_cap(state, a) - a["grain"], "laborers": 0})
@@ -1060,11 +2050,11 @@ func _army_section(a: Dictionary) -> void:
 		var row = [_btn("补满粮食", func(): queue(lc), _can(lc))]
 		if player == "han":
 			row.append(_btn("+2000民夫并装满", func(): queue(lc2), _can(lc2)))
-		side.add_child(_row(row))
-	side.add_child(_row([_btn("解散", func(): queue(Cmd.make("disband", player, {"army": a["id"]})))]))
+		_add(_row(row))
+	_add(_row([_btn("解散", func(): queue(Cmd.make("disband", player, {"army": a["id"]})))]))
 	if a["is_convoy"] and a["loc"].has("node"):
 		var fc = Cmd.make("found_colony", player, {"node": a["loc"]["node"], "army": a["id"]})
-		side.add_child(_row([_btn("在此设立屯田区", func(): queue(fc), _can(fc))]))
+		_add(_row([_btn("在此设立屯田区", func(): queue(fc), _can(fc))]))
 
 func _step_text(s: Dictionary) -> String:
 	var nm = state.nodes[s["node"]]["name"] if s.has("node") and state.nodes.has(s["node"]) else ""
@@ -1095,28 +2085,6 @@ func _preset_text(p: String) -> String:
 		"assault": "迎战要求胜率≥55%；敌强≥2倍(1跳内)撤回；损失≥40%撤退，需预先准备攻城口粮",
 		"raider": "胜率≥60%才迎战，速度占优可避战；遇强敌后撤本土",
 	}.get(p, "")
-
-func _orders_section() -> void:
-	side.add_child(_lbl("本回合命令（%d）" % orders.size(), true))
-	if orders.is_empty():
-		side.add_child(_lbl("（尚无）", false, Color("999d8e")))
-	for i in orders.size():
-		var c: Dictionary = orders[i]
-		var h = HBoxContainer.new()
-		var l = Label.new()
-		l.text = _order_text(c)
-		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		l.custom_minimum_size = Vector2(300, 0)
-		h.add_child(l)
-		var x = Button.new()
-		x.text = "✕"
-		var idx = i
-		x.pressed.connect(func():
-			orders.remove_at(idx)
-			refresh())
-		h.add_child(x)
-		side.add_child(h)
 
 func _order_text(c: Dictionary) -> String:
 	var nm = func(id): return state.nodes[id]["name"] if state.nodes.has(id) else id

@@ -527,6 +527,27 @@
    "tags": []
   },
   {
+   "id": "beilu_chakou",
+   "name": "北麓岔口",
+   "type": "junction",
+   "faction": "",
+   "pop": 0,
+   "pos": [
+    461,
+    172
+   ],
+   "walls": 0,
+   "farm_cap": 0,
+   "pasture_cap": 0,
+   "farm_dev": 0.0,
+   "grain": 0,
+   "horses": 0,
+   "counts_for_victory": false,
+   "tags": [
+    "junction"
+   ]
+  },
+  {
    "id": "yan_qi",
    "name": "焉耆",
    "type": "city",
@@ -1309,19 +1330,37 @@
   },
   {
    "a": "hu_jie",
+   "b": "beilu_chakou",
+   "terrain": "mountain",
+   "days": 39.17,
+   "distance_km": 470,
+   "mounted_speed_cap": 1.15,
+   "calibration_method": "regional_estimate"
+  },
+  {
+   "a": "beilu_chakou",
    "b": "cheshi_qian",
    "terrain": "mountain",
-   "days": 54.17,
-   "distance_km": 650,
+   "days": 15.0,
+   "distance_km": 180,
    "mounted_speed_cap": 1.15,
    "calibration_method": "regional_estimate"
   },
   {
    "a": "cheshi_hou",
+   "b": "beilu_chakou",
+   "terrain": "steppe",
+   "days": 7.5,
+   "distance_km": 150,
+   "mounted_speed_cap": 2.2,
+   "calibration_method": "regional_estimate"
+  },
+  {
+   "a": "beilu_chakou",
    "b": "chi_gu",
    "terrain": "steppe",
-   "days": 65.0,
-   "distance_km": 1300,
+   "days": 57.5,
+   "distance_km": 1150,
    "mounted_speed_cap": 2.2,
    "calibration_method": "regional_estimate"
   },

@@ -28,7 +28,7 @@ static func monthly(state) -> void:
 		_new_year(state)
 	for id in state.nodes:
 		var n: Dictionary = state.nodes[id]
-		if n["type"] == "source" or n["type"] == "pass":
+		if n["type"] in ["source", "pass", "junction"]:
 			continue
 		_node_month(state, n, month, season, f)
 

@@ -41,6 +41,7 @@ func _init() -> void:
 	test_economy()
 	test_pathfinding()
 	test_map_connections_and_colors()
+	test_junctions()
 	test_historical_travel()
 	test_supply_tmax()
 	test_combat()
@@ -60,7 +61,7 @@ func _init() -> void:
 func test_data() -> void:
 	print("data")
 	var s = fresh()
-	ok(s.nodes.size() == 42, "42 个节点")
+	ok(s.nodes.size() == 43, "43 个节点（含 1 处路口）")
 	ok(s.routes.size() >= 50, "边数")
 	var cnt = 0
 	for sid in s.relations:
@@ -119,6 +120,24 @@ func test_pathfinding() -> void:
 	var idx: int = s.route_between("cheshi_qian", "cheshi_hou")
 	ok(s.route_closed(idx), "冬季山道封闭")
 	ok(Path.path_to(s, "cheshi_qian", "cheshi_hou").size() > 1 or Path.path_to(s, "cheshi_qian", "cheshi_hou").is_empty(), "冬季不能走直达山道")
+
+func test_junctions() -> void:
+	print("junctions")
+	var s = fresh()
+	var j: Dictionary = s.nodes["beilu_chakou"]
+	ok(j["type"] == "junction" and s.controller(j) == "" and j["pop"] == 0, "北麓岔口是无主路口")
+	near(s.route_days(s.route_between("hu_jie", "beilu_chakou")) + s.route_days(s.route_between("beilu_chakou", "cheshi_qian")), 54.17, 0.01, "呼揭—车师前经路口总天数不变")
+	near(s.route_days(s.route_between("cheshi_hou", "beilu_chakou")) + s.route_days(s.route_between("beilu_chakou", "chi_gu")), 65.0, 0.01, "车师后—乌孙经路口总天数不变")
+	ok(s.route_between("hu_jie", "cheshi_qian") < 0 and s.route_between("cheshi_hou", "chi_gu") < 0, "原交叉直连已拆分为经路口")
+	ok(s.hops("cheshi_hou", "chi_gu") == 1 and s.hops("hu_jie", "cheshi_qian") == 1, "路口不额外计跳数")
+	ok(s.hops("chi_gu", "cheshi_qian") == 1, "路口两侧道路互通，乌孙与车师前相邻")
+	ok("chi_gu" in s.near_neighbors("cheshi_hou") and not ("chi_gu" in s.neighbors("cheshi_hou")), "影响力穿过路口，行军仍走实际道路")
+	s.tick = 5 * 3  # 6 月
+	ok("beilu_chakou" in Path.path_to(s, "chi_gu", "cheshi_qian"), "乌孙→车师前可在路口换路")
+	var a: Dictionary = s.armies["han_g_dunhuang"]
+	for t in ["siege", "burn"]:
+		var c = Cmd.make("set_plan", "han", {"army": a["id"], "steps": [{"type": t, "node": "beilu_chakou"}], "preset": "balanced"})
+		ok(Cmd.validate(s, c) != "", "路口不可%s" % t)
 
 func test_map_connections_and_colors() -> void:
 	print("map connections and ownership colors")

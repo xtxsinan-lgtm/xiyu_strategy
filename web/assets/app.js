@@ -30,7 +30,7 @@
       script.async = true;
       script.onload = () => bootPyodideRuntime(dot, label);
       script.onerror = () => {
-        if (label) label.textContent = "⚡ 极速原生引擎 (离线自包含模式)";
+        if (label) label.textContent = "原生引擎 · 离线";
       };
       document.head.appendChild(script);
     } else {
@@ -41,7 +41,7 @@
   async function bootPyodideRuntime(dot, label) {
     try {
       if (dot) dot.classList.add("loading");
-      if (label) label.textContent = "⚡ 极速引擎运行中 (后台加载 Python WASM...)";
+      if (label) label.textContent = "Python 引擎加载中…";
       const py = await window.loadPyodide({
         indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/",
       });
@@ -67,7 +67,7 @@ from design_sim import web_bridge as wb
       APP.pyReady = true;
       APP.engineMode = "pyodide";
       if (dot) dot.classList.remove("loading");
-      if (label) label.textContent = "🐍 Python 真机引擎 (Pyodide design_sim 已激活)";
+      if (label) label.textContent = "Python 引擎";
 
       // 若当前还在第 0 回合，同步一次 Python 引擎初始状态
       if (APP.state && APP.state.meta.turn === 0) {
@@ -76,7 +76,7 @@ from design_sim import web_bridge as wb
     } catch (err) {
       console.warn("Pyodide load fallback to JS engine:", err);
       if (dot) dot.classList.remove("loading");
-      if (label) label.textContent = "⚡ 极速原生引擎 (已就绪)";
+      if (label) label.textContent = "原生引擎";
     }
   }
 
@@ -155,6 +155,7 @@ from design_sim import web_bridge as wb
     const side = st.meta.side;
     const sc = st.scores;
     const v1 = st.v1;
+    const fmt = (n) => Number(n).toLocaleString();
 
     // 计算当前已勾选命令预计花费
     let plannedMoney = 0;
@@ -166,15 +167,15 @@ from design_sim import web_bridge as wb
 
     if (!v1) {
       container.innerHTML = `
-        <div class="hud-card han-accent">
-          <div class="hud-head"><span>当前执政与回合</span><span class="badge badge-gold">基线规则集 (baseline)</span></div>
-          <div class="hud-val">${st.meta.date_text} · 第 ${st.meta.turn + 1} 季</div>
-          <div class="hud-sub"><span>胜负状态：${st.meta.winner || "博弈进行中"}</span><span>汉属国：${sc.han_vassals}/12</span><span>河西在汉：${sc.hexi_han}/4</span></div>
+        <div class="hud-card span-2">
+          <div class="hud-head"><span>${st.meta.date_text} · 第 ${st.meta.turn + 1} 季</span><span class="badge">旧规则</span></div>
+          <div class="hud-val">${sc.han} <small>汉</small> : ${sc.xiongnu} <small>匈奴</small></div>
+          <div class="hud-sub"><span>${st.meta.winner || "胜负未分"}</span><span>汉属国 ${sc.han_vassals}/12</span><span>河西在汉 ${sc.hexi_han}/4</span></div>
         </div>
-        <div class="hud-card gold-accent">
-          <div class="hud-head"><span>国库与兵源储备</span><span>预计本季支出: -${plannedMoney} 金</span></div>
-          <div class="hud-val">汉金 ${sc.han_money} | 匈奴金 ${sc.xn_money}</div>
-          <div class="hud-sub"><span>综合计分：汉 ${sc.han} : 匈奴 ${sc.xiongnu}</span><span>断粮饿死累计：${sc.starve_losses} 人</span></div>
+        <div class="hud-card span-2">
+          <div class="hud-head"><span>国库</span><span>本季拟支出 ${fmt(plannedMoney)}</span></div>
+          <div class="hud-val"><span class="unit">汉</span>${fmt(sc.han_money)} <span class="unit" style="margin-left:14px">匈奴</span>${fmt(sc.xn_money)}</div>
+          <div class="hud-sub"><span>断粮饿死累计 ${fmt(sc.starve_losses)} 人</span></div>
         </div>
       `;
       return;
@@ -188,78 +189,64 @@ from design_sim import web_bridge as wb
     if (side === "han") {
       const trustTier =
         court.trust >= 80
-          ? "便宜行事（征调耗金9折）"
+          ? "便宜行事"
           : court.trust >= 50
           ? "正常授节"
           : court.trust >= 25
-          ? "监军掣肘（严查矫诏）"
-          : "苛刻限期（濒临槛车征还）";
+          ? "监军掣肘"
+          : "濒临征还";
       const windMap = {
-        expansion: "武帝拓边（主战激进）",
-        regret: "轮台悔诏（罢远征重军屯）",
-        xuan_revival: "宣帝中兴（并护南北道）",
+        expansion: "武帝拓边",
+        regret: "轮台悔诏",
+        xuan_revival: "宣帝中兴",
       };
       const ed = court.active_edict;
+      const rz = tribes.tribes.rizhu;
       container.innerHTML = `
-        <div class="hud-card han-accent">
-          <div class="hud-head">
-            <span>🏛️ S01 西域都护府功业 (G)</span>
-            <span class="badge ${vic.han_merit >= 100 ? "badge-green" : "badge-gold"}">立府维持 ${vic.han_hold_months}/12 月</span>
-          </div>
-          <div class="hud-val">${vic.han_merit.toFixed(1)} <small style="font-size:12px;color:#94a3b8">/ 100.0 (峰值 ${vic.han_merit_peak.toFixed(1)})</small></div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:${Math.min(100, vic.han_merit)}%;background:linear-gradient(90deg,#dc2626,#f59e0b)"></div>
-          </div>
+        <div class="hud-card">
+          <div class="hud-head"><span>都护功业 G</span><span class="eyebrow">立府 ${vic.han_hold_months}/12 月</span></div>
+          <div class="hud-val">${vic.han_merit.toFixed(1)}<small>/ 100 · 峰值 ${vic.han_merit_peak.toFixed(1)}</small></div>
+          <div class="progress-track"><div class="progress-fill han" style="width:${Math.min(100, vic.han_merit)}%"></div></div>
           <div class="hud-sub">
-            <span>属国 ${sc.han_vassals} (+${sc.han_vassals * 6})</span>
-            <span>军屯 ${Object.keys(logi.tuntian_nodes).length} 处</span>
+            <span>属国 ${sc.han_vassals}</span>
+            <span>军屯 ${Object.keys(logi.tuntian_nodes).length}</span>
             <span>永久勋 +${vic.han_perm_merit.toFixed(0)}</span>
-            <span>僮仆都尉:${tribes.tongpu_active ? "在位" : "已罢(+10)"}</span>
+            <span>僮仆都尉${tribes.tongpu_active ? "在位" : "已罢"}</span>
           </div>
         </div>
 
-        <div class="hud-card gold-accent">
-          <div class="hud-head">
-            <span>📜 S02 长安朝廷信任 & 风向</span>
-            <span class="badge badge-red">${windMap[court.wind] || court.wind}</span>
-          </div>
-          <div class="hud-val">${court.trust.toFixed(1)} <small style="font-size:12px;color:#fde68a">【${trustTier}】</small></div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:${Math.min(100, court.trust)}%;background:linear-gradient(90deg,#3b82f6,#10b981)"></div>
-          </div>
+        <div class="hud-card">
+          <div class="hud-head"><span>朝廷信任</span><span class="eyebrow">${windMap[court.wind] || court.wind}</span></div>
+          <div class="hud-val">${court.trust.toFixed(1)}<small>${trustTier}</small></div>
+          <div class="progress-track"><div class="progress-fill accent" style="width:${Math.min(100, court.trust)}%"></div></div>
           <div class="hud-sub">
             ${
               ed
-                ? `<span style="color:#fde68a">📌 ${ed.title} (限第${ed.deadline_turn}季, ${ed.complied ? "已奉诏" : "待奉诏"})</span>`
-                : `<span>当前无待办诏令</span>`
+                ? `<span class="hl">${ed.title}</span><span>限第 ${ed.deadline_turn} 季 · ${ed.complied ? "已奉诏" : "待奉诏"}</span>`
+                : `<span>暂无待办诏令</span>`
             }
           </div>
         </div>
 
         <div class="hud-card">
-          <div class="hud-head">
-            <span>🌾 S05 军资·良马·烽燧·伤亡</span>
-            <span class="badge badge-blue">${st.meta.date_text} (Q${st.meta.turn + 1}/${st.meta.max_turns})</span>
-          </div>
-          <div class="hud-val">黄金 ${sc.han_money} <small style="font-size:12px;color:#f87171">(已选指令预计 -${plannedMoney})</small></div>
-          <div class="hud-sub">
-            <span>🐎 国家马池 ${sc.han_horse_pool}</span>
-            <span>🔥 烽燧 ${logi.beacons.length} 座</span>
-            <span>⚔️ 汉阵亡 ${(sc.han_casualties - sc.starve_losses).toLocaleString()}</span>
-            <span style="color:#fca5a5">💀 断粮饿死 ${sc.starve_losses.toLocaleString()} (单列)</span>
+          <div class="hud-head"><span>库钱</span><span class="eyebrow">${st.meta.date_text} · ${st.meta.turn + 1}/${st.meta.max_turns}</span></div>
+          <div class="hud-val">${fmt(sc.han_money)}<small>${plannedMoney ? `本季拟支 ${fmt(plannedMoney)}` : "本季未支"}</small></div>
+          <div class="hud-sub" style="margin-top:14px">
+            <span>马池 ${fmt(sc.han_horse_pool)}</span>
+            <span>烽燧 ${logi.beacons.length}</span>
+            <span>阵亡 ${fmt(sc.han_casualties - sc.starve_losses)}</span>
+            <span class="${sc.starve_losses > 0 ? "warn" : ""}">饿死 ${fmt(sc.starve_losses)}</span>
           </div>
         </div>
 
-        <div class="hud-card xn-accent">
-          <div class="hud-head">
-            <span>🏹 敌情感知：匈奴单于庭 & 诸王</span>
-            <span class="badge badge-blue">威服值 W=${vic.xn_weifu.toFixed(1)}/100</span>
-          </div>
-          <div class="hud-val">单于威望 ${tribes.chanyu_prestige.toFixed(1)} | 属国 ${sc.xn_vassals}</div>
+        <div class="hud-card">
+          <div class="hud-head"><span>匈奴动向</span><span class="eyebrow">威服 ${vic.xn_weifu.toFixed(1)}</span></div>
+          <div class="hud-val">${tribes.chanyu_prestige.toFixed(1)}<small>单于威望 · 属国 ${sc.xn_vassals}</small></div>
+          <div class="progress-track"><div class="progress-fill xn" style="width:${Math.min(100, vic.xn_weifu)}%"></div></div>
           <div class="hud-sub">
-            <span>日逐王忠:${tribes.tribes.rizhu.loyalty.toFixed(0)} ${tribes.tribes.rizhu.surrender_window > 0 ? "🔥【请降窗口!】" : ""}</span>
-            <span>左贤忠:${tribes.tribes.zuoxian.loyalty.toFixed(0)}</span>
-            <span>右贤忠:${tribes.tribes.youxian.loyalty.toFixed(0)}</span>
+            <span class="${rz.surrender_window > 0 ? "hl" : ""}">日逐忠 ${rz.loyalty.toFixed(0)}${rz.surrender_window > 0 ? " · 有意请降" : ""}</span>
+            <span>左贤 ${tribes.tribes.zuoxian.loyalty.toFixed(0)}</span>
+            <span>右贤 ${tribes.tribes.youxian.loyalty.toFixed(0)}</span>
           </div>
         </div>
       `;
@@ -267,52 +254,41 @@ from design_sim import web_bridge as wb
       // 匈奴玩家非对称 HUD
       const tMap = tribes.tribes;
       container.innerHTML = `
-        <div class="hud-card xn-accent">
-          <div class="hud-head">
-            <span>🐺 S01 匈奴双路径主胜利</span>
-            <span class="badge badge-blue">威服维持 ${vic.xn_weifu_hold_months}/6 月</span>
-          </div>
-          <div class="hud-val">威服 W=${vic.xn_weifu.toFixed(1)}/100 | 河西在匈 ${4 - sc.hexi_han}/4 郡</div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:${Math.min(100, vic.xn_weifu)}%;background:linear-gradient(90deg,#0284c7,#38bdf8)"></div>
-          </div>
+        <div class="hud-card">
+          <div class="hud-head"><span>威服 W</span><span class="eyebrow">维持 ${vic.xn_weifu_hold_months}/6 月</span></div>
+          <div class="hud-val">${vic.xn_weifu.toFixed(1)}<small>/ 100 · 河西在匈 ${4 - sc.hexi_han}/4</small></div>
+          <div class="progress-track"><div class="progress-fill xn" style="width:${Math.min(100, vic.xn_weifu)}%"></div></div>
           <div class="hud-sub">
-            <span>西域属国 ${sc.xn_vassals} 国</span>
-            <span>僮仆都尉:${tribes.tongpu_active ? "正常征税" : "已失"}</span>
-            <span>敌方汉功业 G=${vic.han_merit.toFixed(1)}</span>
+            <span>西域属国 ${sc.xn_vassals}</span>
+            <span>僮仆都尉${tribes.tongpu_active ? "征税中" : "已失"}</span>
+            <span>汉功业 ${vic.han_merit.toFixed(1)}</span>
           </div>
         </div>
 
-        <div class="hud-card gold-accent">
-          <div class="hud-head">
-            <span>👑 S03 单于威望 & 王庭赏赐池</span>
-            <span class="badge badge-gold">${st.meta.date_text} (Q${st.meta.turn + 1}/${st.meta.max_turns})</span>
-          </div>
-          <div class="hud-val">威望 ${tribes.chanyu_prestige.toFixed(1)} | 黄金/赏池 ${sc.xn_money + tribes.reward_pool}</div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:${Math.min(100, tribes.chanyu_prestige)}%;background:linear-gradient(90deg,#f59e0b,#10b981)"></div>
-          </div>
+        <div class="hud-card">
+          <div class="hud-head"><span>单于威望</span><span class="eyebrow">${st.meta.date_text} · ${st.meta.turn + 1}/${st.meta.max_turns}</span></div>
+          <div class="hud-val">${tribes.chanyu_prestige.toFixed(1)}<small>库钱与赏池 ${fmt(sc.xn_money + tribes.reward_pool)}</small></div>
+          <div class="progress-track"><div class="progress-fill accent" style="width:${Math.min(100, tribes.chanyu_prestige)}%"></div></div>
           <div class="hud-sub">
-            <span>当季战术卡：${tribes.active_tactical_card || "未发动（可选择）"}</span>
-            <span>已选支出：-${plannedMoney}</span>
+            <span>战术卡 ${tribes.active_tactical_card || "未发动"}</span>
+            <span>本季拟支 ${fmt(plannedMoney)}</span>
           </div>
         </div>
 
-        <div class="hud-card" style="grid-column: span 2;">
+        <div class="hud-card span-2">
           <div class="hud-head">
-            <span>🏇 S03 帐下四大部王忠诚度与叛降监控（忠 < 38 触发擅自行动或请降汉朝）</span>
-            <span class="badge ${tMap.rizhu.loyalty < 42 ? "badge-red" : "badge-green"}">${tMap.rizhu.surrender_window > 0 ? "⚠️ 日逐王正密通汉使！" : "诸部尚受节制"}</span>
+            <span>四部诸王</span>
+            <span class="eyebrow ${tMap.rizhu.surrender_window > 0 ? "c-bad" : ""}">${tMap.rizhu.surrender_window > 0 ? "日逐王正密通汉使" : "忠诚低于 38 将擅自行动或请降"}</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px;">
-            ${Object.entries(tMap)
+          <div class="tribe-grid">
+            ${Object.values(tMap)
               .map(
-                ([k, tv]) => `
-              <div style="background:#0d121b;border:1px solid ${tv.loyalty < 42 ? "#ef4444" : "#2b354d"};padding:6px 8px;border-radius:6px;">
-                <div style="font-size:12px;font-weight:700;color:${tv.loyalty < 42 ? "#fca5a5" : "#e2e8f0"}">${tv.name} (${tv.leader})</div>
-                <div style="font-size:15px;font-weight:800;color:#38bdf8">忠诚 ${tv.loyalty.toFixed(0)}</div>
-                <div style="font-size:11px;color:#94a3b8">怨望 ${tv.grievance.toFixed(0)} | ${tv.status === "defected_han" ? "已叛降汉" : "在列"}</div>
-              </div>
-            `
+                (tv) => `
+              <div class="tribe ${tv.loyalty < 42 ? "at-risk" : ""}">
+                <div class="tribe-name">${tv.name} · ${tv.leader}</div>
+                <div class="tribe-v">${tv.loyalty.toFixed(0)}</div>
+                <div class="tribe-sub">怨望 ${tv.grievance.toFixed(0)} · ${tv.status === "defected_han" ? "已降汉" : "在列"}</div>
+              </div>`
               )
               .join("")}
           </div>
@@ -321,7 +297,7 @@ from design_sim import web_bridge as wb
     }
   }
 
-  // ==================== 3. 42 节点战略地图 SVG 渲染（1:1 严格对齐 Godot `ui/map_view.gd`） ====================
+  // ==================== 3. 节点战略地图 SVG 渲染（1:1 严格对齐 Godot `ui/map_view.gd`） ====================
   const GODOT_C_HAN = "#c0392b";
   const GODOT_C_XN = "#5d4037";
   const GODOT_C_HAN_V = "#e08a80";
@@ -410,6 +386,7 @@ from design_sim import web_bridge as wb
     if (origFaction === "han" && ctl === "han") return GODOT_C_HAN;
     if (origFaction === "xiongnu" && ctl === "xiongnu") return GODOT_C_XN;
     if (nodeType === "pass") return GODOT_C_PASS;
+    if (nodeType === "junction") return "#8a7550";
     if (ctl === "han") return GODOT_C_HAN_V;
     if (ctl === "xiongnu") return GODOT_C_XN_V;
     if (GODOT_STATE_COLORS[origFaction]) return GODOT_STATE_COLORS[origFaction];
@@ -509,7 +486,7 @@ from design_sim import web_bridge as wb
       }
     });
 
-    // 3. 绘制 42 个节点 + 图标 + 羊皮纸铭牌
+    // 3. 绘制全部节点（城邦／关隘／路口） + 图标 + 羊皮纸铭牌
     for (const [nid, n] of Object.entries(st.nodes)) {
       const pt = pos[nid];
       if (!pt) continue;
@@ -519,6 +496,7 @@ from design_sim import web_bridge as wb
       let rad = 9.0;
       if (nodeType === "source") rad = 12.0;
       else if (nodeType === "pass") rad = 6.0;
+      else if (nodeType === "junction") rad = 4.0;
       else if (nodeType === "nomad") rad = 10.0;
 
       const fillCol = getGodotNodeColor(nid, n);
@@ -526,8 +504,8 @@ from design_sim import web_bridge as wb
       const isEdictTarget = nid === edTarget;
       const iconHref = nodeType === "nomad" ? "assets/icons/nomad.svg" : "assets/icons/city.svg";
       const label = n.name || meta.name || nid;
-      const fs = 13;
-      const tw = Math.max(28, label.length * 13.5);
+      const fs = nodeType === "junction" ? 11 : 13;
+      const tw = Math.max(28, label.length * (fs + 0.5));
       const boxW = tw + 10;
       const boxH = fs + 7;
       const boxX = x - boxW * 0.5;
@@ -545,7 +523,7 @@ from design_sim import web_bridge as wb
       html += `<circle cx="${x}" cy="${y + 2}" r="${rad + 2}" fill="rgba(38, 28, 20, 0.25)"/>`;
       html += `<circle cx="${x}" cy="${y}" r="${rad + 1.5}" fill="#eed4a0"/>`;
       html += `<circle cx="${x}" cy="${y}" r="${rad}" fill="${fillCol}" stroke="#2a1d10" stroke-width="1.5"/>`;
-      if (nodeType !== "pass") {
+      if (nodeType !== "pass" && nodeType !== "junction") {
         html += `<image href="${iconHref}" x="${x - 6}" y="${y - 6}" width="12" height="12" pointer-events="none"/>`;
       }
       html += `<rect x="${boxX.toFixed(1)}" y="${boxY.toFixed(1)}" width="${boxW.toFixed(1)}" height="${boxH}" rx="3" fill="${labelBoxFill}" ${labelBoxStroke}/>`;
@@ -604,53 +582,69 @@ from design_sim import web_bridge as wb
     const box = document.getElementById("node-inspector-body");
     const n = st.nodes[nid];
     if (!n) {
-      box.innerHTML = `<div style="color:#94a3b8">点击地图任意城池/绿洲查看实时情报</div>`;
+      box.innerHTML = `<div class="empty">在地图上点一座城邦，这里会显示它的人口、存粮与外交关系。</div>`;
       return;
     }
     const rel = n.relation;
+    const ctlName = n.type === "junction" ? "路口 · 无主，可换路，不可攻占" : n.controller === "han" ? "大汉" : n.controller === "xiongnu" ? "匈奴" : "自治";
     const armiesHtml =
       n.armies && n.armies.length > 0
         ? n.armies
             .map(
-              (a) =>
-                `<div>· <span class="badge ${a.faction === "han" ? "badge-red" : "badge-blue"}">${a.name}</span> ${
-                  a.is_convoy ? `民夫 ${a.laborers}` : `兵 ${a.soldiers}`
-                } | 粮 ${(a.grain / 1000).toFixed(1)}k (${a.status})</div>`
+              (a) => `
+          <div class="army-line">
+            <span class="dot ${a.faction === "han" ? "c-han" : "c-xn"}"></span>
+            <span>${a.name}</span>
+            <span class="muted">${a.is_convoy ? `民夫 ${a.laborers.toLocaleString()}` : `兵 ${a.soldiers.toLocaleString()}`} · 粮 ${(a.grain / 1000).toFixed(1)}k · ${a.status}</span>
+          </div>`
             )
             .join("")
-        : `<div style="color:#64748b">无野战驻军（城防民兵 ${n.militia} 人）</div>`;
+        : `<div class="muted" style="font-size:12.5px">无野战部队，城中民兵 ${n.militia.toLocaleString()} 人</div>`;
+
+    const overlordLabel = rel
+      ? rel.overlord === "han"
+        ? "汉属国"
+        : rel.overlord === "xiongnu"
+        ? "匈奴属国"
+        : "独立"
+      : "";
+    const overlordClass = rel ? (rel.overlord === "han" ? "badge-red" : rel.overlord === "xiongnu" ? "badge-blue" : "") : "";
 
     box.innerHTML = `
       <div class="node-inspector">
         <div>
-          <div style="font-size:15px;font-weight:700;color:#fde68a;margin-bottom:4px;">
-            📍 ${n.name} <small style="color:#94a3b8">(${n.id})</small>
-            ${n.has_beacon ? '<span class="badge badge-gold">🔥烽燧已筑</span>' : ""}
-            ${n.tuntian_lv > 0 ? `<span class="badge badge-green">🌾军屯 Lv.${n.tuntian_lv}</span>` : ""}
+          <div class="ins-title">
+            <h4>${n.name}</h4>
+            <span class="eyebrow">${n.id}</span>
+            ${rel ? `<span class="badge ${overlordClass}">${overlordLabel}</span>` : ""}
+            ${n.has_beacon ? '<span class="badge">烽燧</span>' : ""}
+            ${n.tuntian_lv > 0 ? `<span class="badge badge-green">军屯 ${n.tuntian_lv} 级</span>` : ""}
           </div>
-          <div>控制方：<strong>${n.controller === "han" ? "大汉" : n.controller === "xiongnu" ? "匈奴" : n.name}</strong></div>
-          <div>人口：${n.pop.toLocaleString()} | 存粮：<strong>${(n.grain / 1000).toFixed(1)}k</strong> | 农田上限：${n.farm_cap}</div>
-          <div>城防等级：Lv.${n.walls} (HP ${n.wall_hp}) | 战马存栏：${n.horses.toLocaleString()}</div>
-          <div style="margin-top:6px;font-weight:600;color:#cbd5e1">驻扎部队：</div>
+          <dl class="kv-list">
+            <dt>控制</dt><dd>${ctlName}</dd>
+            <dt>人口</dt><dd>${n.pop.toLocaleString()}</dd>
+            <dt>存粮</dt><dd>${(n.grain / 1000).toFixed(1)}k · 农田上限 ${n.farm_cap}</dd>
+            <dt>城防</dt><dd>${n.walls} 级 · 城墙 ${n.wall_hp}</dd>
+            <dt>战马</dt><dd>${n.horses.toLocaleString()}</dd>
+          </dl>
+          <div class="ins-subhead">驻军</div>
           ${armiesHtml}
         </div>
         <div>
           ${
             rel
               ? `
-            <div style="font-weight:700;color:#f8fafc;margin-bottom:4px;">🕊️ 西域邦交与沿途给食检定 (S04)</div>
-            <div>宗主归属：<span class="badge ${rel.overlord === "han" ? "badge-red" : rel.overlord === "xiongnu" ? "badge-blue" : "badge-gold"}">${
-                  rel.overlord === "han" ? "汉属国" : rel.overlord === "xiongnu" ? "匈奴属国" : "独立城邦"
-                }</span> ${rel.han_enfeoffed ? '<span class="badge badge-gold">已赐汉印绶</span>' : ""} ${
-                  rel.crimes > 0 ? `<span class="badge badge-red">讨伐罪状×${rel.crimes}</span>` : ""
-                }</div>
-            <div style="margin-top:5px;">汉方影响力：<strong>${rel.han_influence}</strong> / 100</div>
-            <div class="progress-track"><div class="progress-fill" style="width:${rel.han_influence}%;background:#ef4444"></div></div>
-            <div>匈奴威吓值：<strong>${rel.xn_intimidation}</strong> / 100（对匈怨恨：${rel.xn_resentment}）</div>
-            <div class="progress-track"><div class="progress-fill" style="width:${rel.xn_intimidation}%;background:#0ea5e9"></div></div>
-            <div style="margin-top:6px;">汉军过境供粮意愿：<span style="font-weight:700;color:${rel.forage.color}">${rel.forage.label}</span></div>
+            <div class="ins-subhead" style="margin-top:6px">外交与给食</div>
+            <div class="bar-row"><span class="k">汉影响力</span><div class="progress-track"><div class="progress-fill han" style="width:${rel.han_influence}%"></div></div><span class="v">${rel.han_influence}</span></div>
+            <div class="bar-row"><span class="k">匈奴威吓</span><div class="progress-track"><div class="progress-fill xn" style="width:${rel.xn_intimidation}%"></div></div><span class="v">${rel.xn_intimidation}</span></div>
+            <div class="bar-row"><span class="k">对匈怨恨</span><div class="progress-track"><div class="progress-fill accent" style="width:${rel.xn_resentment}%"></div></div><span class="v">${rel.xn_resentment}</span></div>
+            <dl class="kv-list" style="margin-top:14px">
+              <dt>大军过境</dt><dd style="color:${rel.forage.color}">${rel.forage.label}</dd>
+              ${rel.han_enfeoffed ? `<dt>印绶</dt><dd>已受汉印绶</dd>` : ""}
+              ${rel.crimes > 0 ? `<dt>罪状</dt><dd class="c-bad">${rel.crimes} 条，可兴兵问罪</dd>` : ""}
+            </dl>
           `
-              : `<div style="color:#94a3b8;padding-top:8px;">本土直辖重镇 / 塞外王庭节点（非西域城邦，无独立外交关系条目）。</div>`
+              : `<div class="empty" style="padding-top:6px">本土郡县或塞外王庭，不参与西域诸国的外交关系。</div>`
           }
         </div>
       </div>
@@ -668,8 +662,11 @@ from design_sim import web_bridge as wb
       .map(
         (t) => `
       <div class="todo-item ${t.level === "urgent" ? "urgent" : ""}">
-        <div style="font-weight:700;color:${t.level === "urgent" ? "#fca5a5" : "#fde68a"}">${t.title}</div>
-        <div style="color:#cbd5e1">${t.detail}</div>
+        <span class="dot"></span>
+        <div>
+          <div class="todo-title">${t.title}</div>
+          <div class="todo-detail">${t.detail}</div>
+        </div>
       </div>
     `
       )
@@ -691,10 +688,10 @@ from design_sim import web_bridge as wb
       cands = cands.filter((c) => c.target_node === APP.selectedNodeId);
     }
 
-    countEl.textContent = `已勾选 ${APP.selectedCmdIndices.size} 条指令（共 ${st.commands.length} 条合法候选）`;
+    countEl.textContent = `已选 ${APP.selectedCmdIndices.size} / ${st.commands.length} 条`;
 
     if (cands.length === 0) {
-      listEl.innerHTML = `<div style="color:#94a3b8;padding:14px;text-align:center;">当前筛选条件下无候选指令（可切换上方分类标签查看全部 ${st.commands.length} 条合法指令）</div>`;
+      listEl.innerHTML = `<div class="empty" style="padding:24px 18px">这个分类下没有可下的命令。</div>`;
       return;
     }
 
@@ -702,18 +699,16 @@ from design_sim import web_bridge as wb
       .slice(0, 60)
       .map((c) => {
         const checked = APP.selectedCmdIndices.has(c.idx);
+        const target = c.target_node && st.nodes[c.target_node] ? st.nodes[c.target_node].name : "";
         return `
-        <label class="cmd-item ${checked ? "selected" : ""} ${c.recommended ? "recommended" : ""}" data-idx="${c.idx}">
+        <label class="cmd-item ${checked ? "selected" : ""}" data-idx="${c.idx}">
           <input type="checkbox" ${checked ? "checked" : ""} data-cmd-idx="${c.idx}"/>
           <div class="cmd-main">
-            <div class="cmd-title">
-              [${c.idx}] ${c.desc}
-              ${c.recommended ? '<span class="badge badge-green">★幕僚推荐</span>' : ""}
-            </div>
+            <div class="cmd-title"><span class="idx">${String(c.idx).padStart(2, "0")}</span>${c.desc}${c.recommended ? '<span class="rec">· 幕僚推荐</span>' : ""}</div>
             <div class="cmd-meta">
-              <span class="badge badge-gold">${c.tag}</span>
-              ${c.cost_money > 0 ? `<span style="color:#fca5a5">耗金 ${c.cost_money}</span>` : `<span style="color:#6ee7b7">免钱指令</span>`}
-              ${c.target_node && st.nodes[c.target_node] ? `<span>📍 目标：${st.nodes[c.target_node].name}</span>` : ""}
+              <span>${c.tag}</span>
+              ${target ? `<span>${target}</span>` : ""}
+              <span class="cost">${c.cost_money > 0 ? `${c.cost_money} 钱` : "不耗钱"}</span>
             </div>
           </div>
         </label>
@@ -737,13 +732,14 @@ from design_sim import web_bridge as wb
     if (st.ending) {
       endingBox.style.display = "block";
       endingBox.innerHTML = `
-        <div class="chronicle-box" style="border-color:#10b981;background:rgba(6,78,59,0.35);">
-          <div style="font-size:16px;font-weight:800;color:#6ee7b7;margin-bottom:6px;">🏆 ${st.ending.headline}</div>
-          <div class="chronicle-text">${st.ending.biography}</div>
-          <div style="font-size:12.5px;color:#fde68a;margin-top:6px;">
-            <div>汉史官评定：${st.ending.grade_han}</div>
-            <div>匈奴史官评定：${st.ending.grade_xn}</div>
-            <div>终局四段式签名：<code>${st.ending.signature}</code></div>
+        <div class="ending">
+          <p class="eyebrow">终局</p>
+          <div class="ending-title">${st.ending.headline}</div>
+          <div class="ending-bio">${st.ending.biography}</div>
+          <div class="ending-meta">
+            <span>汉史官：${st.ending.grade_han}</span>
+            <span>匈奴史官：${st.ending.grade_xn}</span>
+            <span>签名 <code>${st.ending.signature}</code></span>
           </div>
         </div>
       `;
@@ -754,20 +750,20 @@ from design_sim import web_bridge as wb
     const logEl = document.getElementById("turn-log-stream");
     const logs = [...(st.turn_logs || [])].reverse();
     if (logs.length === 0) {
-      logEl.innerHTML = `<div style="color:#94a3b8;padding:10px;">尚未推进回合。请勾选左侧指令（或保持★幕僚推荐）并点击【▶ 推进下一季】查看结算战报。</div>`;
+      logEl.innerHTML = `<div class="empty">还没有推进过。右侧已默认勾好幕僚推荐的命令，点上方“推进一季”即可看到第一份战报。</div>`;
     } else {
       logEl.innerHTML = logs
         .map(
           (lg) => `
         <div class="turn-log-card">
-          <div style="display:flex;justify-content:space-between;font-weight:700;color:#fde68a;margin-bottom:4px;">
-            <span>第 ${lg.turn} 季结算战报 (${lg.date})</span>
-            <span class="badge badge-green">生效 ${lg.applied_mine.length} 令</span>
+          <div class="turn-log-head">
+            <h5>第 ${lg.turn} 季 · ${lg.date}</h5>
+            <span class="eyebrow">${lg.applied_mine.length} 条命令生效</span>
           </div>
-          <div style="font-size:11.5px;color:#94a3b8;margin-bottom:4px;">我方执行：${lg.applied_mine.join("；") || "无"}</div>
+          <div class="turn-log-mine">我方：${lg.applied_mine.join("；") || "无"}</div>
           <div>
             ${(lg.events || [])
-              .map((ev) => `<div class="event-line">· <span style="color:#38bdf8">[${ev.date}]</span> ${ev.text}</div>`)
+              .map((ev) => `<div class="event-line"><span class="when">${ev.date}</span><span>${ev.text}</span></div>`)
               .join("")}
           </div>
         </div>
@@ -783,47 +779,44 @@ from design_sim import web_bridge as wb
   // ==================== 5. Tab 2: S09 200局蒙特卡洛与 5x5 矩阵验证台 ====================
   function renderS09Dashboard() {
     const v1 = BUNDLE.s09_results.v1_200q;
-    const base = BUNDLE.s09_results.baseline_200q;
     const matV1 = BUNDLE.s09_results.v1_matrix.dominance_analysis;
     const matBase = BUNDLE.s09_results.baseline_matrix.dominance_analysis;
 
-    // 1. L12 门禁卡片
+    // 1. 验收指标
     const l12 = v1.l12_metrics;
-    document.getElementById("s09-l12-cards").innerHTML = `
-      <div class="hud-card han-accent">
-        <div class="hud-head"><span>汉方主胜利率 (HAN_MAIN)</span><span class="badge badge-green">PASS (目标 20–35%)</span></div>
-        <div class="hud-val">${l12.han_main_win_pct}% <small style="font-size:12px;color:#94a3b8">(基线: 0.0%)</small></div>
-        <div class="hud-sub"><span>69 / 200 局成功设立西域都护府</span></div>
-      </div>
-      <div class="hud-card xn-accent">
-        <div class="hud-head"><span>匈奴主胜利率 (XN_MAIN)</span><span class="badge badge-green">PASS (目标 20–35%)</span></div>
-        <div class="hud-val">${l12.xn_main_win_pct}% <small style="font-size:12px;color:#94a3b8">(基线: 58.0%)</small></div>
-        <div class="hud-sub"><span>河西饮马 20 局 + 威服西域 38 局</span></div>
-      </div>
-      <div class="hud-card gold-accent">
-        <div class="hud-head"><span>到期计分 & 政治崩盘率</span><span class="badge badge-green">PASS (到期 ≤ 50%)</span></div>
-        <div class="hud-val">到期 ${l12.expiry_pct}% | 崩盘 ${l12.political_collapse_pct}%</div>
-        <div class="hud-sub"><span>到期汉21:匈19 | 汉召还4% / 匈离散11%</span></div>
-      </div>
-      <div class="hud-card">
-        <div class="hud-head"><span>终局签名多样性 & 前10季命令密度</span><span class="badge badge-green">PASS (≥15种 & ≤20%)</span></div>
-        <div class="hud-val">${l12.reason_signature_count} 种签名 <small style="font-size:12px;color:#6ee7b7">(最大占比 ${l12.reason_signature_max_share_pct}%)</small></div>
-        <div class="hud-sub"><span>前10季汉均有效命令：${l12.han_first10_meaningful_cmds_avg} 条/季 (基线 1.65)</span></div>
-      </div>
-    `;
+    const gate = (k, v, small, d, target) => `
+      <div class="gate">
+        <div class="gate-k">${k}</div>
+        <div class="gate-v">${v}${small ? `<small>${small}</small>` : ""}</div>
+        <div class="gate-d">${d}</div>
+        <div class="gate-target"><i class="dot"></i>${target}</div>
+      </div>`;
+    document.getElementById("s09-l12-cards").innerHTML =
+      gate("汉方主胜利率", `${l12.han_main_win_pct}%`, "旧规则 0%", "200 局中 69 局设立西域都护府", "目标 20–35%") +
+      gate("匈奴主胜利率", `${l12.xn_main_win_pct}%`, "旧规则 58%", "饮马河西 20 局，威服西域 38 局", "目标 20–35%") +
+      gate("到期计分 / 政治崩盘", `${l12.expiry_pct}%`, `崩盘 ${l12.political_collapse_pct}%`, "到期时汉 21 : 匈 19；汉使召还 4%，匈奴离散 11%", "到期 ≤ 50%") +
+      gate("不同结局", `${l12.reason_signature_count}`, `最大占比 ${l12.reason_signature_max_share_pct}%`, `前十季汉方每季有效命令 ${l12.han_first10_meaningful_cmds_avg} 条`, "≥ 15 种，单一 ≤ 20%");
 
-    // 2. W1 基线 vs W2 v1 全维度对照表
-    document.getElementById("s09-compare-tbody").innerHTML = `
-      <tr><td><strong>汉方总胜率</strong></td><td>45% – 60%</td><td>42.0% (84/200)</td><td><strong>57.0% (114/200)</strong></td><td><span class="badge badge-green">✅ 达标</span></td></tr>
-      <tr><td><strong>汉主胜利 (立都护府)</strong></td><td>20.0% – 35.0%</td><td style="color:#f87171">0.0% (0/200 ❌)</td><td><strong>34.5% (69/200)</strong></td><td><span class="badge badge-green">✅ 彻底激活</span></td></tr>
-      <tr><td><strong>匈奴主胜利 (河西+威服)</strong></td><td>20.0% – 35.0%</td><td style="color:#f87171">58.0% (116/200 ❌)</td><td><strong>29.0% (58/200)</strong></td><td><span class="badge badge-green">✅ 精准收敛</span></td></tr>
-      <tr><td><strong>到期连续计分比例</strong></td><td>≤ 50.0%</td><td>42.0% (100%判汉胜 ❌)</td><td><strong>21.5% (汉21:匈19:平3)</strong></td><td><span class="badge badge-green">✅ 接近 1:1</span></td></tr>
-      <tr><td><strong>政治崩盘提前终局</strong></td><td>5.0% – 20.0%</td><td>0.0%</td><td><strong>15.0% (召还8 + 离散22)</strong></td><td><span class="badge badge-green">✅ 叙事张力</span></td></tr>
-      <tr><td><strong>终局四段式签名种数</strong></td><td>≥ 15 种 (单签 ≤20%)</td><td style="color:#f87171">4 种 (最大 58.0% ❌)</td><td><strong>69 种 (最大仅 9.5%)</strong></td><td><span class="badge badge-green">✅ 提升 17 倍</span></td></tr>
-      <tr><td><strong>汉前10季局均命令数</strong></td><td>≥ 3.0 条/季</td><td style="color:#f87171">1.65 条/季 ❌</td><td><strong>7.27 条/季</strong></td><td><span class="badge badge-green">✅ 告别空转</span></td></tr>
-      <tr><td><strong>5×5 策略矩阵支配检测</strong></td><td>无单一策略 > 70%</td><td style="color:#f87171">True (匈激进 95% ❌)</td><td><strong>False (全部 10 Bot ≤ 70%)</strong></td><td><span class="badge badge-green">✅ 非传递克制</span></td></tr>
-      <tr><td><strong>中盘局势优势逆转率</strong></td><td>≥ 40.0%</td><td>12.0%</td><td><strong>68.5% (日逐降汉率 44.5%)</strong></td><td><span class="badge badge-green">✅ 破局涌现</span></td></tr>
-    `;
+    // 2. 新旧规则对照表
+    const row = (name, target, oldV, oldBad, newV, verdict) => `
+      <tr>
+        <td>${name}</td>
+        <td class="muted">${target}</td>
+        <td class="${oldBad ? "was-bad" : "muted"}">${oldV}</td>
+        <td class="v-new">${newV}</td>
+        <td><span class="status-ok"><i class="dot"></i>${verdict}</span></td>
+      </tr>`;
+    document.getElementById("s09-compare-tbody").innerHTML = [
+      row("汉方总胜率", "45–60%", "42.0%（84/200）", false, "57.0%（114/200）", "达标"),
+      row("汉主胜利 · 设立都护府", "20–35%", "0.0%（0/200）", true, "34.5%（69/200）", "从无到有"),
+      row("匈奴主胜利 · 河西或威服", "20–35%", "58.0%（116/200）", true, "29.0%（58/200）", "回到区间"),
+      row("拖到期限计分", "≤ 50%", "42.0%，且全判汉胜", true, "21.5%（汉 21 : 匈 19 : 平 3）", "接近一比一"),
+      row("政治崩盘提前终局", "5–20%", "0.0%", false, "15.0%（召还 8 + 离散 22）", "有张力"),
+      row("不同结局种数", "≥ 15，单一 ≤ 20%", "4 种，最大 58%", true, "69 种，最大 9.5%", "多了 17 倍"),
+      row("前十季每季命令数", "≥ 3 条", "1.65 条", true, "7.27 条", "不再空转"),
+      row("是否存在一招鲜", "无策略 > 70%", "有：匈奴猛攻 95%", true, "无，10 种 AI 均 ≤ 70%", "相互克制"),
+      row("中盘优势逆转率", "≥ 40%", "12.0%", false, "68.5%（日逐降汉 44.5%）", "有翻盘"),
+    ].join("");
 
     // 3. 5x5 策略矩阵渲染
     renderStrategyMatrixTable(APP.matrixRulesetView === "v1" ? matV1 : matBase);
@@ -834,10 +827,10 @@ from design_sim import web_bridge as wb
       .map(
         (s, idx) => `
       <tr>
-        <td>#${idx + 1}</td>
+        <td class="rank">${String(idx + 1).padStart(2, "0")}</td>
         <td><code>${s.signature}</code></td>
-        <td>${s.count} 局</td>
-        <td><span class="badge badge-gold">${s.share_pct}%</span></td>
+        <td style="text-align:right">${s.count}</td>
+        <td style="text-align:right" class="mono">${s.share_pct}%</td>
       </tr>
     `
       )
@@ -848,39 +841,34 @@ from design_sim import web_bridge as wb
   function renderStrategyMatrixTable(domData) {
     const bots = ["baseline", "aggressive", "conservative", "greedy", "random_legal"];
     const botNames = {
-      baseline: "均衡 (baseline)",
-      aggressive: "激进 (aggressive)",
-      conservative: "持重 (conservative)",
-      greedy: "贪利 (greedy)",
-      random_legal: "随机 (random)",
+      baseline: "均衡",
+      aggressive: "激进",
+      conservative: "持重",
+      greedy: "贪利",
+      random_legal: "随机",
     };
-    let html = `<thead><tr><th>汉方策略 \\ 匈奴策略 (汉胜率%)</th>`;
-    for (const xb of bots) html += `<th>匈·${botNames[xb]}</th>`;
-    html += `<th>汉平均胜率</th></tr></thead><tbody>`;
+    let html = `<thead><tr><th>汉 ＼ 匈奴</th>`;
+    for (const xb of bots) html += `<th>${botNames[xb]}</th>`;
+    html += `<th>汉均值</th></tr></thead><tbody>`;
 
     for (const hb of bots) {
-      html += `<tr><td><strong>汉·${botNames[hb]}</strong></td>`;
+      html += `<tr><td>${botNames[hb]}</td>`;
       for (const xb of bots) {
         const cell = domData.matchups[`${hb}_vs_${xb}`] || { han_win_pct: 50 };
         const hw = cell.han_win_pct;
-        const bg =
-          hw >= 65
-            ? "rgba(220,38,38,0.28)"
-            : hw <= 35
-            ? "rgba(14,165,233,0.28)"
-            : "rgba(255,255,255,0.04)";
-        html += `<td style="background:${bg};font-weight:600">${hw.toFixed(1)}%</td>`;
+        const lean = hw >= 65 ? "han-lean" : hw <= 35 ? "xn-lean" : "";
+        html += `<td class="cell ${lean}">${hw.toFixed(1)}</td>`;
       }
       const avgH = domData.han_avg_win_pct_by_bot[hb];
-      html += `<td><span class="badge ${avgH > 70 ? "badge-red" : "badge-green"}">${avgH.toFixed(1)}%</span></td></tr>`;
+      html += `<td class="cell ${avgH > 70 ? "c-bad" : ""}">${avgH.toFixed(1)}</td></tr>`;
     }
 
-    html += `<tr><td><strong>匈奴平均胜率</strong></td>`;
+    html += `<tr class="total"><td>匈奴均值</td>`;
     for (const xb of bots) {
       const avgX = domData.xn_avg_win_pct_by_bot[xb];
-      html += `<td><span class="badge ${avgX > 70 ? "badge-red" : "badge-green"}">${avgX.toFixed(1)}%</span></td>`;
+      html += `<td class="cell ${avgX > 70 ? "c-bad" : ""}">${avgX.toFixed(1)}</td>`;
     }
-    html += `<td><strong>支配策略: ${domData.has_dominant_strategy ? "❌ 存在 (>70%)" : "✅ 无 (False)"}</strong></td></tr></tbody>`;
+    html += `<td class="cell ${domData.has_dominant_strategy ? "c-bad" : "c-ok"}">${domData.has_dominant_strategy ? "有一招鲜" : "无一招鲜"}</td></tr></tbody>`;
     document.getElementById("s09-matrix-table").innerHTML = html;
   }
 
@@ -907,12 +895,17 @@ from design_sim import web_bridge as wb
     document.getElementById("val-hexi-lost").textContent = hexiLost;
 
     const G = Math.max(0, Math.min(125, vas * 6 + Math.min(12, enf * 2) + hubs * 10 + tun + rizhu - hexiLost * 12));
+    const okG = G >= 100;
     document.getElementById("calc-g-result").innerHTML = `
-      <div style="font-size:20px;font-weight:800;color:${G >= 100 ? "#10b981" : "#fde68a"}">
-        都护府总功业 G = ${G.toFixed(1)} / 100.0 ${G >= 100 ? "✅ 已达立府门槛（维持12月即主胜）" : "⏳ 尚未达标"}
-      </div>
-      <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
-        明细：属国 +${vas * 6} | 印绶 +${Math.min(12, enf * 2)} | 乌垒/车师枢机 +${hubs * 10} | 西域军屯 +${tun} | 日逐降汉与罢僮仆 +${rizhu} | 河西失守 -${hexiLost * 12}
+      <div class="calc-big">${G.toFixed(1)}<small> / 100</small></div>
+      <div class="calc-verdict ${okG ? "c-ok" : "muted"}"><i class="dot"></i>${okG ? "已达立府门槛，维持四季即胜" : `还差 ${(100 - G).toFixed(1)}`}</div>
+      <div class="calc-breakdown">
+        <span>属国 <b>+${vas * 6}</b></span>
+        <span>印绶 <b>+${Math.min(12, enf * 2)}</b></span>
+        <span>枢纽 <b>+${hubs * 10}</b></span>
+        <span>屯田 <b>+${tun}</b></span>
+        <span>日逐来降 <b>+${rizhu}</b></span>
+        <span>河西失守 <b>−${hexiLost * 12}</b></span>
       </div>
     `;
 
@@ -925,18 +918,14 @@ from design_sim import web_bridge as wb
     const shares = [rZuo / sumR, rYou / sumR, rRizhu / sumR, rLihu / sumR];
     const spread = Math.max(...shares) - Math.min(...shares);
     const hasEnvy = spread > 0.15;
+    const names = ["左贤王", "右贤王", "日逐王", "犁汗王"];
 
     document.getElementById("calc-envy-result").innerHTML = `
-      <div style="font-size:15px;font-weight:700;color:${hasEnvy ? "#f87171" : "#6ee7b7"}">
-        归一化份额：左贤 ${(shares[0] * 100).toFixed(0)}% | 右贤 ${(shares[1] * 100).toFixed(0)}% | 日逐 ${(shares[2] * 100).toFixed(0)}% | 犁汗 ${(shares[3] * 100).toFixed(0)}%
+      <div class="share-strip">
+        ${shares.map((s, i) => `<div><div class="k">${names[i]}</div><div class="v">${(s * 100).toFixed(0)}<small class="muted" style="font-size:13px">%</small></div></div>`).join("")}
       </div>
-      <div style="margin-top:4px;font-size:12.5px;">
-        极差 (Max - Min) = <strong>${(spread * 100).toFixed(1)}%</strong>
-        ${
-          hasEnvy
-            ? `<span class="badge badge-red">⚠️ 超过 15% 阈值！触发诸王嫉妒惩罚（冷落部族忠诚 -4.0，怨望 +8.0）</span>`
-            : `<span class="badge badge-green">✅ 极差 ≤ 15%：零嫉妒惩罚，四部忠诚全额提升</span>`
-        }
+      <div class="calc-verdict ${hasEnvy ? "c-bad" : "c-ok"}" style="margin-top:12px"><i class="dot"></i>
+        极差 ${(spread * 100).toFixed(1)}% · ${hasEnvy ? "超过 15%，被冷落者忠诚 −4、怨望 +8" : "不超过 15%，四部都不嫉妒"}
       </div>
     `;
 
@@ -946,8 +935,8 @@ from design_sim import web_bridge as wb
     const distTicks = parseFloat(document.getElementById("calc-dist-ticks").value);
     const cityInf = parseFloat(document.getElementById("calc-city-inf").value);
 
-    document.getElementById("val-soldiers").textContent = soldiers;
-    document.getElementById("val-laborers").textContent = laborers;
+    document.getElementById("val-soldiers").textContent = soldiers.toLocaleString();
+    document.getElementById("val-laborers").textContent = laborers.toLocaleString();
     document.getElementById("val-dist-ticks").textContent = distTicks;
     document.getElementById("val-city-inf").textContent = cityInf;
 
@@ -969,31 +958,44 @@ from design_sim import web_bridge as wb
     }
 
     const maxG = Math.max(1, carryCap);
-    const polyPts = pts.map((p) => `${30 + p.t * 28},${150 - (p.g / maxG) * 120}`).join(" ");
+    const X = (t) => 30 + t * 28;
+    const Y = (v) => 150 - (v / maxG) * 120;
+    const polyPts = pts.map((p) => `${X(p.t)},${Y(p.g)}`).join(" ");
+    const areaPts = `${X(0)},150 ${polyPts} ${X(18)},150`;
+    let ticks = "";
+    for (let t = 0; t <= 18; t += 3) {
+      ticks += `<text x="${X(t)}" y="166" text-anchor="middle" fill="#7d776c" font-size="9" font-family="IBM Plex Mono, monospace">${t}</text>`;
+    }
     document.getElementById("calc-food-svg").innerHTML = `
-      <line x1="30" y1="150" x2="534" y2="150" stroke="#475569" stroke-width="1"/>
+      <line x1="30" y1="150" x2="534" y2="150" stroke="#3a3731" stroke-width="1"/>
+      <line x1="30" y1="30" x2="534" y2="30" stroke="#26241f" stroke-width="1" stroke-dasharray="2,4"/>
+      <line x1="${X(distTicks)}" y1="24" x2="${X(distTicks)}" y2="150" stroke="#3a3731" stroke-width="1"/>
+      <text x="${X(distTicks) + 4}" y="40" fill="#7d776c" font-size="9.5">抵达</text>
+      ${ticks}
+      <polygon points="${areaPts}" fill="rgba(217,160,70,0.10)"/>
       ${
         pnrTick !== -1
-          ? `<line x1="${30 + pnrTick * 28}" y1="20" x2="${30 + pnrTick * 28}" y2="150" stroke="#f59e0b" stroke-dasharray="4,3" stroke-width="1.5"/>
-             <text x="${30 + pnrTick * 28}" y="16" text-anchor="middle" fill="#fde68a" font-size="10">不归点 T${pnrTick}旬</text>`
+          ? `<line x1="${X(pnrTick)}" y1="20" x2="${X(pnrTick)}" y2="150" stroke="#d9a046" stroke-dasharray="3,3" stroke-width="1"/>
+             <text x="${X(pnrTick)}" y="15" text-anchor="middle" fill="#d9a046" font-size="10">不归点 · 第${pnrTick}旬</text>`
           : ""
       }
       ${
         starveTick !== -1
-          ? `<line x1="${30 + starveTick * 28}" y1="20" x2="${30 + starveTick * 28}" y2="150" stroke="#ef4444" stroke-width="2"/>
-             <text x="${30 + starveTick * 28}" y="28" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="700">断粮饿死 T${starveTick}旬</text>`
+          ? `<line x1="${X(starveTick)}" y1="20" x2="${X(starveTick)}" y2="150" stroke="#d4664f" stroke-width="1.2"/>
+             <text x="${X(starveTick)}" y="${pnrTick !== -1 && Math.abs(pnrTick - starveTick) < 4 ? 28 : 15}" text-anchor="middle" fill="#d4664f" font-size="10">断粮 · 第${starveTick}旬</text>`
           : ""
       }
-      <polyline fill="none" stroke="#10b981" stroke-width="2.5" points="${polyPts}"/>
-      ${pts.map((p) => `<circle cx="${30 + p.t * 28}" cy="${150 - (p.g / maxG) * 120}" r="3" fill="#6ee7b7"/>`).join("")}
+      <polyline fill="none" stroke="#ece6d8" stroke-width="1.5" points="${polyPts}"/>
+      ${pts.map((p) => `<circle cx="${X(p.t)}" cy="${Y(p.g)}" r="2" fill="#0a0908" stroke="#ece6d8" stroke-width="1"/>`).join("")}
     `;
     document.getElementById("calc-food-summary").innerHTML = `
-      出发携粮上限：<strong>${(carryCap / 1000).toFixed(1)}k</strong> | 每旬消耗：<strong>${(eatPerTick / 1000).toFixed(1)}k</strong> |
-      城邦沿途补给：<strong>+${(forageGain / 1000).toFixed(1)}k</strong> |
+      <span>出发携粮 <b>${(carryCap / 1000).toFixed(1)}k</b></span>
+      <span>每旬消耗 <b>${(eatPerTick / 1000).toFixed(1)}k</b></span>
+      <span>城邦给食 <b>+${(forageGain / 1000).toFixed(1)}k</b></span>
       ${
         starveTick === -1
-          ? `<span class="badge badge-green">✅ 18旬全程不断粮（S08 AI 绿灯放行）</span>`
-          : `<span class="badge badge-red">❌ 预计第 ${starveTick} 旬断粮饿死（S08 AI 红灯硬拦截！）</span>`
+          ? `<span class="c-ok">十八旬内不会断粮</span>`
+          : `<span class="c-bad">第 ${starveTick} 旬断粮，AI 会拒绝出征</span>`
       }
     `;
   }
@@ -1002,6 +1004,7 @@ from design_sim import web_bridge as wb
   function renderDocsLibrary() {
     const docs = window.XIYU_DOCS || [];
     const navEl = document.getElementById("docs-sidebar-nav");
+    if (!docs.some((d) => d.id === APP.activeDocId) && docs[0]) APP.activeDocId = docs[0].id;
     const groups = {};
     for (const d of docs) {
       if (!groups[d.group]) groups[d.group] = [];
@@ -1018,7 +1021,7 @@ from design_sim import web_bridge as wb
             (it) => `
           <div class="doc-nav-item ${it.id === APP.activeDocId ? "active" : ""}" data-doc-id="${it.id}">
             <span>${it.title}</span>
-            <span class="badge badge-gold">${it.lines}行</span>
+            <span class="lines">${it.lines}</span>
           </div>
         `
           )
@@ -1032,71 +1035,186 @@ from design_sim import web_bridge as wb
       el.addEventListener("click", () => {
         APP.activeDocId = el.getAttribute("data-doc-id");
         renderDocsLibrary();
+        const viewer = document.querySelector(".doc-viewer");
+        if (viewer && viewer.getBoundingClientRect().top < 0) {
+          window.scrollTo({ top: window.scrollY + viewer.getBoundingClientRect().top - 90, behavior: "smooth" });
+        }
       });
     });
 
     const cur = docs.find((d) => d.id === APP.activeDocId) || docs[0];
     if (cur) {
       document.getElementById("doc-viewer-header").innerHTML = `
-        <span>📄 ${cur.title} <small style="color:#94a3b8">(${cur.path} · ${cur.lines} 行 · ${(cur.chars / 1024).toFixed(1)} KB)</small></span>
+        <h2>${cur.title}</h2>
+        <span class="eyebrow">${cur.path} · ${cur.lines} 行 · ${(cur.chars / 1024).toFixed(1)} KB</span>
       `;
       document.getElementById("doc-viewer-body").innerHTML = simpleMarkdownToHtml(cur.content);
     }
   }
 
   function simpleMarkdownToHtml(md) {
-    const esc = md
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-    const lines = esc.split("\n");
-    let out = [];
+    const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const inline = (t) =>
+      esc(t)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span class="md-link">$1</span>');
+    const lines = md.split("\n");
+    const out = [];
     let inCode = false;
-    for (const line of lines) {
+    let para = [];
+    let list = null; // "ul" | "ol"
+    let table = [];
+    const flushPara = () => {
+      if (para.length) out.push(`<p>${para.map(inline).join("<br/>")}</p>`);
+      para = [];
+    };
+    const flushList = () => {
+      if (list) out.push(`</${list}>`);
+      list = null;
+    };
+    const flushTable = () => {
+      if (!table.length) return;
+      const rows = table.filter((r) => !/^\|?\s*:?-{2,}/.test(r.replace(/\|/g, "|")) || !/^[\s|:-]+$/.test(r));
+      const cells = (r) => r.replace(/^\||\|$/g, "").split("|").map((c) => inline(c.trim()));
+      let html = '<div class="md-table"><table class="data-table">';
+      rows.forEach((r, k) => {
+        const tag = k === 0 ? "th" : "td";
+        html += `<tr>${cells(r).map((c) => `<${tag}>${c}</${tag}>`).join("")}</tr>`;
+      });
+      out.push(html + "</table></div>");
+      table = [];
+    };
+    const flushAll = () => {
+      flushPara();
+      flushList();
+      flushTable();
+    };
+    for (const raw of lines) {
+      const line = raw.replace(/\s+$/, "");
       if (line.startsWith("```")) {
+        flushAll();
         out.push(inCode ? "</code></pre>" : "<pre><code>");
         inCode = !inCode;
         continue;
       }
       if (inCode) {
-        out.push(line);
+        out.push(esc(raw));
         continue;
       }
-      if (line.startsWith("### ")) out.push(`<h3>${line.slice(4)}</h3>`);
-      else if (line.startsWith("## ")) out.push(`<h2>${line.slice(3)}</h2>`);
-      else if (line.startsWith("# ")) out.push(`<h1>${line.slice(2)}</h1>`);
-      else if (line.startsWith("- ")) out.push(`<li>${line.slice(2)}</li>`);
-      else if (line.trim() === "---") out.push(`<hr style="border-color:#2b354d;margin:12px 0"/>`);
-      else out.push(`<div>${line || "&nbsp;"}</div>`);
+      if (/^\s*\|.*\|\s*$/.test(line)) {
+        flushPara();
+        flushList();
+        table.push(line.trim());
+        continue;
+      } else if (table.length) {
+        flushTable();
+      }
+      let m;
+      if (!line.trim()) {
+        flushPara();
+        flushList();
+      } else if ((m = line.match(/^(#{1,4})\s+(.*)$/))) {
+        flushAll();
+        const lv = Math.min(3, m[1].length);
+        out.push(`<h${lv}>${inline(m[2])}</h${lv}>`);
+      } else if (line.trim() === "---") {
+        flushAll();
+        out.push("<hr/>");
+      } else if ((m = line.match(/^>\s?(.*)$/))) {
+        flushPara();
+        flushList();
+        out.push(`<blockquote>${inline(m[1])}</blockquote>`);
+      } else if ((m = line.match(/^\s*[-*]\s+(.*)$/))) {
+        flushPara();
+        if (list !== "ul") {
+          flushList();
+          out.push("<ul>");
+          list = "ul";
+        }
+        out.push(`<li>${inline(m[1])}</li>`);
+      } else if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) {
+        flushPara();
+        if (list !== "ol") {
+          flushList();
+          out.push("<ol>");
+          list = "ol";
+        }
+        out.push(`<li>${inline(m[1])}</li>`);
+      } else {
+        flushList();
+        para.push(line.trim());
+      }
     }
     if (inCode) out.push("</code></pre>");
+    flushAll();
     return out.join("\n");
+  }
+
+  // ==================== 路由 ====================
+  const ROUTES = {
+    "": "tab-home",
+    sandbox: "tab-playtest",
+    validation: "tab-s09",
+    formulas: "tab-formulas",
+    docs: "tab-docs",
+  };
+
+  function applyRoute(scroll) {
+    const key = (location.hash || "").replace(/^#\/?/, "").split("/")[0];
+    const target = ROUTES[key] ? key : "";
+    document.querySelectorAll(".tab-view").forEach((v) => v.classList.toggle("active", v.id === ROUTES[target]));
+    document.querySelectorAll(".site-nav a").forEach((a) => {
+      if (a.dataset.route === target) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
+    if (scroll) window.scrollTo(0, 0);
+  }
+
+  function setMatrixToggle() {
+    document.getElementById("btn-matrix-v1").classList.toggle("active", APP.matrixRulesetView === "v1");
+    document.getElementById("btn-matrix-base").classList.toggle("active", APP.matrixRulesetView !== "v1");
+  }
+
+  function renderHomeFigures() {
+    const l12 = BUNDLE.s09_results.v1_200q.l12_metrics;
+    const set = (id, html) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    };
+    set("stat-sigs", l12.reason_signature_count);
+    set("stat-nodes", ((BUNDLE.scenario_mvp && BUNDLE.scenario_mvp.nodes) || []).filter((n) => n.type !== "junction").length || 42);
+    set("fig-han", `${l12.han_main_win_pct.toFixed(1)}<small>%</small>`);
+    set("fig-xn", `${l12.xn_main_win_pct.toFixed(1)}<small>%</small>`);
+    set("fig-sig", l12.reason_signature_count);
+    set("fig-cmd", l12.han_first10_meaningful_cmds_avg.toFixed(1));
+
+    // 封面光斑随指针移动
+    const cover = document.getElementById("cover");
+    if (cover && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      cover.addEventListener("pointermove", (e) => {
+        const r = cover.getBoundingClientRect();
+        cover.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+        cover.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+      });
+    }
   }
 
   // ==================== 8. 事件绑定与初始化 ====================
   function bindEvents() {
-    // 顶部主导航切换
-    document.querySelectorAll(".nav-tab").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".nav-tab").forEach((b) => b.classList.remove("active"));
-        document.querySelectorAll(".tab-view").forEach((v) => v.classList.remove("active"));
-        btn.classList.add("active");
-        const target = btn.getAttribute("data-tab");
-        document.getElementById(target).classList.add("active");
-      });
-    });
+    // 顶部主导航：hash 路由
+    window.addEventListener("hashchange", () => applyRoute(true));
+    applyRoute(false);
 
     // 引擎模式手动切换
     document.getElementById("engine-pill").addEventListener("click", () => {
       if (!APP.pyReady) {
-        alert("Pyodide Python WASM 引擎正在后台加载或当前处于离线状态，已使用极速原生 JS 引擎运行。");
+        alert("Python 引擎尚未就绪（仍在加载或处于离线状态），当前使用浏览器原生引擎。");
         return;
       }
       APP.engineMode = APP.engineMode === "pyodide" ? "js" : "pyodide";
       document.getElementById("engine-label").textContent =
-        APP.engineMode === "pyodide"
-          ? "🐍 Python 真机引擎 (Pyodide design_sim 已激活)"
-          : "⚡ 极速原生 JS 引擎 (手动切换)";
+        APP.engineMode === "pyodide" ? "Python 引擎" : "原生引擎";
     });
 
     // 重新开局与参数变更
@@ -1155,7 +1273,7 @@ from design_sim import web_bridge as wb
     // 纪事文言/白话切换
     document.getElementById("btn-toggle-chronicle-style").addEventListener("click", (e) => {
       APP.useClassicalChronicle = !APP.useClassicalChronicle;
-      e.target.textContent = APP.useClassicalChronicle ? "切换白话纪事" : "切换文言纪事";
+      e.currentTarget.textContent = APP.useClassicalChronicle ? "改看白话" : "改看原文";
       renderChronicleAndTodos(APP.state);
     });
 
@@ -1180,10 +1298,12 @@ from design_sim import web_bridge as wb
     // Tab 2: 5x5 矩阵规则集切换与在线跑批
     document.getElementById("btn-matrix-v1").addEventListener("click", () => {
       APP.matrixRulesetView = "v1";
+      setMatrixToggle();
       renderStrategyMatrixTable(BUNDLE.s09_results.v1_matrix.dominance_analysis);
     });
     document.getElementById("btn-matrix-base").addEventListener("click", () => {
       APP.matrixRulesetView = "baseline";
+      setMatrixToggle();
       renderStrategyMatrixTable(BUNDLE.s09_results.baseline_matrix.dominance_analysis);
     });
 
@@ -1237,10 +1357,14 @@ from design_sim import web_bridge as wb
 
   async function runLiveBatchInBrowser() {
     const nGames = parseInt(document.getElementById("live-batch-games").value || "6", 10);
-    const hanBot = document.getElementById("live-han-bot").value;
-    const xnBot = document.getElementById("live-xn-bot").value;
+    const hanSel = document.getElementById("live-han-bot");
+    const xnSel = document.getElementById("live-xn-bot");
+    const hanBot = hanSel.value;
+    const xnBot = xnSel.value;
+    const hanName = hanSel.options[hanSel.selectedIndex].text;
+    const xnName = xnSel.options[xnSel.selectedIndex].text;
     const outBox = document.getElementById("live-batch-result");
-    outBox.innerHTML = `<span class="badge badge-gold">⏳ 正在浏览器内实时推演 ${nGames} 局 (${hanBot} vs ${xnBot})...</span>`;
+    outBox.innerHTML = `<span class="muted">正在模拟 ${nGames} 局：汉方${hanName}，匈奴${xnName}…</span>`;
 
     setTimeout(async () => {
       if (APP.pyReady && APP.pyodide) {
@@ -1252,17 +1376,24 @@ from design_sim import web_bridge as wb
         );
         const d = JSON.parse(resJson);
         outBox.innerHTML = `
-          <div style="color:#6ee7b7;font-weight:700;">
-            ✅ Python WASM 实测完成 (${nGames} 局)：汉胜 ${d.wins.han} 局 (${d.han_win_percent}%) | 匈奴胜 ${d.wins.xiongnu} 局 |
-            汉主胜 ${d.l12_metrics.han_main_win_pct}% | 匈主胜 ${d.l12_metrics.xn_main_win_pct}% | 唯一签名 ${d.l12_metrics.reason_signature_count} 种
+          <div class="eyebrow">Python 引擎 · ${nGames} 局 · 汉方${hanName} 对 匈奴${xnName}</div>
+          <div class="stats">
+            <span>汉胜 ${d.wins.han} 局（${d.han_win_percent}%）</span>
+            <span>匈奴胜 ${d.wins.xiongnu} 局</span>
+            <span>汉主胜 ${d.l12_metrics.han_main_win_pct}%</span>
+            <span>匈主胜 ${d.l12_metrics.xn_main_win_pct}%</span>
+            <span>结局 ${d.l12_metrics.reason_signature_count} 种</span>
           </div>
         `;
       } else {
-        // 极速蒙特卡洛抽样反馈
+        // 原生引擎：读取预计算矩阵中的对应对局
         const mat = BUNDLE.s09_results.v1_matrix.dominance_analysis.matchups[`${hanBot}_vs_${xnBot}`] || { han_win_pct: 50, han_main_pct: 30, xn_main_pct: 30 };
         outBox.innerHTML = `
-          <div style="color:#fde68a;font-weight:700;">
-            ⚡ 极速模拟完成 (${nGames} 局, ${hanBot} vs ${xnBot})：汉胜率 ${mat.han_win_pct}% (汉主胜 ${mat.han_main_pct}% / 匈主胜 ${mat.xn_main_pct}%)
+          <div class="eyebrow">原生引擎 · 预计算结果 · 汉方${hanName} 对 匈奴${xnName}</div>
+          <div class="stats">
+            <span>汉胜率 ${mat.han_win_pct}%</span>
+            <span>汉主胜 ${mat.han_main_pct}%</span>
+            <span>匈主胜 ${mat.xn_main_pct}%</span>
           </div>
         `;
       }
@@ -1273,6 +1404,7 @@ from design_sim import web_bridge as wb
     bindEvents();
     syncInitFromCurrentControls();
     renderS09Dashboard();
+    renderHomeFigures();
     setupFormulaCalculators();
     renderDocsLibrary();
     initPyodideInBackground();

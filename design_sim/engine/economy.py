@@ -31,7 +31,7 @@ def economy_monthly(state):
     if month == 1:
         _new_year(state)
     for n in state.nodes.values():
-        if n["type"] in ("source", "pass"):
+        if n["type"] in ("source", "pass", "junction"):
             continue
         _node_month(state, n, month, season, f)
 
@@ -205,7 +205,7 @@ def diplomacy_monthly(state):
             continue
         here = a["loc"]["node"]
         seen = set()
-        for nid in [here] + state.neighbors(here):
+        for nid in [here] + state.near_neighbors(here):
             sid = state.nodes[nid]["faction"]
             if sid not in state.relations or sid in seen:
                 continue
@@ -221,8 +221,16 @@ def diplomacy_monthly(state):
             rel["xn_intimidation"] = min(100.0, rel["xn_intimidation"] + min(presence[sid], d["xn_presence_cap_month"]) + d["intimidation_decay_month"])
         if rel["overlord"] == "xiongnu" and rel["tax_level"] > 0:
             tr = d["tax_rates"][int(rel["tax_level"])]
-            state.factions["xiongnu"]["money"] += int(state.state_pop(sid) * tr["money"])
-            rel["xn_resentment"] = min(100.0, rel["xn_resentment"] + tr["res"])
+            if "v1" in getattr(state, "ext", {}):
+                v1_tr = state.ext["v1"]["tribes"]
+                if v1_tr.get("tongpu_active", True):
+                    tx_m = int(state.state_pop(sid) * tr["money"] * 0.45)
+                    state.factions["xiongnu"]["money"] += int(tx_m * 0.65)
+                    v1_tr["reward_pool"] += tx_m - int(tx_m * 0.65)
+                    rel["xn_resentment"] = min(100.0, rel["xn_resentment"] + tr["res"])
+            else:
+                state.factions["xiongnu"]["money"] += int(state.state_pop(sid) * tr["money"])
+                rel["xn_resentment"] = min(100.0, rel["xn_resentment"] + tr["res"])
         rel["han_influence"] = min(d["influence_max"], max(0.0, rel["han_influence"]))
         rel["xn_intimidation"] = min(100.0, max(0.0, rel["xn_intimidation"]))
 

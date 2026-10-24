@@ -34,6 +34,14 @@ def army_speed(state, a):
         return 1.0
     if a["laborers"] > 0:
         sp = min(sp, 1.0)
+    v1 = getattr(state, "ext", {}).get("v1")
+    if v1:
+        cid = a.get("commander", "")
+        ch = v1.get("characters", {}).get(cid)
+        if ch and "cavalry_leader" in ch.get("traits", ()):
+            sp *= 1.12
+        if a["faction"] == "han" and v1.get("diplomacy", {}).get("dayuan_horse_bonus") and a["units"].get("cavalry", 0) > 0:
+            sp *= 1.08
     return sp
 
 
@@ -225,14 +233,27 @@ def _v1_side_mult(state, armies, opts, is_side_a):
             best_tier = max(best_tier, int(chars[cid].get("command_tier", 6)))
     coef = float(v1["cfg"]["s06"].get("command_tier_combat_coef", 0.03))
     mult *= 1.0 + coef * (best_tier - 3)
-    if fac == "han" and v1["court"].get("forged_bonus_ticks", 0) > 0:
-        mult *= 1.15
+    if fac == "han":
+        if v1["court"].get("forged_bonus_ticks", 0) > 0:
+            mult *= 1.16
+        if v1["events"].get("dawan_horses_obtained") and any(a["units"].get("cavalry", 0) > 0 for a in armies):
+            mult *= 1.10
+        node = opts.get("node")
+        if node and node.get("id") in v1["logistics"]["beacons"] and not is_side_a:
+            if v1["tribes"].get("active_tactical_card") != "raze_beacons":
+                mult *= 1.08
     elif fac == "xiongnu":
         card = v1["tribes"].get("active_tactical_card", "")
+        node = opts.get("node")
         if card in ("feigned_retreat", "night_raid"):
-            node = opts.get("node")
             has_beacon = node and node.get("id") in v1["logistics"]["beacons"]
             mult *= 1.04 if has_beacon else 1.14
+        elif card == "clear_steppe" and not is_side_a:
+            mult *= 1.12
+        elif card == "raze_beacons" and node and node.get("id") in v1["logistics"]["beacons"]:
+            mult *= 1.08
+        if node and v1["tribes"].get("assembly_ticks", 0) > 0 and node.get("id") == v1["tribes"].get("assembly_target"):
+            mult *= 1.12
     return mult
 
 

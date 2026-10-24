@@ -197,22 +197,40 @@ func armies_at(node_id: String) -> Array:
 func army_node(a: Dictionary) -> String:
 	return a["loc"]["node"] if a["loc"].has("node") else ""
 
+func is_junction(id: String) -> bool:
+	return nodes[id]["type"] == "junction"
+
+## 一跳范围内的节点：穿过路口视为直连（威吓辐射等影响力用）。行军与撤退仍用 neighbors()。
+func near_neighbors(id: String) -> Array:
+	var out = []
+	for nb in neighbors(id):
+		if not out.has(nb):
+			out.append(nb)
+		if is_junction(nb):
+			for nb2 in neighbors(nb):
+				if nb2 != id and not out.has(nb2):
+					out.append(nb2)
+	return out
+
+## 跳数：路口位于道路中段，不额外计一跳（以半跳计：接触路口的路段计 1，其余计 2）。
 func hops(from_id: String, to_id: String, limit := 9) -> int:
 	if from_id == to_id:
 		return 0
-	var seen = {from_id: 0}
+	var half = {from_id: 0}
 	var q = [from_id]
 	while not q.is_empty():
 		var cur: String = q.pop_front()
-		if seen[cur] >= limit:
+		if half[cur] >= limit * 2:
 			continue
 		for nb in neighbors(cur):
-			if not seen.has(nb):
-				seen[nb] = seen[cur] + 1
-				if nb == to_id:
-					return seen[nb]
+			var w: int = 1 if is_junction(cur) or is_junction(nb) else 2
+			if half[cur] + w < half.get(nb, 1 << 30):
+				half[nb] = half[cur] + w
 				q.append(nb)
-	return 99
+	if not half.has(to_id):
+		return 99
+	var h: int = (half[to_id] + 1) / 2
+	return h if h <= limit else 99
 
 func nodes_of_state(sid: String) -> Array:
 	var out = []

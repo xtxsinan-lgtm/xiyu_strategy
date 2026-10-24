@@ -264,13 +264,32 @@ def _trigger_hit(state, a, trg, enemies):
     if c == "losses_high":
         return a["init_size"] > 0 and not a["is_convoy"] and 1.0 - float(state.army_size(a)) / a["init_size"] >= trg["pct"]
     if c == "enemy_near":
-        my = combat.strength(state, a)
+        here = a["loc"]["node"] if "node" in a["loc"] else a["loc"]["to"]
+        if trg.get("react") in ("retreat_origin", "evade_home") and here == a.get("origin", ""):
+            return False
+        my = sum(
+            combat.strength(state, x)
+            for x in state.armies.values()
+            if x["faction"] == a["faction"]
+            and not x["is_convoy"]
+            and (x["loc"].get("node") if "node" in x["loc"] else x["loc"].get("to")) == here
+        )
         if my <= 0:
             return False
         other = "xiongnu" if a["faction"] == "han" else "han"
-        here = a["loc"]["node"] if "node" in a["loc"] else a["loc"]["to"]
         h = int(trg["hops"])
+        st_cur = current_step(a)
+        is_rally_move = (
+            st_cur is not None
+            and st_cur["type"] == "move_to"
+            and st_cur.get("node") in state.nodes
+            and state.controller(state.nodes[st_cur["node"]]) == a["faction"]
+        )
+        path_nodes = set(a.get("path", [])[: max(1, h)])
+        path_nodes.add(here)
         for nid, st in enemies[other]:
+            if is_rally_move and nid not in path_nodes:
+                continue
             if st / my >= trg["ratio"] and state.hops(here, nid, h) <= h:
                 return True
         return False

@@ -539,29 +539,59 @@
     },
     {
       "a": "hu_jie",
-      "b": "cheshi_qian",
-      "distance_km": 650,
+      "b": "beilu_chakou",
+      "distance_km": 470,
       "method": "regional_estimate",
       "sources": [
         "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
       ],
-      "note": "呼揭按准噶尔北缘区域、车师前按交河代表；通过北麓与天山山口的合并路径，呼揭确址未定。",
+      "note": "呼揭（准噶尔北缘）南下至天山北麓岔口；沿用原合并路段的山地通行模型，呼揭确址未定。",
       "terrain": "mountain",
-      "previous_days": 24,
-      "foot_days": 54.17
+      "previous_days": 17.35,
+      "foot_days": 39.17,
+      "split_from": "hu_jie|cheshi_qian"
+    },
+    {
+      "a": "beilu_chakou",
+      "b": "cheshi_qian",
+      "distance_km": 180,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "天山北麓岔口翻越天山山口至车师前（交河）；与上段合计仍为原650公里。",
+      "terrain": "mountain",
+      "previous_days": 6.65,
+      "foot_days": 15.0,
+      "split_from": "hu_jie|cheshi_qian"
     },
     {
       "a": "cheshi_hou",
-      "b": "chi_gu",
-      "distance_km": 1300,
+      "b": "beilu_chakou",
+      "distance_km": 150,
       "method": "regional_estimate",
       "sources": [
         "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
       ],
-      "note": "车师后—天山北麓—伊犁—赤谷走廊，合并了多个小国，非直线穿越山体。",
+      "note": "车师后沿天山北麓西行至岔口。",
       "terrain": "steppe",
-      "previous_days": 46,
-      "foot_days": 65.0
+      "previous_days": 5.31,
+      "foot_days": 7.5,
+      "split_from": "cheshi_hou|chi_gu"
+    },
+    {
+      "a": "beilu_chakou",
+      "b": "chi_gu",
+      "distance_km": 1150,
+      "method": "regional_estimate",
+      "sources": [
+        "https://depts.washington.edu/silkroad/texts/hhshu/notes1.html"
+      ],
+      "note": "天山北麓岔口—伊犁—赤谷走廊，合并多个小国；与上段合计仍为原1300公里。",
+      "terrain": "steppe",
+      "previous_days": 40.69,
+      "foot_days": 57.5,
+      "split_from": "cheshi_hou|chi_gu"
     },
     {
       "a": "ju_yan",

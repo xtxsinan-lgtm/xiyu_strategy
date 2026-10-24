@@ -105,7 +105,7 @@ static func monthly(state) -> void:
 		if a["faction"] != "xiongnu" or a["is_convoy"] or not a["loc"].has("node"):
 			continue
 		var here: String = a["loc"]["node"]
-		var near = [here] + state.neighbors(here)
+		var near = [here] + state.near_neighbors(here)
 		var seen = {}
 		for nid in near:
 			var sid: String = state.nodes[nid]["faction"]

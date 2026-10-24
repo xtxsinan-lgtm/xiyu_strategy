@@ -32,6 +32,8 @@ static func validate(state, c: Dictionary) -> String:
 						return "设伏须选择道路端点和持续月份"
 				if a["is_convoy"] and s["type"] in ["siege", "burn", "ambush"]:
 					return "运输队不能执行攻击步骤"
+				if s["type"] in ["siege", "burn"] and state.nodes.get(s.get("node", ""), {}).get("type", "") == "junction":
+					return "路口无城可攻、无田可焚"
 			return ""
 		"recruit":
 			return _v_recruit(state, c)

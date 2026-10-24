@@ -13,6 +13,11 @@ for t in sc["trade_routes"]:
     for n in t["nodes"]:
         if n not in ids: errs.append(f"商路节点不存在: {t['id']} {n}")
 for n in sc["nodes"]:
+    if n["type"] == "junction":
+        # 路口：无主、无人口、无经济，只作为换路节点
+        if n["faction"] != "" or n["pop"] or n["walls"] or n["grain"] or n["counts_for_victory"]:
+            errs.append(f"路口节点必须无主、无人口、无城墙、无存粮: {n['id']}")
+        continue
     if n["faction"] not in fids: errs.append(f"节点势力不存在: {n['id']}")
 for a in sc["armies"]:
     if a["at"] not in ids: errs.append(f"军队位置不存在: {a['id']}")
@@ -29,6 +34,10 @@ t = bal["time"]
 if t["decision_ticks"] not in (t["ticks_per_month"], t["ticks_per_month"] * 3):
     errs.append("decision_ticks 不是月制或季制")
 if not 1 <= sc["start"]["month"] <= 12: errs.append("开局月份不在 1-12")
+sys.path.insert(0, "tools")
+from check_map_crossings import find_crossings
+for ra, rb, p in find_crossings():
+    errs.append(f"道路交叉处缺少路口节点: {ra['a']}—{ra['b']} × {rb['a']}—{rb['b']} @ ({p[0]:.0f}, {p[1]:.0f})")
 print(f"节点 {len(ids)}，路段 {len(sc['routes'])}，势力 {len(fids)}，兵种 {len(units)}")
 print("\n".join(errs) or "OK")
 sys.exit(1 if errs else 0)

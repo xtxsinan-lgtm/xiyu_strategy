@@ -22,7 +22,7 @@ func _initialize() -> void:
 	var view = MapView.new()
 	view.state = state
 	view.size = Vector2(1300, 700)
-	check(view.layout["positions"].size() == 42, "全部42节点都有新版显示坐标")
+	check(view.layout["positions"].size() == state.nodes.size(), "全部节点（含路口）都有新版显示坐标")
 	check(view.node_world_pos("cheshi_hou").y < view.node_world_pos("cheshi_qian").y, "车师后置于车师前北侧")
 	for route in state.routes:
 		var curve = view.route_curve(route)

@@ -51,6 +51,8 @@ def validate(state, c):
                     return "设伏须选择道路端点和持续月份"
             if a["is_convoy"] and s.get("type") in ("siege", "burn", "ambush"):
                 return "运输队不能执行攻击步骤"
+            if s.get("type") in ("siege", "burn") and state.nodes.get(s.get("node"), {}).get("type") == "junction":
+                return "路口无城可攻、无田可焚"
         return ""
 
     if t == "recruit":
@@ -202,6 +204,9 @@ def _v_recruit(state, c):
         for t, cnt in units.items():
             if state.central.get(t, 0) < cnt:
                 return "中央军池不足（%s）" % state.units[t]["name"]
+        horses_req = sum(int(state.units[t]["horses"]) * int(cnt) for t, cnt in units.items())
+        if horses_req > 0 and hasattr(state, "han_horse_pool") and state.han_horse_pool < horses_req:
+            return "国家马匹池不足（需 %d 匹，现存 %d 匹）" % (horses_req, int(state.han_horse_pool))
         cost = sum(cnt / 1000.0 * state.units[t]["cost_money_per_1000"] for t, cnt in units.items())
         if state.factions[f]["money"] < cost:
             return "钱不足（需 %d）" % int(cost)
@@ -229,12 +234,16 @@ def _v_recruit(state, c):
             return "牧民征召仅弓骑，上限 %d" % cap3
         if n["horses"] < tot * 2:
             return "马匹不足（每骑 2 匹）"
+        if "v1" in getattr(state, "ext", {}) and state.factions[f]["money"] < int(tot / 1000.0 * 60):
+            return "单于庭赏赐钱不足（需 %d）" % int(tot / 1000.0 * 60)
     elif src == "vassal":
         if f != "xiongnu" or state.controller(n) != "xiongnu" or n["faction"] == "xiongnu":
             return "须在匈奴属国征召"
         cap4 = int(n["pop"] * state.bal["xiongnu"]["vassal_infantry_levy_ratio"]) - n["recruited"].get("vassal", 0)
         if tot > cap4 or list(units.keys()) != ["infantry"]:
             return "属国征召仅步兵，上限 %d" % cap4
+        if "v1" in getattr(state, "ext", {}) and state.factions[f]["money"] < int(tot / 1000.0 * 30):
+            return "征调器械钱不足（需 %d）" % int(tot / 1000.0 * 30)
     else:
         return "未知兵源"
     return ""
@@ -360,7 +369,16 @@ def apply(state, c):
                 for ut, cnt in a["units"].items():
                     if ut in state.bal["han"]["central_cap"]:
                         state.central[ut] = min(int(state.bal["han"]["central_cap"][ut]), state.central.get(ut, 0) + cnt)
+                if hasattr(state, "han_horse_pool") and a.get("horses", 0) > 0:
+                    state.han_horse_pool += int(a["horses"])
             state.set_stock(n, f, state.stock(n, f) + a["grain"])
+        if "v1" in getattr(state, "ext", {}) and a.get("commander"):
+            v1_ext = state.ext["v1"]
+            chars = v1_ext.get("characters") or v1_ext.get("events", {}).get("characters", {})
+            ch = chars.get(a["commander"])
+            if ch:
+                ch["assigned_army"] = ""
+                ch["at_army"] = ""
         state.remove_army(a["id"])
 
     elif t == "expand_farm":
@@ -413,6 +431,8 @@ def _a_recruit(state, c):
             state.central[ut] -= cnt
             state.factions[f]["money"] -= int(cnt / 1000.0 * state.units[ut]["cost_money_per_1000"])
             horses += int(state.units[ut]["horses"]) * int(cnt)
+        if horses > 0 and hasattr(state, "han_horse_pool"):
+            state.han_horse_pool = max(0, int(state.han_horse_pool) - horses)
     elif src == "tuntian":
         n["recruited"]["tuntian"] = n["recruited"].get("tuntian", 0) + tot
         n["levied_out"] += tot
@@ -425,16 +445,39 @@ def _a_recruit(state, c):
         n["recruited"]["nomad"] = n["recruited"].get("nomad", 0) + tot
         n["horses"] -= tot * 2
         horses = tot * 2
+        if "v1" in getattr(state, "ext", {}):
+            state.factions[f]["money"] = max(0, state.factions[f]["money"] - int(tot / 1000.0 * 60))
     elif src == "vassal":
         n["recruited"]["vassal"] = n["recruited"].get("vassal", 0) + tot
         rel = state.relations.get(n["faction"])
         if rel is not None:
             rel["xn_resentment"] = min(100.0, rel["xn_resentment"] + state.bal["xiongnu"]["vassal_levy_resentment"])
+        if "v1" in getattr(state, "ext", {}):
+            state.factions[f]["money"] = max(0, state.factions[f]["money"] - int(tot / 1000.0 * 30))
     a = state.new_army(f, n["id"], dict(c["units"]), horses)
     state.apply_preset(a, c.get("preset", "balanced"))
     a["ai_role"] = c.get("role", "")
     a["origin"] = n["id"]
     a["name"] = "%s军%s" % (state.factions[f]["name"], a["id"].split("_")[-1])
+    if "v1" in getattr(state, "ext", {}):
+        v1_ext = state.ext["v1"]
+        chars = v1_ext.get("characters") or v1_ext.get("events", {}).get("characters", {})
+        cands = [
+            (cid, ch)
+            for cid, ch in chars.items()
+            if ch.get("faction") == f
+            and ch.get("alive", True)
+            and not ch.get("assigned_army")
+            and not ch.get("at_army")
+            and ch.get("role") in ("general", "envoy", "tribe_king", "duwei")
+        ]
+        cands.sort(key=lambda x: int(x[1].get("command", 70)), reverse=True)
+        if cands:
+            cid, ch = cands[0]
+            a["commander"] = cid
+            ch["assigned_army"] = a["id"]
+            ch["at_army"] = a["id"]
+            a["name"] = "%s(%s部)" % (a["name"], ch["name"])
     state.log_event("recruit", "%s 在%s召集 %d 人" % (state.factions[f]["name"], n["name"], tot), {"army": a["id"]})
 
 

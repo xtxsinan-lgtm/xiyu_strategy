@@ -1,11 +1,13 @@
 extends Control
 # 节点图地图：节点=城市/部领，边=商路（也是行军路线）。只读 GameState；点击通过信号交给 main。
+# 舆图画框（docs/ui_desk_spec.md §5）：框带 + 天干地支方格 + 题签 + 指北 + 绢色罩与暗角。
 
 const ARMY_ICON = preload("res://assets/icons/standard.svg")
 const CONVOY_ICON = preload("res://assets/icons/convoy.svg")
 const CITY_ICON = preload("res://assets/icons/city.svg")
 const NOMAD_ICON = preload("res://assets/icons/nomad.svg")
 const Fonts = preload("res://ui/font_provider.gd")
+const Desk = preload("res://ui/desk_theme.gd")
 const ATLAS = preload("res://assets/art/western-regions-atlas-v2.png")
 const LAYOUT_PATH = "res://data/map_presentation.json"
 const Trade = preload("res://core/trade.gd")
@@ -26,19 +28,30 @@ var preview_path: Array = []   # 计划预览：节点 id 序列
 var preview_color := Color(1.0, 0.85, 0.2)
 var flash: Dictionary = {}     # node id -> 剩余帧
 var show_trade := true
+var show_grid := true          # 「计里画方」墨线
+var show_regions := true       # 区域地名
 var zoom := 1.0
 var pan := Vector2.ZERO
 var _drag := false
 var _drag_moved := false
 var _army_rects: Array = []    # [{rect, id}]
 var _font: Font
+var _title_font: Font
 
 const C_HAN = Color("c0392b")
 const C_XN = Color("5d4037")
 const C_HAN_V = Color("e08a80")
 const C_XN_V = Color("a1887f")
 const C_PASS = Color("b8b8b8")
-const BG = Color("e9dcc0")
+const C_JUNCTION = Color("8a7550")
+const BG = Color("d9c8a3")
+const SILK_WASH = Color(0.949, 0.890, 0.729, 0.30)
+const FRAME_INSET = 8.0
+const FRAME_BAND = 22.0
+const STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+const BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+const GRID_COL = 100.0         # 世界坐标每 100 单位一列
+const GRID_ROWS = 6            # 画布高度分 6 行
 # 固定到国家 id：同国同色，读档、回放及脱离宗主国后仍恢复原色。
 const STATE_COLORS = {
 	"dong_qiemi": Color("d99032"),
@@ -70,11 +83,28 @@ func _ready() -> void:
 	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_font = Fonts.body_font()
+	_title_font = Desk.title_font()
 
 func fit() -> void:
 	zoom = 1.0
 	pan = Vector2.ZERO
 	queue_redraw()
+
+## 以视图中心为锚缩放（镜头按钮用）。
+func zoom_step(f: float) -> void:
+	_zoom_at(size * 0.5, f)
+
+## 把世界坐标移到视图中心；min_zoom > 0 时同时放大到至少该倍数。
+func center_on(world: Vector2, min_zoom := 0.0) -> void:
+	if min_zoom > 0.0:
+		zoom = clampf(maxf(zoom, min_zoom), 0.6, 4.0)
+	var area := Vector2(layout["canvas"][0], layout["canvas"][1]) * _base_scale()
+	pan = size * 0.5 - world * (_base_scale() * zoom) - (size - area) * 0.5
+	queue_redraw()
+
+## 框带内侧（地图可视区）。
+func inner_rect() -> Rect2:
+	return Rect2(Vector2.ZERO, size).grow(-(FRAME_INSET + FRAME_BAND))
 
 func _base_scale() -> float:
 	return minf(size.x / float(layout["canvas"][0]), size.y / float(layout["canvas"][1]))
@@ -148,6 +178,8 @@ func node_color(n: Dictionary) -> Color:
 		return C_XN
 	if n["type"] == "pass":
 		return C_PASS
+	if n["type"] == "junction":
+		return C_JUNCTION
 	var ctl: String = state.controller(n)
 	if ctl == "han":
 		return C_HAN_V
@@ -171,13 +203,22 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), BG)
 	var map_rect = Rect2(to_screen(Vector2.ZERO), Vector2(layout["canvas"][0], layout["canvas"][1]) * _base_scale() * zoom)
 	draw_texture_rect(ATLAS, map_rect, false)
-	draw_rect(map_rect, Color(0.95, 0.89, 0.73, 0.38))
-	if state == null:
-		return
+	draw_rect(map_rect, SILK_WASH)
+	if show_grid:
+		_draw_grid()
+	if state != null:
+		_draw_world()
+	_draw_vignette()
+	_draw_frame()
+	_draw_cartouche()
+	_draw_compass()
+
+func _draw_world() -> void:
 	_army_rects.clear()
 	var s := _base_scale() * zoom
-	# 区域底色提示
-	_draw_region_labels(s)
+	# 区域地名
+	if show_regions:
+		_draw_region_labels(s)
 	# 商路高亮
 	if show_trade:
 		for tr in state.trade_routes:
@@ -232,6 +273,8 @@ func _draw() -> void:
 				rad = 12.0
 			"pass":
 				rad = 6.0
+			"junction":
+				rad = 4.0
 			"nomad":
 				rad = 10.0
 		rad *= clampf(sqrt(zoom), 0.8, 1.6)
@@ -245,10 +288,12 @@ func _draw() -> void:
 		draw_circle(p, rad + 1.5, Color("eed4a0"))
 		draw_circle(p, rad, node_color(n))
 		draw_arc(p, rad, 0, TAU, 20, Color("2a1d10"), 1.5)
-		if n["type"] != "pass":
+		if n["type"] not in ["pass", "junction"]:
 			draw_texture_rect(NOMAD_ICON if n["type"] == "nomad" else CITY_ICON, Rect2(p - Vector2(6, 6), Vector2(12, 12)), false)
 		var label: String = n["name"]
 		var fs := int(clampf(14.0 * sqrt(zoom), 12.0, 20.0))
+		if n["type"] == "junction":
+			fs = int(clampf(11.0 * sqrt(zoom), 10.0, 16.0))
 		var tw := _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var label_pos := p + Vector2(-tw * 0.5, rad + fs + 2)
 		draw_style_box(_label_box(id == selected_node), Rect2(label_pos - Vector2(5, fs - 1), Vector2(tw + 10, fs + 7)))
@@ -332,12 +377,151 @@ func _draw_region_labels(s: float) -> void:
 		var font_size := int(clampf(21.0 * s, 13.0, 30.0))
 		draw_string_outline(_font, p, l[0], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 2, Color(0.96, 0.92, 0.80, 0.6))
 		draw_string(_font, p, l[0], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.30, 0.28, 0.22, 0.70))
-	# 固定在屏幕边角的导航与图例，不随着拖动失去位置。
-	draw_style_box(_label_box(), Rect2(14, 14, 300, 59))
-	draw_string(_font, Vector2(26, 37), "西域舆图  /  前119年战略示意", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color("37291a"))
-	draw_string(_font, Vector2(26, 58), "滚轮缩放 · 拖动平移 · 悬停查看里程", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("66523a"))
-	draw_style_box(_label_box(), Rect2(14, size.y - 53, 337, 37))
-	draw_string(_font, Vector2(26, size.y - 30), "金色：商路  虚线：险道  交叉处不可换路", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("493820"))
+
+# ---------------- 画框 ----------------
+func _col_x(i: float) -> float:
+	return to_screen(Vector2(i * GRID_COL, 0.0)).x
+
+func _row_y(j: float) -> float:
+	return to_screen(Vector2(0.0, j * float(layout["canvas"][1]) / GRID_ROWS)).y
+
+func _col_count() -> int:
+	return ceili(float(layout["canvas"][0]) / GRID_COL)
+
+## 「计里画方」：地图范围内 6% 墨色方格线。
+func _draw_grid() -> void:
+	var inner := inner_rect()
+	var col := Color(Desk.INK, 0.06)
+	var top := clampf(_row_y(0), inner.position.y, inner.end.y)
+	var bottom := clampf(_row_y(GRID_ROWS), inner.position.y, inner.end.y)
+	var left := clampf(_col_x(0), inner.position.x, inner.end.x)
+	var right := clampf(_col_x(_col_count()), inner.position.x, inner.end.x)
+	for i in range(1, _col_count()):
+		var x := _col_x(i)
+		if x > inner.position.x and x < inner.end.x:
+			draw_line(Vector2(x, top), Vector2(x, bottom), col, 1.0)
+	for j in range(1, GRID_ROWS):
+		var y := _row_y(j)
+		if y > inner.position.y and y < inner.end.y:
+			draw_line(Vector2(left, y), Vector2(right, y), col, 1.0)
+
+## 四边向内渐隐的暗角；四角两条叠加，自然更暗。
+func _draw_vignette() -> void:
+	var r := inner_rect()
+	var w := minf(110.0, minf(r.size.x, r.size.y) * 0.25)
+	var dark := Color(0.12, 0.07, 0.03, 0.22)
+	var clear := Color(0.12, 0.07, 0.03, 0.0)
+	var tl := r.position
+	var tr := Vector2(r.end.x, r.position.y)
+	var br := r.end
+	var bl := Vector2(r.position.x, r.end.y)
+	draw_polygon(PackedVector2Array([tl, tr, tr + Vector2(0, w), tl + Vector2(0, w)]), PackedColorArray([dark, dark, clear, clear]))
+	draw_polygon(PackedVector2Array([bl, br, br - Vector2(0, w), bl - Vector2(0, w)]), PackedColorArray([dark, dark, clear, clear]))
+	draw_polygon(PackedVector2Array([tl, bl, bl + Vector2(w, 0), tl + Vector2(w, 0)]), PackedColorArray([dark, dark, clear, clear]))
+	draw_polygon(PackedVector2Array([tr, br, br - Vector2(w, 0), tr - Vector2(w, 0)]), PackedColorArray([dark, dark, clear, clear]))
+
+func _text_centered(font: Font, center: Vector2, t: String, fs: int, col: Color) -> void:
+	var w := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var baseline := center.y + (font.get_ascent(fs) - font.get_descent(fs)) * 0.5
+	draw_string(font, Vector2(center.x - w * 0.5, baseline), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+
+## 画框带：外线（距边 8px）+ 22px 绢色框带 + 内线；框带上按当前视图标注天干（列）与地支（行）。
+func _draw_frame() -> void:
+	var outer := Rect2(Vector2.ZERO, size).grow(-FRAME_INSET)
+	var inner := inner_rect()
+	if inner.size.x <= 0.0 or inner.size.y <= 0.0:
+		return
+	# 框外留白与框带底色
+	draw_rect(Rect2(0, 0, size.x, outer.position.y), BG)
+	draw_rect(Rect2(0, outer.end.y, size.x, size.y - outer.end.y), BG)
+	draw_rect(Rect2(0, 0, outer.position.x, size.y), BG)
+	draw_rect(Rect2(outer.end.x, 0, size.x - outer.end.x, size.y), BG)
+	draw_rect(Rect2(outer.position, Vector2(outer.size.x, FRAME_BAND)), Desk.SILK_2)
+	draw_rect(Rect2(Vector2(outer.position.x, inner.end.y), Vector2(outer.size.x, FRAME_BAND)), Desk.SILK_2)
+	draw_rect(Rect2(Vector2(outer.position.x, inner.position.y), Vector2(FRAME_BAND, inner.size.y)), Desk.SILK_2)
+	draw_rect(Rect2(Vector2(inner.end.x, inner.position.y), Vector2(FRAME_BAND, inner.size.y)), Desk.SILK_2)
+	draw_rect(outer, Desk.INK, false, 1.0)
+	draw_rect(inner, Desk.INK, false, 1.0)
+	if _font == null:
+		return
+	var tick_col := Color(Desk.INK, 0.7)
+	var label_col: Color = Desk.INK_2
+	var fs := 12
+	var band_mid_top := outer.position.y + FRAME_BAND * 0.5
+	var band_mid_bottom := inner.end.y + FRAME_BAND * 0.5
+	var band_mid_left := outer.position.x + FRAME_BAND * 0.5
+	var band_mid_right := inner.end.x + FRAME_BAND * 0.5
+	# 列：天干
+	for i in range(0, _col_count() + 1):
+		var x := _col_x(i)
+		if x >= inner.position.x and x <= inner.end.x:
+			draw_line(Vector2(x, inner.position.y - 6), Vector2(x, inner.position.y), tick_col, 1.0)
+			draw_line(Vector2(x, inner.end.y), Vector2(x, inner.end.y + 6), tick_col, 1.0)
+		if i < _col_count():
+			var cx := _col_x(i + 0.5)
+			if cx > inner.position.x + 8 and cx < inner.end.x - 8:
+				var stem: String = STEMS[i % STEMS.size()]
+				_text_centered(_font, Vector2(cx, band_mid_top), stem, fs, label_col)
+				_text_centered(_font, Vector2(cx, band_mid_bottom), stem, fs, label_col)
+	# 行：地支
+	for j in range(0, GRID_ROWS + 1):
+		var y := _row_y(j)
+		if y >= inner.position.y and y <= inner.end.y:
+			draw_line(Vector2(inner.position.x - 6, y), Vector2(inner.position.x, y), tick_col, 1.0)
+			draw_line(Vector2(inner.end.x, y), Vector2(inner.end.x + 6, y), tick_col, 1.0)
+		if j < GRID_ROWS:
+			var cy := _row_y(j + 0.5)
+			if cy > inner.position.y + 8 and cy < inner.end.y - 8:
+				var branch: String = BRANCHES[j % BRANCHES.size()]
+				_text_centered(_font, Vector2(band_mid_left, cy), branch, fs, label_col)
+				_text_centered(_font, Vector2(band_mid_right, cy), branch, fs, label_col)
+
+## 题签（左上）：绢卡双线框，「西域诸国图」楷 26、字距 0.3em。
+func _draw_cartouche() -> void:
+	var font := _title_font if _title_font != null else _font
+	if font == null:
+		return
+	var inner := inner_rect()
+	var title := "西域诸国图"
+	var fs := 26
+	var spacing := fs * 0.3
+	var title_w := 0.0
+	for ch in title:
+		title_w += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	title_w += spacing * (title.length() - 1)
+	var sub := "前119年 · 道里据《汉书·西域传》"
+	var sub_w := _font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var card := Rect2(inner.position + Vector2(12, 12), Vector2(maxf(title_w, sub_w) + 36, 74))
+	draw_rect(card, Desk.SILK)
+	draw_rect(card, Desk.INK, false, 1.0)
+	draw_rect(card.grow(-3), Desk.INK, false, 1.0)
+	var x := card.position.x + (card.size.x - title_w) * 0.5
+	for ch in title:
+		draw_string(font, Vector2(x, card.position.y + 38), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Desk.INK)
+		x += font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + spacing
+	draw_string(_font, Vector2(card.position.x + (card.size.x - sub_w) * 0.5, card.position.y + 60), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Desk.MUTED)
+
+## 指北（右上）：直径 64 的圆 + 八角星，顶端「北」。
+func _draw_compass() -> void:
+	var inner := inner_rect()
+	var c := Vector2(inner.end.x - 12 - 32, inner.position.y + 24 + 32)
+	draw_circle(c, 32, Color(Desk.SILK, 0.88))
+	draw_arc(c, 32, 0, TAU, 48, Desk.INK, 1.0, true)
+	draw_arc(c, 27, 0, TAU, 48, Color(Desk.INK, 0.35), 1.0, true)
+	for k in 8:
+		var ang := -PI * 0.5 + k * PI / 4.0
+		var r := 26.0 if k % 2 == 0 else 15.0
+		var tip := c + Vector2.from_angle(ang) * r
+		var left := c + Vector2.from_angle(ang - PI / 8.0) * 5.0
+		var right := c + Vector2.from_angle(ang + PI / 8.0) * 5.0
+		var dark: Color = Desk.CINNABAR if k == 0 else Desk.INK
+		draw_colored_polygon(PackedVector2Array([c, left, tip]), dark)
+		draw_colored_polygon(PackedVector2Array([c, tip, right]), Desk.SILK_3 if k != 0 else Desk.CINNABAR_HI)
+		draw_polyline(PackedVector2Array([left, tip, right]), Color(Desk.INK, 0.8), 1.0, true)
+	draw_circle(c, 2.5, Desk.INK)
+	var font := _title_font if _title_font != null else _font
+	if font != null:
+		_text_centered(font, Vector2(c.x, c.y - 32 - 11), "北", 16, Desk.CINNABAR)
 
 func _gui_input(ev: InputEvent) -> void:
 	if state == null:
@@ -379,7 +563,7 @@ func _get_tooltip(at_position: Vector2) -> String:
 	var methods := {"recorded_li": "史书记载里数换算", "derived_itinerary": "合并古道或分段推算", "regional_estimate": "区域路线估计，确址未定", "identified_site": "遗址区域距离参照", "identified_corridor": "地理通道参照", "corrected_geography": "按地理研究修正史书里数", "conflicting_accounts": "记载有差异，采用区域估计"}
 	var terrain_names := {"road": "绿洲道路", "steppe": "草原", "desert": "沙漠", "mountain": "山道", "hazard": "悬度险道"}
 	var speed = closest["distance_km"] / closest["days"]
-	return "%s\n约 %.0f 公里 · %s · 步兵约 %d 天\n持续日行约 %.0f 公里；骑兵优势上限 %.2f 倍\n%s\n路线交叉不创建节点；仅城市／关隘可换路。\n未计战斗与封路等待；图上长度不用于计时。" % [names, closest["distance_km"], terrain_names[closest["terrain"]], ceili(closest["days"]), speed, closest.get("mounted_speed_cap", 1.0), methods.get(closest.get("calibration_method", ""), "路线估计")]
+	return "%s\n约 %.0f 公里 · %s · 步兵约 %d 天\n持续日行约 %.0f 公里；骑兵优势上限 %.2f 倍\n%s\n道路只在城市、关隘与路口交汇，可在这些节点换路。\n未计战斗与封路等待；图上长度不用于计时。" % [names, closest["distance_km"], terrain_names[closest["terrain"]], ceili(closest["days"]), speed, closest.get("mounted_speed_cap", 1.0), methods.get(closest.get("calibration_method", ""), "路线估计")]
 
 func _zoom_at(p: Vector2, f: float) -> void:
 	var nz := clampf(zoom * f, 0.6, 4.0)

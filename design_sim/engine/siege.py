@@ -4,9 +4,17 @@ from . import buffs, combat, supply
 
 def siege_damage_per_tick(state, armies):
     dmg = 0.0
+    v1 = getattr(state, "ext", {}).get("v1")
+    chars = v1.get("characters", {}) if v1 else {}
     for a in armies:
+        mult = 1.25 if a.get("is_convict") else 1.0
+        cid = a.get("commander", "")
+        if cid and cid in chars:
+            traits = chars[cid].get("traits", ())
+            if "siege_master" in traits or "stern" in traits:
+                mult *= 1.20
         for t, n in a["units"].items():
-            dmg += n * state.units[t]["siege"]
+            dmg += n * state.units[t]["siege"] * mult
     return dmg * state.bal["siege"]["siege_damage_k"] / 3.0
 
 
@@ -139,6 +147,39 @@ def capture(state, node, attacker):
         node["militia"] = {}
         node["grain"] = node["grain"] * 0.5
     state.log_event("capture", "%s 攻陷 %s" % (attacker, node["name"]), {"node": node["id"], "by": attacker})
+    v1 = getattr(state, "ext", {}).get("v1")
+    if v1:
+        nid = node["id"]
+        if attacker == "xiongnu":
+            if nid in v1["logistics"]["beacons"]:
+                v1["logistics"]["beacons"].remove(nid)
+                state.factions["xiongnu"]["money"] += 80
+                state.log_event("v1_beacon", "【烽燧焚毁】匈奴攻陷 %s，焚毁汉亭燧" % node["name"], {"node": nid})
+            if v1["logistics"]["tuntian_nodes"].get(nid, 0) > 0:
+                v1["logistics"]["tuntian_nodes"][nid] = max(0, v1["logistics"]["tuntian_nodes"][nid] - 1)
+            tr = v1["tribes"]
+            if tr.get("assembly_target") == nid and tr.get("assembly_ticks", 0) > 0:
+                state.factions["xiongnu"]["money"] += 600
+                tr["reward_pool"] += 300
+                for tk in ("zuoxian", "youxian", "rizhu", "lihu"):
+                    if tk in tr["tribes"] and tr["tribes"][tk]["status"] != "defected_han":
+                        tr["tribes"][tk]["loyalty"] = min(100.0, tr["tribes"][tk]["loyalty"] + 8.0)
+                tr["assembly_target"] = ""
+                tr["assembly_ticks"] = 0
+                state.log_event("v1_assembly", "【蹛林盟约告捷】匈奴攻克盟会目标 %s，诸王分赏战利，部族忠诚大振！" % node["name"], {"node": nid})
+        elif attacker == "han":
+            court = v1["court"]
+            if court.get("forged_bonus_ticks", 0) > 0:
+                court["trust"] = min(100.0, court["trust"] + 8.0)
+                v1["victory"]["han_merit"] += 3.0
+                court["forged_bonus_ticks"] = 0
+                state.log_event("v1_court", "【功成不问矫制】汉军矫制破 %s 有功，朝廷释疑嘉奖（信任+8，功绩+3）" % node["name"], {"node": nid})
+            if old == "da_wan" and not v1["events"].get("dawan_horses_obtained"):
+                v1["events"]["dawan_horses_obtained"] = True
+                if hasattr(state, "han_horse_pool"):
+                    state.han_horse_pool += 2500
+                v1["victory"]["han_merit"] += 8.0
+                state.log_event("v1_event", "【天马徕·贰师破宛】汉军攻克%s，得汗血良马二千五百匹，天子大悦！" % node["name"], {"node": nid})
 
 
 def monthly(state):
@@ -169,7 +210,15 @@ def burn(state, a, node):
     a["grain"] += loot
     state.stats["grain_raided_" + f] = state.stats.get("grain_raided_" + f, 0.0) + loot
     if f == "xiongnu":
-        state.factions[f]["money"] += int(node["pop"] * state.bal["raid"]["money_per_pop"])
+        raid_gold = int(node["pop"] * state.bal["raid"]["money_per_pop"])
+        v1 = getattr(state, "ext", {}).get("v1")
+        if v1 and v1["tribes"].get("active_tactical_card") == "scorched_earth":
+            raid_gold = int(raid_gold * 1.15)
+            tp = v1["logistics"].setdefault("tuntian_pressure", {})
+            if isinstance(tp, dict):
+                for tnid in v1["logistics"].get("tuntian_nodes", {}):
+                    tp[tnid] = min(100.0, float(tp.get(tnid, 0.0)) + 5.0)
+        state.factions[f]["money"] += raid_gold
     if node["farm_cap"] > 0:
         node["farm_dev"] = max(state.bal["farm"]["min_dev"], node["farm_dev"] - state.bal["farm"]["burn_dev_loss"])
         buffs.apply(state, "sacked", node["id"])

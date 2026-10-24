@@ -109,9 +109,11 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             rel["crimes_against_han"] = 1 if sid in ("lou_lan", "cheshi_qian") else 0
             rel["satiation"] = 0
             rel["forage_stance"] = "market"
+            rel["war_weariness"] = 0.0
+            rel["last_insult_turn"] = -9
 
         # S05: 国家马匹池与初始河西烽燧、敦煌屯田
-        state.han_horse_pool = int(s05.get("init_horse_pool", 8000))
+        state.han_horse_pool = int(s05.get("init_horse_pool", 5800))
 
         # S06: 初始化 25 名历史人物并绑定初始主力将领
         chars = {}
@@ -120,6 +122,8 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             cc["command_tier"] = int(round(cc["command"] / 10.0))
             cc["busy_until"] = 0
             cc["alive"] = True
+            cc["assigned_army"] = ""
+            cc["at_army"] = ""
             chars[cc["id"]] = cc
 
         han_armies = [a for a in state.armies.values() if a["faction"] == "han" and not a["is_convoy"]]
@@ -129,6 +133,8 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 gid = han_gens[idx]
                 a["commander"] = gid
                 chars[gid]["at_army"] = a["id"]
+                chars[gid]["assigned_army"] = a["id"]
+                a["name"] = "%s(%s部)" % (a["name"], chars[gid]["name"])
 
         xn_armies = [a for a in state.armies.values() if a["faction"] == "xiongnu" and not a["is_convoy"]]
         xn_gens = ["yizhi_xie", "huyan_gu", "xian_xiandan", "xiutu_yu"]
@@ -137,6 +143,8 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 gid = xn_gens[idx]
                 a["commander"] = gid
                 chars[gid]["at_army"] = a["id"]
+                chars[gid]["assigned_army"] = a["id"]
+                a["name"] = "%s(%s部)" % (a["name"], chars[gid]["name"])
 
         base_han_pop = max(1, sum(n["pop"] for n in state.nodes.values() if n["faction"] == "han"))
         base_xn_pop = max(
@@ -223,6 +231,9 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 "edicts_completed": 0,
                 "edicts_failed": 0,
                 "last_appropriation_turn": -3,
+                "last_assassinate_turn": -9,
+                "assassinate_count": 0,
+                "last_levy_vassal_turn": -9,
             },
             "tribes": {
                 "chanyu_prestige": float(s03.get("init_prestige", 62.0)),
@@ -236,6 +247,11 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 "active_tactical_card": "",
                 "tactical_card_ticks": 0,
                 "scatter_consecutive_turns": 0,
+                "intimidate_this_quarter": 0,
+                "intimidated_states_quarter": [],
+                "assembly_target": "",
+                "assembly_ticks": 0,
+                "last_assembly_turn": -9,
                 "tribes": {
                     "zuoxian": {"name": "左贤王部", "leader": "须卜奢", "loyalty": 72.0, "status": "normal", "expect": 240, "grievance": 10.0},
                     "youxian": {"name": "右贤王部", "leader": "呼衍骨", "loyalty": 68.0, "status": "normal", "expect": 240, "grievance": 15.0},
@@ -253,12 +269,15 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             "logistics": {
                 "supply_priority": 2,
                 "forward_hub": "dun_huang",
+                "supply_lines": ["dun_huang"],
                 "beacons": ["wu_wei", "zhang_ye", "jiu_quan", "dun_huang"],
+                "beacon_built_this_quarter": 0,
                 "tuntian_nodes": {"dun_huang": 1},
                 "tuntian_pressure": {},
                 "convicts_year": 0,
                 "auto_delivered_grain": 0.0,
             },
+            "characters": chars,
             "events": {
                 "characters": chars,
                 "major_events_count": 0,
@@ -295,7 +314,7 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 return ""
         if in_res and t in (
             "recruit", "load", "set_tax", "build_tuntian", "convoy",
-            "accept_dual_allegiance", "assassinate_king", "install_prince", "intimidate_city", "welcome_rizhu",
+            "accept_dual_allegiance", "install_prince", "welcome_rizhu",
             "intercept_tongpu",
         ):
             return ""
@@ -389,10 +408,19 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             rel = state.relations.get(sid)
             if not rel or rel["overlord"] == "han":
                 return "目标已是汉属国"
-            if rel.get("crimes_against_han", 0) <= 0 and v1["court"]["forged_bonus_ticks"] <= 0:
+            if state.turn - v1["court"].get("last_assassinate_turn", -9) < 3:
+                return "奇袭刺王冷却中（每3季限1次）"
+            if v1["court"].get("assassinate_count", 0) >= 3:
+                return "诸国戒备森严，本局奇袭刺王已达上限(3次)"
+            forged = v1["court"].get("forged_bonus_ticks", 0) > 0
+            if rel.get("crimes_against_han", 0) <= 0 and not forged:
                 return "需持有该国罪状或先行持节矫诏"
-            if money < 240:
-                return "奇袭经费不足"
+            if rel["han_influence"] < 34.0 and not forged:
+                return "该国亲汉内应不足(需亲汉≥34或先行持节矫诏)"
+            if rel["xn_intimidation"] > 78.0 and not forged:
+                return "匈奴控弦重兵驻守(需威吓≤78或先行持节矫诏)"
+            if money < 320:
+                return "奇袭死士与重币经费不足(需320金)"
             return ""
 
         if t == "build_tuntian":
@@ -415,8 +443,31 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
 
         if t == "setup_supply_line":
             if f != "han":
-                return "仅汉方可设补给线"
-            return ""
+                return "仅汉方可辟筑驿道粮线"
+            hub = cmd.get("forward_hub", "")
+            prio = int(cmd.get("priority", v1["logistics"]["supply_priority"]))
+            lines = v1["logistics"].get("supply_lines", ["dun_huang"])
+            if hub and hub not in lines:
+                if hub not in state.nodes:
+                    return "枢纽节点无效"
+                n = state.nodes[hub]
+                rel = state.relations.get(n["faction"])
+                has_han_presence = (
+                    state.controller(n) == "han"
+                    or v1["logistics"]["tuntian_nodes"].get(hub, 0) > 0
+                    or (rel and (rel.get("is_dual") or rel["han_influence"] >= 42.0))
+                    or any(a["faction"] == "han" and state.army_size(a) >= 1000 for a in state.armies_at(hub))
+                )
+                if not has_han_presence:
+                    return "需先控制该节点、设有屯田或亲汉度≥42方可设驿站"
+                if money < 220:
+                    return "辟筑驿站经费不足(需220金)"
+                if getattr(state, "han_horse_pool", 0) < 350:
+                    return "国家马匹池不足以调拨驿传驼马(需350匹)"
+                return ""
+            if prio != v1["logistics"]["supply_priority"]:
+                return ""
+            return "该枢纽已接入驿道粮网"
 
         if t == "build_beacon":
             if f != "han":
@@ -424,8 +475,38 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             nid = cmd.get("node", "")
             if nid not in state.nodes or nid in v1["logistics"]["beacons"]:
                 return "该处已有烽燧或节点无效"
-            if money < 180:
-                return "筑燧经费不足"
+            if v1["logistics"].get("beacon_built_this_quarter", 0) >= 1:
+                return "本季筑燧工卒已派发(每季限1处)"
+            n = state.nodes[nid]
+            rel = state.relations.get(n["faction"])
+            has_reach = (
+                nid == "ju_yan"
+                or state.controller(n) == "han"
+                or (rel and (rel.get("is_dual") or rel["han_influence"] >= 42.0))
+                or any(a["faction"] == "han" and state.army_size(a) >= 1000 for a in state.armies_at(nid))
+            )
+            if not has_reach:
+                return "需汉方控制、驻军或盟好城邦方可修筑塞外烽燧"
+            chars = v1.get("characters", {})
+            lu_alive = chars.get("lu_bode", {}).get("alive", False)
+            cost = 130 if lu_alive else 180
+            if money < cost:
+                return "筑燧经费不足(需%d金)" % cost
+            return ""
+
+        if t == "levy_vassal_troops":
+            if f != "han":
+                return "仅汉方可持节发诸国兵"
+            if state.turn - v1["court"].get("last_levy_vassal_turn", -9) < 3:
+                return "诸国助战冷却中（每3季限1次）"
+            n_ally = sum(
+                1 for sid, r in state.relations.items()
+                if (r["overlord"] == "han" or r.get("is_dual")) and r.get("war_weariness", 0.0) < 60.0
+            )
+            if n_ally < 3 and not v1["events"].get("wusun_married"):
+                return "需至少3个未疲弊西域属国或已达成乌孙和亲"
+            if money < 260:
+                return "犒军赐金不足(需260金)"
             return ""
 
         if t == "recruit_convict":
@@ -494,8 +575,23 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             sid = cmd.get("state", "")
             if sid not in state.relations:
                 return "目标城邦无效"
-            if not v1["tribes"]["tongpu_active"] and money < 150:
-                return "僮仆都尉不在位且经费不足"
+            rel = state.relations[sid]
+            if v1["tribes"].get("intimidate_this_quarter", 0) >= 2:
+                return "本季僮仆铁骑巡行名额已满(每季限2国)"
+            if state.turn - rel.get("last_intimidate_turn", -9) < 2:
+                return "该城邦近期已受铁骑巡行震慑(冷却2季)"
+            cost = 50 if v1["tribes"]["tongpu_active"] else 140
+            if money < cost:
+                return "铁骑巡行赏赐金不足(需%d金)" % cost
+            return ""
+
+        if t == "hold_chanyu_assembly":
+            if f != "xiongnu":
+                return "仅匈奴单于可召集龙城/蹛林大会"
+            if state.turn - v1["tribes"].get("last_assembly_turn", -9) < 4:
+                return "单于庭大会每年限办一次"
+            if money + v1["tribes"]["reward_pool"] < 320:
+                return "大会赐宴赏金不足(需320金)"
             return ""
 
         if t == "install_prince":
@@ -609,11 +705,19 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             v1["court"]["forged_bonus_ticks"] = 9
             if not self_imp:
                 v1["court"]["unpardoned_forged_edict"] = True
+            n_ally = sum(1 for r in state.relations.values() if r["overlord"] == "han" or r.get("is_dual") or r.get("han_enfeoffed"))
+            spawn_msg = ""
+            if n_ally >= 2:
+                hub = "wu_lei" if state.controller(state.nodes["wu_lei"]) == "han" else ("lou_lan" if state.controller(state.nodes["lou_lan"]) == "han" else "dun_huang")
+                aux = state.new_army("han", hub, {"cavalry": 900, "infantry": 600}, 900, 16000.0, 0)
+                state.apply_preset(aux, "assault")
+                aux["name"] = "矫制诸国从军" + aux["id"].split("_")[-1]
+                spawn_msg = "，于%s矫制调发诸国从军1,500人" % state.nodes[hub]["name"]
             record_key_event(state, "jiaozhao")
             state.log_event(
                 "diplomacy",
-                "汉使持节矫诏便宜发兵奇袭 %s（%s，信任 -%.0f）"
-                % (tgt, "附奏自劾" if self_imp else "秘而不宣", cost_trust),
+                "汉使持节矫诏便宜发兵奇袭 %s%s（%s，信任 -%.0f）"
+                % (tgt, spawn_msg, "附奏自劾" if self_imp else "秘而不宣", cost_trust),
             )
             return True
 
@@ -643,10 +747,26 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             state.factions["han"]["money"] = max(0, state.factions["han"]["money"] - budget)
             v1["diplomacy"]["elite_missions_this_quarter"] += 1
             rel = state.relations[sid]
+            chars = v1.get("characters", {})
+            envoy_cands = [
+                ch for ch in chars.values()
+                if ch.get("faction") == "han" and ch.get("alive", True) and ch.get("busy_until", 0) <= state.turn
+                and (ch.get("role") == "envoy" or ch.get("eloquence", 0) >= 82)
+            ]
+            envoy_cands.sort(key=lambda x: int(x.get("eloquence", 70)), reverse=True)
+            envoy_name = "持节正使"
+            eloq_mult = 1.18
+            if envoy_cands:
+                env = envoy_cands[0]
+                envoy_name = env["name"]
+                env["busy_until"] = state.turn + 1
+                eloq_mult = 1.12 + max(0.0, (float(env.get("eloquence", 80)) - 75.0) * 0.006)
+                if "zaokong" in env.get("traits", ()) and rel["han_influence"] < 40.0:
+                    eloq_mult *= 1.18
             max_gain = float(s04.get("gift_max_gain", 22.0))
             scale = float(s04.get("gift_budget_scale", 520.0))
             sat = int(rel.get("satiation", 0))
-            gain = max_gain * (1.0 - math.exp(-budget / scale)) * 1.18 * (0.78 ** sat)
+            gain = max_gain * (1.0 - math.exp(-budget / scale)) * eloq_mult * (0.78 ** sat)
             rel["han_influence"] = _clamp(rel["han_influence"] + gain, 0.0, 100.0)
             rel["xn_intimidation"] = _clamp(rel["xn_intimidation"] - gain * 0.25, 0.0, 100.0)
             rel["satiation"] = sat + 1
@@ -661,9 +781,9 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 self._trigger_dawan_horses(state)
             state.log_event(
                 "diplomacy",
-                "汉遣精使团持节出使 %s（预算 %d 金，亲汉度 +%.1f -> %.0f）"
-                % (state.factions[sid]["name"], budget, gain, rel["han_influence"]),
-                {"state": sid},
+                "汉遣精使【%s】持节出使 %s（预算 %d 金，亲汉度 +%.1f -> %.0f）"
+                % (envoy_name, state.factions[sid]["name"], budget, gain, rel["han_influence"]),
+                {"state": sid, "envoy": envoy_name},
             )
             return True
 
@@ -679,9 +799,15 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             gain = 14.0 * (1.0 - math.exp(-eff_budget / 380.0)) * (0.75 ** sat)
             rel["han_influence"] = _clamp(rel["han_influence"] + gain, 0.0, 100.0)
             rel["satiation"] = sat + 1
-            insult_prob = _clamp(0.18 + (rel["xn_intimidation"] - rel["han_influence"]) * float(s04.get("insult_diff_slope", 0.006)), 0.05, 0.65)
-            if rel["overlord"] != "han" and state.rng.random() < insult_prob:
+            insult_prob = _clamp(0.16 + (rel["xn_intimidation"] - rel["han_influence"]) * float(s04.get("insult_diff_slope", 0.005)), 0.05, 0.50)
+            if (
+                rel["overlord"] != "han"
+                and state.turn - rel.get("last_insult_turn", -9) >= 3
+                and (rel["han_influence"] >= 20.0 or state.turn >= 3)
+                and state.rng.random() < insult_prob
+            ):
                 rel["crimes_against_han"] = int(rel.get("crimes_against_han", 0)) + 1
+                rel["last_insult_turn"] = state.turn
                 v1["diplomacy"]["insults_recorded"] += 1
                 state.log_event(
                     "diplomacy",
@@ -717,9 +843,19 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
         if t == "assassinate_king":
             sid = cmd["state"]
             rel = state.relations.get(sid)
-            if not rel or rel["overlord"] == "han" or state.factions["han"]["money"] < 240:
+            forged = v1["court"].get("forged_bonus_ticks", 0) > 0
+            if (
+                not rel
+                or rel["overlord"] == "han"
+                or state.factions["han"]["money"] < 320
+                or state.turn - v1["court"].get("last_assassinate_turn", -9) < 3
+                or v1["court"].get("assassinate_count", 0) >= 3
+                or (rel["han_influence"] < 34.0 and not forged)
+            ):
                 return True
-            state.factions["han"]["money"] = max(0, state.factions["han"]["money"] - 240)
+            state.factions["han"]["money"] = max(0, state.factions["han"]["money"] - 320)
+            v1["court"]["last_assassinate_turn"] = state.turn
+            v1["court"]["assassinate_count"] = v1["court"].get("assassinate_count", 0) + 1
             nm = state.factions[sid]["name"]
             rel["overlord"] = "han"
             rel["han_enfeoffed"] = True
@@ -731,7 +867,12 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             if sid not in v1["victory"]["punished_states"]:
                 v1["victory"]["punished_states"].append(sid)
                 self._add_han_event_merit(state, 4.0, "奇袭斩%s亲匈之王、更立亲汉新王" % nm)
-            v1["court"]["trust"] = _clamp(v1["court"]["trust"] + 5.0, 0.0, 100.0)
+            if forged:
+                v1["court"]["trust"] = _clamp(v1["court"]["trust"] + 8.0, 0.0, 100.0)
+                v1["court"]["forged_bonus_ticks"] = 0
+                v1["court"]["unpardoned_forged_edict"] = False
+            else:
+                v1["court"]["trust"] = _clamp(v1["court"]["trust"] + 5.0, 0.0, 100.0)
             v1["tribes"]["chanyu_prestige"] = _clamp(v1["tribes"]["chanyu_prestige"] - 3.5, 0.0, 100.0)
             v1["events"]["loulan_king_slain"] = True
             record_key_event(state, "king_slain")
@@ -755,7 +896,7 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             v1["logistics"]["tuntian_nodes"][nid] = lv
             n["colonies"] = n.get("colonies", 0) + 1500
             state.set_stock(n, "han", state.stock(n, "han") + 18000.0)
-            for nb in state.neighbors(nid):
+            for nb in state.near_neighbors(nid):
                 sid = state.nodes[nb]["faction"]
                 if sid in state.relations and state.relations[sid]["overlord"] == "xiongnu":
                     v1["logistics"]["tuntian_pressure"][sid] = v1["logistics"]["tuntian_pressure"].get(sid, 0.0) + 12.0
@@ -763,22 +904,45 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             return True
 
         if t == "setup_supply_line":
-            prio = int(cmd.get("priority", 2))
-            hub = cmd.get("forward_hub", "dun_huang")
+            prio = int(cmd.get("priority", v1["logistics"]["supply_priority"]))
+            hub = cmd.get("forward_hub", "")
             v1["logistics"]["supply_priority"] = _clamp(prio, 1, 3)
-            v1["logistics"]["forward_hub"] = hub
-            state.log_event("economy", "调整河西—西域自动转输补给线（优先级 %d，前推枢纽 %s）" % (prio, hub))
+            lines = v1["logistics"].setdefault("supply_lines", ["dun_huang"])
+            if hub and hub in state.nodes and hub not in lines:
+                if state.factions["han"]["money"] >= 220 and getattr(state, "han_horse_pool", 0) >= 350:
+                    state.factions["han"]["money"] -= 220
+                    state.han_horse_pool -= 350
+                    lines.append(hub)
+                    v1["logistics"]["forward_hub"] = hub
+                    dh = state.nodes["dun_huang"]
+                    xfer = min(18000.0, max(0.0, dh["grain"] - 60000.0))
+                    if xfer > 0:
+                        dh["grain"] -= xfer
+                        state.set_stock(state.nodes[hub], "han", state.stock(state.nodes[hub], "han") + xfer * 0.90)
+                    self._add_han_event_merit(state, 1.5, "辟通%s西域驿道粮线" % state.nodes[hub]["name"])
+                    state.log_event(
+                        "economy",
+                        "汉辟筑【敦煌—%s】驼马驿道粮线（拨官马350匹，首运军粮 %.0f 斛）" % (state.nodes[hub]["name"], xfer * 0.90),
+                        {"node": hub},
+                    )
+                    return True
+            state.log_event("economy", "调整河西—西域转输补给线（优先级 %d，前推枢纽 %s）" % (prio, hub or v1["logistics"]["forward_hub"]))
             return True
 
         if t == "build_beacon":
             nid = cmd["node"]
-            if nid not in v1["logistics"]["beacons"]:
-                state.factions["han"]["money"] = max(0, state.factions["han"]["money"] - 180)
+            if nid not in v1["logistics"]["beacons"] and v1["logistics"].get("beacon_built_this_quarter", 0) < 1:
+                chars = v1.get("characters", {})
+                cost = 130 if chars.get("lu_bode", {}).get("alive", False) else 180
+                if state.factions["han"]["money"] < cost:
+                    return True
+                state.factions["han"]["money"] = max(0, state.factions["han"]["money"] - cost)
                 v1["logistics"]["beacons"].append(nid)
+                v1["logistics"]["beacon_built_this_quarter"] = v1["logistics"].get("beacon_built_this_quarter", 0) + 1
                 n = state.nodes[nid]
                 n["wall_hp_max"] += 150.0
                 n["wall_hp"] = min(n["wall_hp_max"], n["wall_hp"] + 150.0)
-                state.log_event("economy", "于 %s 修筑塞外烽燧亭障（视野精度提升，城防巩固）" % n["name"], {"node": nid})
+                state.log_event("economy", "于 %s 修筑塞外烽燧亭障（耗 %d 金，视野精度提升，城防巩固）" % (n["name"], cost), {"node": nid})
             return True
 
         if t == "recruit_convict":
@@ -790,7 +954,49 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             state.apply_preset(a, "balanced")
             a["is_convict"] = True
             a["name"] = "驰刑士" + a["id"].split("_")[-1]
-            state.log_event("recruit", "汉于 %s 征发七科谪罪人兵 %d 人充边" % (state.nodes[nid]["name"], cnt + 500))
+            chars = v1.get("characters", {})
+            for cid in ("lai_dan", "guo_chang", "wei_guang", "feng_fengshi"):
+                ch = chars.get(cid)
+                if ch and ch.get("alive", True) and not ch.get("assigned_army") and not ch.get("at_army"):
+                    a["commander"] = cid
+                    ch["assigned_army"] = a["id"]
+                    ch["at_army"] = a["id"]
+                    a["name"] = "%s(%s部)" % (a["name"], ch["name"])
+                    break
+            state.set_stock(state.nodes[nid], "han", state.stock(state.nodes[nid], "han") + 6000.0)
+            state.log_event("recruit", "汉于 %s 征发七科谪驰刑士 %d 人充边助屯（攻城伤害+25%%，屯粮+6,000）" % (state.nodes[nid]["name"], cnt + 500))
+            return True
+
+        if t == "levy_vassal_troops":
+            if state.turn - v1["court"].get("last_levy_vassal_turn", -9) < 3 or state.factions["han"]["money"] < 260:
+                return True
+            state.factions["han"]["money"] = max(0, state.factions["han"]["money"] - 260)
+            v1["court"]["last_levy_vassal_turn"] = state.turn
+            hub = "wu_lei" if state.controller(state.nodes["wu_lei"]) == "han" else (
+                "lou_lan" if state.controller(state.nodes["lou_lan"]) == "han" else "dun_huang"
+            )
+            cav_cnt = 1500 + (1000 if v1["events"].get("wusun_married") else 0)
+            inf_cnt = 1800
+            a = state.new_army("han", hub, {"cavalry": cav_cnt, "infantry": inf_cnt}, cav_cnt, (cav_cnt + inf_cnt) * 6.0, 0)
+            state.apply_preset(a, "balanced")
+            a["name"] = "西域诸国联军" + a["id"].split("_")[-1]
+            chars = v1.get("characters", {})
+            for cid in ("chang_hui", "zheng_ji", "feng_fengshi"):
+                ch = chars.get(cid)
+                if ch and ch.get("alive", True) and not ch.get("assigned_army") and not ch.get("at_army"):
+                    a["commander"] = cid
+                    ch["assigned_army"] = a["id"]
+                    ch["at_army"] = a["id"]
+                    a["name"] = "%s(%s持节督师)" % (a["name"], ch["name"])
+                    break
+            for sid, r in state.relations.items():
+                if r["overlord"] == "han" or r.get("is_dual"):
+                    r["war_weariness"] = min(100.0, r.get("war_weariness", 0.0) + 9.0)
+            state.log_event(
+                "recruit",
+                "汉使持节于 %s 征发西域诸国及乌孙助战兵 %d 人合击北道！" % (state.nodes[hub]["name"], cav_cnt + inf_cnt),
+                {"army": a["id"], "node": hub},
+            )
             return True
 
         if t == "welcome_rizhu":
@@ -884,16 +1090,57 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             rel = state.relations.get(sid)
             if not rel:
                 return True
-            if not v1["tribes"]["tongpu_active"]:
-                if state.factions["xiongnu"]["money"] < 150:
-                    return True
-                state.factions["xiongnu"]["money"] = max(0, state.factions["xiongnu"]["money"] - 150)
-            rel["xn_intimidation"] = _clamp(rel["xn_intimidation"] + 14.0, 0.0, 100.0)
+            if v1["tribes"].get("intimidate_this_quarter", 0) >= 2 or state.turn - rel.get("last_intimidate_turn", -9) < 2:
+                return True
+            cost = 50 if v1["tribes"]["tongpu_active"] else 140
+            if state.factions["xiongnu"]["money"] < cost:
+                return True
+            state.factions["xiongnu"]["money"] = max(0, state.factions["xiongnu"]["money"] - cost)
+            v1["tribes"]["intimidate_this_quarter"] = v1["tribes"].get("intimidate_this_quarter", 0) + 1
+            v1["tribes"].setdefault("intimidated_states_quarter", []).append(sid)
+            rel["last_intimidate_turn"] = state.turn
+            rel["xn_intimidation"] = _clamp(rel["xn_intimidation"] + 13.5, 0.0, 100.0)
             rel["xn_resentment"] = _clamp(rel["xn_resentment"] + 4.0, 0.0, 100.0)
-            if rel["xn_intimidation"] > rel["han_influence"] + 8.0 and rel["overlord"] != "xiongnu":
+            margin = 14.0 if rel["overlord"] == "han" else 8.0
+            if rel["xn_intimidation"] > rel["han_influence"] + margin and rel["overlord"] != "xiongnu":
                 rel["overlord"] = "xiongnu"
                 rel["is_dual"] = False
-            state.log_event("diplomacy", "僮仆都尉铁骑巡行威压 %s（威吓 +14）" % state.factions[sid]["name"], {"state": sid})
+            state.log_event("diplomacy", "僮仆都尉铁骑巡行威压 %s（耗 %d 金，威吓 +13.5）" % (state.factions[sid]["name"], cost), {"state": sid})
+            return True
+
+        if t == "hold_chanyu_assembly":
+            if state.turn - v1["tribes"].get("last_assembly_turn", -9) < 4:
+                return True
+            avail = state.factions["xiongnu"]["money"] + v1["tribes"]["reward_pool"]
+            if avail < 320:
+                return True
+            v1["tribes"]["last_assembly_turn"] = state.turn
+            pool_use = min(v1["tribes"]["reward_pool"], 320)
+            v1["tribes"]["reward_pool"] -= pool_use
+            if 320 - pool_use > 0:
+                state.factions["xiongnu"]["money"] = max(0, state.factions["xiongnu"]["money"] - (320 - pool_use))
+            for tk, tv in v1["tribes"]["tribes"].items():
+                if tv["status"] != "defected_han":
+                    tv["loyalty"] = _clamp(tv["loyalty"] + 7.5, 0.0, 100.0)
+                    tv["grievance"] = max(0.0, tv.get("grievance", 0.0) - 8.0)
+            v1["tribes"]["chanyu_prestige"] = _clamp(v1["tribes"]["chanyu_prestige"] + 4.5, 0.0, 100.0)
+            for nid in ("chanyu_ting", "youxian_wang"):
+                if nid in state.nodes and state.nodes[nid]["faction"] == "xiongnu":
+                    state.nodes[nid]["horses"] += 1500
+            tgt = cmd.get("target", "")
+            if not tgt:
+                for cand in ("lou_lan", "cheshi_qian", "wu_lei", "dun_huang", "jiu_quan"):
+                    if cand in state.nodes and state.controller(state.nodes[cand]) != "xiongnu":
+                        tgt = cand
+                        break
+            v1["tribes"]["assembly_target"] = tgt
+            v1["tribes"]["assembly_ticks"] = 27
+            tgt_nm = state.nodes.get(tgt, {}).get("name", "西域")
+            state.log_event(
+                "diplomacy",
+                "【龙城/蹛林大会】单于会诸王课校人畜计，赐宴定盟主攻【%s】（诸部忠诚+7.5，主攻战力+12%%）" % tgt_nm,
+                {"target": tgt},
+            )
             return True
 
         if t == "install_prince":
@@ -973,10 +1220,23 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 if self.validate_command(state, c_tt) == "":
                     out.append(c_tt)
 
-            for nid in ("ju_yan", "lou_lan", "wu_lei"):
+            for nid in ("ju_yan", "lou_lan", "wu_lei", "cheshi_qian"):
                 c_bc = commands.make("build_beacon", "han", {"node": nid})
                 if self.validate_command(state, c_bc) == "":
                     out.append(c_bc)
+
+            for hub in ("lou_lan", "wu_lei", "wei_li", "cheshi_qian", "yan_qi"):
+                c_sl = commands.make("setup_supply_line", "han", {"forward_hub": hub, "priority": 2})
+                if self.validate_command(state, c_sl) == "":
+                    out.append(c_sl)
+
+            c_lv = commands.make("levy_vassal_troops", "han")
+            if self.validate_command(state, c_lv) == "":
+                out.append(c_lv)
+
+            c_fg = commands.make("forge_edict", "han", {"target": "cheshi_qian", "self_impeach": True})
+            if self.validate_command(state, c_fg) == "":
+                out.append(c_fg)
 
             c_cv = commands.make("recruit_convict", "han", {"node": "dun_huang", "count": 2500})
             if self.validate_command(state, c_cv) == "":
@@ -986,6 +1246,7 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             for c in (
                 commands.make("distribute_rewards", "xiongnu", {"amount": 600, "mode": "equal"}),
                 commands.make("pacify_tribe", "xiongnu", {"tribe": "rizhu"}),
+                commands.make("hold_chanyu_assembly", "xiongnu", {"target": "lou_lan"}),
                 commands.make("play_tactical_card", "xiongnu", {"card": "feigned_retreat"}),
                 commands.make("play_tactical_card", "xiongnu", {"card": "scorched_earth"}),
                 commands.make("play_tactical_card", "xiongnu", {"card": "clear_steppe"}),
@@ -1014,6 +1275,9 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
         v1["in_turn_resolve"] = True
         v1["diplomacy"]["recruited_missions_this_quarter"] = 0
         v1["diplomacy"]["elite_missions_this_quarter"] = 0
+        v1["tribes"]["intimidate_this_quarter"] = 0
+        v1["tribes"]["intimidated_states_quarter"] = []
+        v1["logistics"]["beacon_built_this_quarter"] = 0
         v1["events"]["seen_event_idx"] = 0
         v1["court"]["starve_pen_this_turn"] = 0
 
@@ -1038,18 +1302,53 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                 still.append(doc)
         v1["court"]["in_transit_docs"] = still
 
-        # S05 自动化补给线子步随军补粮（防止行军途中在月度结算前意外断粮）
+        # S05 真实驿道补给网子步随军转输（须在驿道粮网/军屯/属国2跳可达范围内，且真实扣减枢纽存粮）与河西战马补配
         prio = v1["logistics"]["supply_priority"]
+        lines = set(v1["logistics"].get("supply_lines", ["dun_huang"]))
+        tt_nodes = v1["logistics"]["tuntian_nodes"]
+        chars = v1.get("characters", {})
+        loss_mult = 0.85 if (chars.get("sang_hongyang", {}).get("alive") or chars.get("zheng_ji", {}).get("alive")) else 1.05
         if prio >= 1:
             for a in state.armies.values():
                 if a["faction"] != "han" or a["is_convoy"]:
                     continue
+                here = a["loc"].get("node") or a["loc"].get("from", "")
+                if here in HEXI_ALL and hasattr(state, "han_horse_pool") and state.han_horse_pool > 0:
+                    need_horses = sum(int(a["units"].get(ut, 0)) * int(state.units[ut]["horses"]) for ut in a["units"])
+                    if a.get("horses", 0) < need_horses:
+                        add_h = min(int(state.han_horse_pool), need_horses - int(a.get("horses", 0)))
+                        if add_h > 0:
+                            a["horses"] += add_h
+                            state.han_horse_pool -= add_h
                 need_m = supply.need_per_month(state, a)
-                if a["grain"] < need_m * 0.9:
-                    topup = min(supply.carry_cap(state, a) - a["grain"], need_m * 0.9)
-                    if topup > 0:
-                        a["grain"] += topup
-                        a["starving"] = 0
+                if a["grain"] < need_m * 0.95 and here in state.nodes:
+                    # 寻找可提供补给的驿道枢纽/军屯/汉控城池（已开通驿线或屯田辐射 4 跳，未开通则仅 2 跳）
+                    best_hub = None
+                    best_stock = 0.0
+                    reach = 4 if (len(lines) > 1 or len(tt_nodes) > 1) else 2
+                    for cand_id in [here] + state.near_neighbors(here) + list(lines) + list(tt_nodes.keys()):
+                        if cand_id not in state.nodes or state.hops(here, cand_id, reach) > reach:
+                            continue
+                        cn = state.nodes[cand_id]
+                        is_hub = (
+                            cand_id in lines
+                            or tt_nodes.get(cand_id, 0) > 0
+                            or state.controller(cn) == "han"
+                            or (cn["faction"] in state.relations and state.relations[cn["faction"]].get("is_dual"))
+                        )
+                        if not is_hub:
+                            continue
+                        st_avail = state.stock(cn, "han")
+                        reserve = cn["pop"] * 3.0 if cn["faction"] == "han" else 500.0
+                        if st_avail - reserve > best_stock:
+                            best_stock = st_avail - reserve
+                            best_hub = cn
+                    if best_hub is not None and best_stock > 300.0:
+                        topup = min(supply.carry_cap(state, a) - a["grain"], need_m * 0.92, best_stock / loss_mult)
+                        if topup > 0:
+                            state.set_stock(best_hub, "han", state.stock(best_hub, "han") - topup * loss_mult)
+                            a["grain"] += topup
+                            a["starving"] = 0
 
         evs = state.events
         start_idx = v1["events"].get("seen_event_idx", 0)
@@ -1100,8 +1399,9 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
 
         # 4) 岁首马匹池补充与统计重置
         if state.month() == 1:
-            regen = int(s05.get("horse_pool_yearly_regen", 1800))
-            state.han_horse_pool = min(20000, getattr(state, "han_horse_pool", 0) + regen)
+            hexi_held = sum(1 for nid in HEXI_FOUR if state.nodes[nid]["faction"] == "han")
+            regen = 200 + hexi_held * 120
+            state.han_horse_pool = min(16000, getattr(state, "han_horse_pool", 0) + regen)
             v1["victory"]["yearly_battle_awards"] = 0
             v1["logistics"]["convicts_year"] = 0
 
@@ -1114,6 +1414,10 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             v1["tribes"]["tactical_card_ticks"] = max(0, v1["tribes"]["tactical_card_ticks"] - 3)
             if v1["tribes"]["tactical_card_ticks"] == 0:
                 v1["tribes"]["active_tactical_card"] = ""
+        if v1["tribes"].get("assembly_ticks", 0) > 0:
+            v1["tribes"]["assembly_ticks"] = max(0, v1["tribes"]["assembly_ticks"] - 3)
+            if v1["tribes"]["assembly_ticks"] == 0:
+                v1["tribes"]["assembly_target"] = ""
 
     def on_quarter_end(self, state):
         v1 = state.ext.get("v1")
@@ -1148,11 +1452,13 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             cap = int(state.bal["han"]["central_cap"][ut])
             state.central[ut] = min(cap, int(state.central.get(ut, 0)) + int(yearly_v // 4))
 
+        self._tick_quarterly_upkeep(state)
         self._check_and_rotate_edict(state)
 
-        # 3) S04 使团饱足度季度衰减
+        # 3) S04 使团饱足度季度衰减 & 屯田压力/城邦自主反扑检定
         for rel in state.relations.values():
             rel["satiation"] = max(0, int(rel.get("satiation", 0)) - 1)
+        self._tick_tuntian_pressure_and_autonomy(state)
 
         # 4) S03 匈奴四部忠诚度、结构性赤字与三次年会结算
         self._tick_xiongnu_confederation_quarterly(state, s03)
@@ -1174,7 +1480,7 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
         G, W = self._update_merit_and_weifu(state)
 
         # Step 1: 更新维持月数（月度滞回缓冲 hold_fail_decrement = 1）
-        han_req = float(s01.get("han_threshold", 101.0))
+        han_req = float(s01.get("han_threshold", 101.0)) + 4.2
         min_trust = float(s01.get("min_trust_for_protectorate", 28.0))
         fail_dec = int(s01.get("hold_fail_decrement", 1))
         hexi_lost_now = sum(1 for nid in HEXI_FOUR if state.nodes[nid]["faction"] != "han")
@@ -1194,12 +1500,12 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             vic["han_hold_months"] = max(0, vic["han_hold_months"] - fail_dec)
 
         hexi_xn_now = sum(1 for nid in HEXI_FOUR if state.nodes[nid]["faction"] == "xiongnu")
-        if hexi_xn_now >= 2 or (hexi_xn_now >= 1 and W >= 95.0):
+        if hexi_xn_now >= 2 or (hexi_xn_now >= 1 and W >= 86.0):
             vic["xn_hexi_hold_months"] += (2 if hexi_xn_now >= 2 else 1)
         else:
             vic["xn_hexi_hold_months"] = max(0, vic["xn_hexi_hold_months"] - fail_dec)
 
-        xn_req = float(s01.get("xn_threshold", 97.5))
+        xn_req = float(s01.get("xn_threshold", 97.5)) - 2.5
         min_prest = float(s01.get("min_prestige_for_weifu", 38.0))
         months_elapsed = state.tick // 3 + 1
         if W >= xn_req and tribes["chanyu_prestige"] >= min_prest and months_elapsed >= 15:
@@ -1451,6 +1757,7 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
         g_great = min(8.0, g_great)
 
         g_tongpu = float(s01.get("tongpu_abolished_bonus", 6.0)) if not tribes["tongpu_active"] else 0.0
+        g_supply = min(3.0, max(0, len(logi.get("supply_lines", ["dun_huang"])) - 1) * 1.0)
 
         hexi_lost_cnt = sum(1 for nid in HEXI_FOUR if state.nodes[nid]["faction"] != "han")
         d_hexi = hexi_lost_cnt * float(s01.get("hexi_loss_penalty_per_node", 12.0))
@@ -1464,6 +1771,7 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
             + g_suppress
             + g_great
             + g_tongpu
+            + g_supply
             + min(20.0, vic["han_merit_pool"])
             + min(24.0, vic["han_perm_merit"])
             + pet_boost
@@ -1517,12 +1825,13 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
 
         prest = tribes["chanyu_prestige"]
         w_prestige = _clamp(math.floor(11.0 * (prest - 52.0) / 40.0), 0.0, 11.0)
+        w_assembly = 3.0 if tribes.get("assembly_ticks", 0) > 0 else 0.0
 
         d_sacred = vic["xn_sacred_penalty"]
         if state.nodes.get("yi_wu", {}).get("faction") == "han":
             d_sacred += 8.0
 
-        W = round(w_hexi + w_vassal + w_hub + w_intim + w_tongpu + w_prestige + vic["xn_event_pool"] - d_sacred, 1)
+        W = round(w_hexi + w_vassal + w_hub + w_intim + w_tongpu + w_prestige + w_assembly + vic["xn_event_pool"] - d_sacred, 1)
         if hexi_xn_cnt >= 4:
             W = max(W, 102.0)
         vic["xn_weifu"] = W
@@ -1556,12 +1865,12 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
         G = vic["han_merit"]
         W = vic["xn_weifu"]
 
-        s_han_merit = _clamp((G - 14.0) * float(s01.get("han_merit_mult", 0.52)), 0.0, 50.0)
+        s_han_merit = _clamp((G - 8.0) * float(s01.get("han_merit_mult", 0.55)), 0.0, 52.0)
         han_horses = float(getattr(state, "han_horse_pool", 0))
         han_horses += sum(n["horses"] for n in state.nodes.values() if n["faction"] == "han")
         han_horses += sum(a["horses"] for a in state.armies.values() if a["faction"] == "han")
-        horses_per_1000 = float(s01.get("horses_per_1000", 1.20))
-        s_han_horse = _clamp((max(0.0, han_horses - 14000.0) / 1000.0) * horses_per_1000, 0.0, 15.0)
+        horses_per_1000 = float(s01.get("horses_per_1000", 1.35))
+        s_han_horse = _clamp((max(0.0, han_horses - 3000.0) / 1000.0) * horses_per_1000, 0.0, 15.0)
 
         han_pop = sum(
             n["pop"]
@@ -1772,50 +2081,187 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
                     v1["court"]["trust"] = _clamp(v1["court"]["trust"] - 0.5, 0.0, 100.0)
 
     def _tick_automated_supply_and_tuntian(self, state, s05):
-        """S05 自动化补给线与西域军屯月度补给。"""
+        """S05 自动化补给线与西域军屯月度补给（真实沿驿道转输军粮并计入郑吉/赖丹屯田加成）。"""
         v1 = state.ext["v1"]
         logi = v1["logistics"]
         prio = logi["supply_priority"]
+        chars = v1.get("characters", {})
 
         if not (state.month() in (7, 8, 9) and state.nodes["dun_huang"]["grain"] > 260000):
-            flow = 14000.0 * prio
+            flow = 13500.0 * prio
             dh = state.nodes.get("dun_huang")
-            if dh and dh["faction"] == "han" and dh["grain"] < 380000:
+            if dh and dh["faction"] == "han" and dh["grain"] < 360000:
                 dh["grain"] += flow
                 logi["auto_delivered_grain"] += flow
             jq = state.nodes.get("jiu_quan")
-            if jq and jq["faction"] == "han" and jq["grain"] < 260000:
-                jq["grain"] += flow * 0.6
+            if jq and jq["faction"] == "han" and jq["grain"] < 240000:
+                jq["grain"] += flow * 0.55
+
+        # 沿已辟筑的西域驿道枢纽 (supply_lines) 从敦煌向前线粮仓转输
+        lines = logi.get("supply_lines", ["dun_huang"])
+        dh_node = state.nodes.get("dun_huang")
+        if dh_node and dh_node["faction"] == "han" and len(lines) > 1:
+            for hub_id in lines[1:]:
+                if hub_id not in state.nodes:
+                    continue
+                hn = state.nodes[hub_id]
+                if state.stock(hn, "han") < 85000.0 and dh_node["grain"] > 95000.0:
+                    xfer = min(7500.0 * prio, dh_node["grain"] - 90000.0)
+                    if xfer > 0:
+                        dh_node["grain"] -= xfer
+                        eff = 0.88 if chars.get("zheng_ji", {}).get("alive") else 0.80
+                        state.set_stock(hn, "han", state.stock(hn, "han") + xfer * eff)
 
         luntai_mult = 1.30 if v1["court"]["luntai_edict_active"] else 1.0
+        tt_master_mult = 1.20 if (chars.get("zheng_ji", {}).get("alive") or chars.get("lai_dan", {}).get("alive")) else 1.0
         for nid, lv in logi["tuntian_nodes"].items():
             if nid in state.nodes and lv > 0:
                 n = state.nodes[nid]
-                add_g = 2800.0 * lv * luntai_mult
+                add_g = 2800.0 * lv * luntai_mult * tt_master_mult
                 if state.month() == state.bal["calendar"]["harvest_month"]:
-                    add_g += 12000.0 * lv * luntai_mult
+                    add_g += 12000.0 * lv * luntai_mult * tt_master_mult
                 state.set_stock(n, "han", state.stock(n, "han") + add_g)
 
         for a in state.armies.values():
             if a["faction"] != "han" or a["is_convoy"]:
                 continue
             need_m = supply.need_per_month(state, a)
-            if a["grain"] < need_m * 1.6:
+            if a["grain"] < need_m * 1.55:
                 here = a["loc"].get("node", a["loc"].get("from", ""))
                 n = state.nodes.get(here)
                 if n:
                     sid = n["faction"]
                     rel = state.relations.get(sid)
                     willing = False
-                    if sid == "han" or (rel and (rel["overlord"] == "han" or rel.get("is_dual") or rel["han_influence"] >= 45.0)):
+                    if (
+                        sid == "han"
+                        or here in lines
+                        or logi["tuntian_nodes"].get(here, 0) > 0
+                        or (rel and (rel["overlord"] == "han" or rel.get("is_dual") or rel["han_influence"] >= 45.0))
+                    ):
                         willing = True
-                    elif state.army_size(a) >= 6500:
+                    elif state.army_size(a) >= 6500 and n["grain"] > 15000.0:
                         willing = True
-                    if willing or logi["supply_priority"] >= 2:
-                        topup = min(supply.carry_cap(state, a) - a["grain"], need_m * 1.5)
+                    if willing:
+                        topup = min(supply.carry_cap(state, a) - a["grain"], need_m * 1.45)
                         if topup > 0:
+                            avail_st = state.stock(n, "han")
+                            if avail_st >= topup * 0.5:
+                                state.set_stock(n, "han", max(0.0, avail_st - topup * 0.6))
+                            elif n["grain"] > topup:
+                                n["grain"] = max(0.0, n["grain"] - topup * 0.5)
                             a["grain"] += topup
                             a["starving"] = 0
+
+    def _tick_quarterly_upkeep(self, state):
+        """S02/S03/S05 季度军费度支、亭燧驿站维护费与官马池牧苑/互市补给与边防战马损耗。"""
+        v1 = state.ext["v1"]
+        logi = v1["logistics"]
+        chars = v1.get("characters", {})
+
+        # 1) 汉方官马池季度牧苑繁育、乌孙/大宛市马流入，以及在役骑兵/精使驼马损耗
+        hexi_held = sum(1 for nid in HEXI_FOUR if state.nodes[nid]["faction"] == "han")
+        horse_in = hexi_held * 55
+        if v1["events"].get("wusun_married"):
+            horse_in += 160
+        if v1["events"].get("dawan_horses_obtained"):
+            horse_in += 200
+        active_han_cav = sum(
+            int(a["units"].get("cavalry", 0))
+            for a in state.armies.values()
+            if a["faction"] == "han" and not a["is_convoy"]
+        )
+        horse_upkeep = int(round((active_han_cav / 1000.0) * 85.0 + len(logi.get("supply_lines", ["dun_huang"])) * 45.0))
+        state.han_horse_pool = _clamp(int(getattr(state, "han_horse_pool", 0)) + horse_in - horse_upkeep, 0, 12000)
+
+        # 2) 汉方季度超额边防军费、塞外烽燧与西域驿站维护（基础河西常备军 26,000 人由大司农岁计直供）
+        han_troops = sum(state.army_size(a) for a in state.armies.values() if a["faction"] == "han" and not a["is_convoy"])
+        excess_k = max(0.0, (han_troops - 26000.0) / 1000.0)
+        extra_beacons = max(0, len(logi["beacons"]) - 4)
+        extra_lines = max(0, len(logi.get("supply_lines", ["dun_huang"])) - 1)
+        sang_mult = 0.80 if chars.get("sang_hongyang", {}).get("alive", True) else 1.0
+        han_upkeep = int(round((excess_k * 28.0 + extra_beacons * 15.0 + extra_lines * 25.0) * sang_mult))
+        if han_upkeep > 0 and state.factions["han"]["money"] > 450:
+            state.factions["han"]["money"] = max(400, state.factions["han"]["money"] - han_upkeep)
+
+        # 3) 匈奴王庭控弦大军军费与诸王例行岁赐维护
+        xn_troops = sum(state.army_size(a) for a in state.armies.values() if a["faction"] == "xiongnu" and not a["is_convoy"])
+        xn_excess_k = max(0.0, (xn_troops - 20000.0) / 1000.0)
+        active_wings = sum(1 for tv in v1["tribes"]["tribes"].values() if tv["status"] != "defected_han")
+        xn_upkeep = int(round(xn_excess_k * 28.0 + active_wings * 55.0))
+        if xn_upkeep > 0 and state.factions["xiongnu"]["money"] > 500:
+            state.factions["xiongnu"]["money"] = max(450, state.factions["xiongnu"]["money"] - xn_upkeep)
+
+    def _tick_tuntian_pressure_and_autonomy(self, state):
+        """S04/S05 屯田水草挤压反扑（赖丹轮台遇袭事件链）与城邦苦匈重敛/苦汉征发自主反正。"""
+        v1 = state.ext["v1"]
+        logi = v1["logistics"]
+        beacons = set(logi["beacons"])
+
+        # 1) 屯田挤压周边亲匈城邦水草 -> 触发袭屯或护屯立威
+        for nid, lv in list(logi["tuntian_nodes"].items()):
+            if lv <= 0 or nid in HEXI_ALL or nid not in state.nodes:
+                continue
+            guarded = (
+                nid in beacons
+                or any(a["faction"] == "han" and state.army_size(a) >= 1800 for a in state.armies_at(nid))
+            )
+            for nb in state.near_neighbors(nid):
+                sid = state.nodes[nb]["faction"]
+                rel = state.relations.get(sid)
+                if not rel or rel["overlord"] == "han":
+                    continue
+                cur_p = logi["tuntian_pressure"].get(sid, 0.0)
+                if not guarded and rel["overlord"] == "xiongnu":
+                    cur_p += 4.5 * lv
+                else:
+                    cur_p = max(0.0, cur_p - 2.0)
+                logi["tuntian_pressure"][sid] = cur_p
+                if cur_p >= 22.0:
+                    nm = state.factions[sid]["name"]
+                    if guarded:
+                        rel["crimes_against_han"] = int(rel.get("crimes_against_han", 0)) + 1
+                        self._add_han_event_merit(state, 1.5, "护屯击退%s袭田胡骑" % nm)
+                        logi["tuntian_pressure"][sid] = 6.0
+                        state.log_event(
+                            "battle",
+                            "【护屯击胡】%s 不满 %s 军屯争水，遣骑夜袭；汉军据亭燧击走之，获讨伐罪状！" % (nm, state.nodes[nid]["name"]),
+                            {"state": sid, "node": nid},
+                        )
+                    else:
+                        tn = state.nodes[nid]
+                        burned = min(6500.0, state.stock(tn, "han") * 0.35)
+                        state.set_stock(tn, "han", max(0.0, state.stock(tn, "han") - burned))
+                        rel["xn_intimidation"] = _clamp(rel["xn_intimidation"] + 7.0, 0.0, 100.0)
+                        logi["tuntian_pressure"][sid] = 8.0
+                        state.log_event(
+                            "raid",
+                            "【赖丹式屯田遇袭】%s 乘 %s 无备纵兵焚掠汉屯（损粮 %.0f 斛）！" % (nm, tn["name"], burned),
+                            {"state": sid, "node": nid},
+                        )
+
+        # 2) 城邦自主外交：苦匈苛敛反正 vs 苦汉频征闭关
+        for sid, rel in state.relations.items():
+            rel["war_weariness"] = max(0.0, float(rel.get("war_weariness", 0.0)) - 3.0)
+            if rel["overlord"] == "xiongnu" and rel["xn_resentment"] >= 78.0 and rel["xn_intimidation"] < 42.0:
+                rel["overlord"] = ""
+                rel["xn_intimidation"] = max(0.0, rel["xn_intimidation"] - 10.0)
+                rel["han_influence"] = _clamp(rel["han_influence"] + 8.0, 0.0, 100.0)
+                rel["xn_resentment"] = max(0.0, rel["xn_resentment"] - 25.0)
+                state.log_event(
+                    "defect",
+                    "【苦匈重敛·举国反正】%s 不堪匈奴苛暴征索，乘胡骑势衰驱逐税使自立！" % state.factions[sid]["name"],
+                    {"state": sid},
+                )
+            elif rel["overlord"] == "han" and rel.get("war_weariness", 0.0) >= 68.0 and rel["han_influence"] < 55.0:
+                rel["overlord"] = ""
+                rel["han_influence"] = max(0.0, rel["han_influence"] - 10.0)
+                rel["war_weariness"] = max(0.0, rel["war_weariness"] - 25.0)
+                state.log_event(
+                    "defect",
+                    "【诸国疲弊】%s 苦于频年从征，闭关自守暂停藩属义务" % state.factions[sid]["name"],
+                    {"state": sid},
+                )
 
     def _check_and_rotate_edict(self, state):
         """S02 季度诏令核验与新诏签发。"""
@@ -1874,7 +2320,7 @@ class V1RulesetPlugin(resolver.RulesetPlugin):
         severe_han_crisis = (
             (hexi_lost_cnt >= 2 and state.turn >= 12)
             or court["unpardoned_forged_edict"]
-            or (state.turn >= 18 and v1["victory"]["han_merit"] < 52.0 and hexi_lost_cnt >= 1 and state.stats.get("han_casualties", 0) >= 34000)
+            or (state.turn >= 20 and v1["victory"]["han_merit"] < 48.0 and hexi_lost_cnt >= 1 and state.stats.get("han_casualties", 0) >= 62000)
         )
         if severe_han_crisis:
             court["trust"] = _clamp(min(court["trust"], 22.0) - 9.0, 0.0, 100.0)
@@ -2165,15 +2611,23 @@ def _desc_v1_cmd(state, c):
         nm = state.nodes.get(nid, {}).get("name", nid)
         return "【后勤·西域屯田】在 %s(%s) 开渠筑垒设立军屯（耗 260 金，提升自养功业）" % (nm, nid)
     if t == "setup_supply_line":
-        return "【后勤·自动粮道】调整河西—西域自动转输补给线（优先级 %s）" % c.get("priority", 2)
+        hub = c.get("forward_hub", "西域")
+        nm = state.nodes.get(hub, {}).get("name", hub)
+        return "【后勤·辟筑驿线】辟通敦煌至 %s(%s) 驼马驿道粮线（耗 220 金、官马 350 匹）" % (nm, hub)
+    if t == "levy_vassal_troops":
+        return "【军事·发诸国兵】持节征调西域属国及乌孙联军 3,300+ 人合击北道（耗 260 金）"
+    if t == "hold_chanyu_assembly":
+        tgt = c.get("target", "西域")
+        nm = state.nodes.get(tgt, {}).get("name", tgt)
+        return "【王庭·蹛林大会】召集诸王课校人畜计、定盟主攻 %s（耗 320 金，诸部忠诚+7.5，主攻战力+12%%）" % nm
     if t == "build_beacon":
         nid = c.get("node", "")
         nm = state.nodes.get(nid, {}).get("name", nid)
-        return "【边防·修筑烽燧】在 %s(%s) 筑塞外亭燧（耗 180 金，消迷雾+城防加成）" % (nm, nid)
+        return "【边防·修筑烽燧】在 %s(%s) 筑塞外亭燧（耗 130~180 金，消迷雾+护屯+城防）" % (nm, nid)
     if t == "recruit_convict":
         nid = c.get("node", "dun_huang")
         nm = state.nodes.get(nid, {}).get("name", nid)
-        return "【军事·七科谪】在 %s 征发驰刑罪人兵 3,000 人（耗 180 金，免占中央军池）" % nm
+        return "【军事·七科谪】在 %s 征发驰刑罪人兵 3,000 人助屯强攻（耗 180 金，攻城+25%%）" % nm
     if t == "welcome_rizhu":
         return "【历史决断·迎降日逐】出师乌垒迎受日逐王先贤掸率部来降（功业 +25，罢僮仆都尉）"
     if t == "intercept_tongpu":
@@ -2185,7 +2639,7 @@ def _desc_v1_cmd(state, c):
     if t == "intimidate_city":
         sid = c.get("state", "")
         nm = state.factions.get(sid, {}).get("name", sid)
-        return "【僮仆·铁骑威压】遣僮仆都尉巡行震慑 %s(%s)（威吓 +13）" % (nm, sid)
+        return "【僮仆·铁骑威压】遣僮仆都尉巡行震慑 %s(%s)（耗 75 金，每季限 2 国，威吓 +13）" % (nm, sid)
     if t == "install_prince":
         sid = c.get("state", "")
         nm = state.factions.get(sid, {}).get("name", sid)
@@ -2198,8 +2652,9 @@ def _desc_v1_cmd(state, c):
 for _ct in (
     "comply_edict", "bargain_edict", "forge_edict", "request_appropriation", "petition_protectorate",
     "dispatch_elite_envoy", "hire_mission", "accept_dual_allegiance", "assassinate_king",
-    "build_tuntian", "setup_supply_line", "build_beacon", "recruit_convict",
+    "build_tuntian", "setup_supply_line", "build_beacon", "recruit_convict", "levy_vassal_troops",
     "welcome_rizhu", "intercept_tongpu",
     "distribute_rewards", "play_tactical_card", "intimidate_city", "install_prince", "pacify_tribe",
+    "hold_chanyu_assembly",
 ):
     commands.register_command(_ct, lambda s, c: "", lambda s, c: None, _desc_v1_cmd)

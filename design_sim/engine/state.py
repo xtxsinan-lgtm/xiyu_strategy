@@ -170,18 +170,36 @@ class GameState:
                 n["militia"] = {"cavalry": int(total * 0.7), "infantry": total - int(total * 0.7)}
 
     def _all_pairs_hops(self):
+        """跳数：路口（junction）位于道路中段，不额外计一跳。
+
+        以半跳为单位：接触路口的路段计 1，其余计 2；结果向上取整为整跳。
+        这样 车师后—路口—赤谷 仍为 1 跳，与拆分前一致。
+        """
         out = {}
         for s in self.nodes:
-            d = {s: 0}
+            half = {s: 0}
             q = deque([s])
-            while q:
+            while q:  # 权重仅 1/2 且图很小：用松弛式 BFS 即可得到最短距离
                 c = q.popleft()
                 for nb in self.nbrs[c]:
-                    if nb not in d:
-                        d[nb] = d[c] + 1
+                    w = 1 if self._is_junction(c) or self._is_junction(nb) else 2
+                    if half[c] + w < half.get(nb, 1 << 30):
+                        half[nb] = half[c] + w
                         q.append(nb)
-            out[s] = d
+            out[s] = {nid: (h + 1) // 2 for nid, h in half.items()}
+        # 保持道路直连顺序，路口后紧接其另一侧节点；无路口时与 nbrs 完全一致
+        self.near = {}
+        for s in self.nodes:
+            seq = []
+            for nb in self.nbrs[s]:
+                seq.append(nb)
+                if self._is_junction(nb):
+                    seq.extend(x for x in self.nbrs[nb] if x != s)
+            self.near[s] = list(dict.fromkeys(x for x in seq if out[s].get(x) == 1))
         return out
+
+    def _is_junction(self, nid):
+        return self.nodes[nid]["type"] == "junction"
 
     # ---------- 日历 ----------
     def month(self, tick=None):
@@ -224,7 +242,12 @@ class GameState:
         return self.route_idx.get((a, b), -1)
 
     def neighbors(self, nid):
+        """道路直连的相邻节点（行军、撤退用）。"""
         return self.nbrs[nid]
+
+    def near_neighbors(self, nid):
+        """一跳范围内的节点：穿过路口视为直连（威吓辐射、烽燧视野等影响力用）。"""
+        return self.near[nid]
 
     def route_closed(self, idx):
         return self.routes[idx]["closed_in_winter"] and self.is_winter()
@@ -256,7 +279,15 @@ class GameState:
     def is_supply_node(self, node, fid):
         if node["type"] == "source":
             return fid == "han"
-        return self.controller(node) == fid
+        if self.controller(node) == fid:
+            return True
+        if fid == "han" and "v1" in getattr(self, "ext", {}):
+            v1 = self.ext["v1"]
+            if v1.get("logistics", {}).get("tuntian_nodes", {}).get(node["id"], 0) > 0:
+                return True
+            if node["depot"].get("han", 0.0) >= 1000.0:
+                return True
+        return False
 
     # ---------- 军队 ----------
     def new_army(self, fid, at, u, horses=0, grain=0, laborers=0, aid=""):
@@ -285,7 +316,16 @@ class GameState:
         a["plan"]["triggers"] = copy.deepcopy(p["triggers"])
 
     def remove_army(self, aid):
-        self.armies.pop(aid, None)
+        a = self.armies.pop(aid, None)
+        if a and a.get("commander") and "v1" in getattr(self, "ext", {}):
+            v1_ext = self.ext["v1"]
+            chars = v1_ext.get("characters") or v1_ext.get("events", {}).get("characters", {})
+            ch = chars.get(a["commander"])
+            if ch:
+                if ch.get("assigned_army") == aid:
+                    ch["assigned_army"] = ""
+                if ch.get("at_army") == aid:
+                    ch["at_army"] = ""
 
     def log_event(self, kind, text, extra=None):
         e = {"tick": self.tick, "turn": self.turn, "date": self.date_text(), "kind": kind, "text": text}
