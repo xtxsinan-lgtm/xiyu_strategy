@@ -3890,14 +3890,19 @@
         ? [
             { idx: "第一阶", title: "凿空立威", desc: "收复楼兰或精绝，内属国 ≥3 国", done: st.scores.han_vassals >= 3 },
             { idx: "第二阶", title: "屯田护道", desc: "塞外开置军屯 ≥3 处，保障北道或南道粮秣", done: ttCount >= 3 },
-            { idx: "第三阶", title: "诸国纳质", desc: "大汉内属国 ≥11 国，迎降或击破僮仆都尉", done: st.scores.han_vassals >= 11 || !v1.tribes.tongpu_active },
-            { idx: "第四阶", title: "都护立府", desc: "总功业 G ≥ 100，乌垒立西域都护府", done: merit >= 100 },
+            { idx: "第三阶", title: "诸国纳质", desc: "内属 ≥11 或罢僮仆（均为功业来源，非单独胜条件）", done: st.scores.han_vassals >= 11 || !v1.tribes.tongpu_active },
+            {
+              idx: "第四阶",
+              title: "都护立府",
+              desc: st.meta.scenario === "lou_lan_gu_shi" ? "短剧本：功业 G ≥ 100 即胜" : "功业 G ≥ 100 并维持四季",
+              done: merit >= 100 && (st.meta.scenario === "lou_lan_gu_shi" || Math.floor((v1.victory.han_hold_months || 0) / 3) >= 4),
+            },
           ]
         : [
             { idx: "第一阶", title: "控弦南下", desc: "稳控车师与焉耆北道门户，服属 ≥5 国", done: st.scores.xn_vassals >= 5 },
             { idx: "第二阶", title: "僮仆重敛", desc: "护持焉耆僮仆都尉，充实王庭赏赐池", done: v1.tribes.tongpu_active && st.scores.xn_money >= 1200 },
             { idx: "第三阶", title: "遮断汉道", desc: "西域服属国 ≥10 国，威服 W ≥ 75", done: st.scores.xn_vassals >= 10 || v1.victory.xn_weifu >= 75 },
-            { idx: "第四阶", title: "漠北独尊", desc: "匈奴威服 W ≥ 100，汉使绝迹西域", done: v1.victory.xn_weifu >= 100 },
+            { idx: "第四阶", title: "漠北独尊", desc: "威服 W ≥ 100 维持四季，或夺河西四郡", done: v1.victory.xn_weifu >= 100 && Math.floor((v1.victory.xn_weifu_hold_months || 0) / 3) >= 4 },
           ];
 
     let activeAssigned = false;
