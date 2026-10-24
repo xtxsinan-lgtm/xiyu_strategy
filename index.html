@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>西域 · 汉匈争霸 — 设计与验证工作台</title>
+  <meta name="description" content="《西域·汉匈争霸》是一款以西汉经营西域为背景的季度制战略游戏。这里是它的推演沙盘、模拟验证、公式实验与设计文档。" />
+  <meta name="theme-color" content="#0e0d0b" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e0d0b'/%3E%3Cg fill='none' stroke='%23d9a046' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M10 26l2.5-13h7L22 26z'/%3E%3Cpath d='M7 26h18M12 18.5h8'/%3E%3C/g%3E%3Cpath d='M16 4.5c2 2.4 2.6 4.2 0 6.5-2.6-2.3-2-4.1 0-6.5z' fill='%23d9a046'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@chinese-fonts/jxzk@3.0.0/dist/%E6%B1%9F%E8%A5%BF%E6%8B%99%E6%A5%B7/result.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-mark" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M7 21l2-10h6l2 10z" />
+        <path d="M4.5 21h15M9.6 15h4.8" />
+      </g>
+      <path d="M12 2.5c1.6 1.9 2 3.3 0 5.1-2-1.8-1.6-3.2 0-5.1z" fill="currentColor" />
+    </symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4" /></symbol>
+  </svg>
+
+  <!-- ==================== 站点页眉 ==================== -->
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#/" aria-label="西域 · 汉匈争霸 首页">
+        <svg class="brand-mark"><use href="#i-mark" /></svg>
+        <span class="brand-name">西域</span>
+        <span class="brand-sub">汉匈争霸 · 设计工作台</span>
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <a href="#/sandbox" data-route="sandbox"><span class="nav-no">壹</span><span>沙盘</span></a>
+        <a href="#/validation" data-route="validation"><span class="nav-no">贰</span><span>验证</span></a>
+        <a href="#/formulas" data-route="formulas"><span class="nav-no">叁</span><span>公式</span></a>
+        <a href="#/docs" data-route="docs"><span class="nav-no">肆</span><span>文档</span></a>
+      </nav>
+
+      <div class="header-tools">
+        <button type="button" class="engine-pill" id="engine-pill" title="在 Python 引擎与浏览器原生引擎之间切换">
+          <span class="engine-dot" id="engine-dot"></span>
+          <span id="engine-label">原生引擎</span>
+        </button>
+        <a class="btn btn-solid btn-sm" href="play.html">
+          <span>进入游戏</span>
+          <svg class="icon"><use href="#i-arrow-right" /></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ==================== 首页 ==================== -->
+    <section id="tab-home" class="tab-view" data-route="home" aria-labelledby="hero-title">
+      <div class="cover" id="cover">
+        <svg class="cover-route" viewBox="0 0 1440 640" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+          <defs>
+            <path id="silk-road" d="M1520 560 C 1300 560 1210 500 1040 512 S 760 590 600 572 S 330 500 140 528 S -40 560 -100 556" />
+          </defs>
+          <path class="dune" d="M-40 610 C 160 586 260 600 420 592 S 700 570 880 588 S 1200 606 1480 590" />
+          <path class="dune" d="M-40 632 C 220 618 380 626 560 620 S 980 606 1160 618 S 1360 628 1480 622" />
+          <use class="road" href="#silk-road" />
+          <rect class="post" x="1034" y="502" width="10" height="10" />
+          <rect class="post" x="596" y="563" width="10" height="10" />
+          <rect class="post" x="136" y="519" width="10" height="10" />
+          <g class="rider">
+            <path d="M0 -4 V-34" />
+            <path d="M0 -34 h14 l-4 5 l4 5 h-14" />
+            <circle cx="0" cy="-2" r="2.4" />
+            <animateMotion dur="60s" repeatCount="indefinite"><mpath href="#silk-road" /></animateMotion>
+          </g>
+        </svg>
+
+        <div class="wrap">
+          <div class="dateline">
+            <span>内部试玩版 · 二〇二六年秋</span>
+            <span>西汉经营西域的季度制战略游戏</span>
+            <span>v1.0</span>
+          </div>
+
+          <div class="cover-grid">
+            <div class="cover-text">
+              <h1 class="display" id="hero-title">三十六国，<br />在<em>汉匈</em>之间</h1>
+              <p class="hero-lede">
+                漠北决战之后，西域诸国夹在长安与单于庭之间。你可以做持节出玉门的汉使，经营万里粮道、周旋朝廷诏令；也可以坐镇单于庭，均分赏赐以安四部，令僮仆都尉赋敛诸国。
+              </p>
+              <p class="hero-count">
+                收录 <b>3</b> 个历史剧本、<b id="stat-nodes">42</b> 座城邦与军镇。当前规则已跑过 <b>200</b> 局模拟对局，出现 <b id="stat-sigs">69</b> 种不同结局。
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn-solid btn-lg" href="play.html">
+                  <span>开始一局</span>
+                  <svg class="icon"><use href="#i-arrow-right" /></svg>
+                </a>
+                <a class="btn btn-quiet" href="#/sandbox">
+                  <span>打开推演沙盘</span>
+                  <svg class="icon"><use href="#i-arrow-right" /></svg>
+                </a>
+              </div>
+            </div>
+
+            <figure class="plate">
+              <a class="plate-media" href="play.html" aria-label="进入游戏舆图">
+                <img src="assets/art/western-regions-atlas-v2.png" alt="西域舆图：天山、塔里木盆地与河西走廊" />
+              </a>
+              <figcaption class="plate-caption">
+                <span class="mono">图 01</span>
+                <span>西域舆图 · 以史料方位整理的战略示意，非实测</span>
+              </figcaption>
+
+              <div class="plate-quote">
+                <p class="plate-kicker">史书上的一句话</p>
+                <blockquote>“汉之号令班西域矣，始自张骞而成于郑吉。”</blockquote>
+                <div class="quote-src">
+                  <span>《汉书 · 郑吉传》</span>
+                  <a class="text-link" href="play.html">剧本：西域都护府 <svg class="icon"><use href="#i-arrow-right" /></svg></a>
+                </div>
+              </div>
+            </figure>
+          </div>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <nav class="contents" aria-label="章节">
+          <a href="#/sandbox"><span class="no">壹</span><span class="t">沙盘</span><span class="d">勾选军令、推进一季，逐条读结算战报</span></a>
+          <a href="#/validation"><span class="no">贰</span><span class="t">验证</span><span class="d">200 局模拟、策略对抗矩阵与结局分布</span></a>
+          <a href="#/formulas"><span class="no">叁</span><span class="t">公式</span><span class="d">功业、分赏与远征粮秣，拖动滑块验算</span></a>
+          <a href="#/docs"><span class="no">肆</span><span class="t">文档</span><span class="d">十份系统规范与二十四张开发工单</span></a>
+        </nav>
+      </div>
+
+      <div class="wrap section">
+        <header class="chapter-head">
+          <span class="chapter-no">◆</span>
+          <div>
+            <h2 class="section-title">三个历史剧本</h2>
+            <p class="section-note">从楼兰之战到都护府设立，前后横跨五十年。每个剧本都从真实的年份与兵力出发，之后怎么走由你决定。</p>
+          </div>
+        </header>
+        <div class="scenario-list">
+          <a class="scenario" href="play.html">
+            <div class="scenario-year"><span>公元前 108 年</span><span>12 季</span></div>
+            <h3 class="scenario-name">楼兰姑师</h3>
+            <p class="scenario-desc">赵破奴率轻骑七百破楼兰、虏其王。短局，附五课新手教学，适合第一次上手。</p>
+            <div class="scenario-meta"><span>教学剧本</span><span class="text-link">开始 <svg class="icon"><use href="#i-arrow-right" /></svg></span></div>
+          </a>
+          <a class="scenario" href="play.html">
+            <div class="scenario-year"><span>公元前 119 年</span><span>40 季</span></div>
+            <h3 class="scenario-name">漠北之后</h3>
+            <p class="scenario-desc">卫青、霍去病漠北决战之后，张骞再使西域，欲联乌孙以断匈奴右臂。完整沙盘，汉匈双方均可执掌。</p>
+            <div class="scenario-meta"><span>主剧本</span><span class="text-link">开始 <svg class="icon"><use href="#i-arrow-right" /></svg></span></div>
+          </a>
+          <a class="scenario" href="play.html">
+            <div class="scenario-year"><span>公元前 68 年</span><span>36 季</span></div>
+            <h3 class="scenario-name">西域都护府</h3>
+            <p class="scenario-desc">郑吉屯田渠犁，五争车师。日逐王先贤掸若来降，僮仆都尉随之而罢，都护之设便在此一举。</p>
+            <div class="scenario-meta"><span>进阶剧本</span><span class="text-link">开始 <svg class="icon"><use href="#i-arrow-right" /></svg></span></div>
+          </a>
+        </div>
+      </div>
+
+      <div class="wrap section">
+        <header class="chapter-head">
+          <span class="chapter-no">◆</span>
+          <div>
+            <h2 class="section-title">两种完全不同的玩法</h2>
+            <p class="section-note">汉与匈奴的资源、胜利条件和内部压力都不对称。汉使要应付的是长安的耐心，单于要应付的是四部诸王的嫉妒。</p>
+          </div>
+        </header>
+        <div class="factions">
+          <div class="faction">
+            <div class="faction-seal">汉</div>
+            <div>
+              <h3 class="faction-name">大汉 · 持节使臣</h3>
+              <p class="faction-role">粮道、诏令与属国</p>
+              <p class="faction-desc">从敦煌拉出一条能养活远征军的粮道；在限期内回应长安的诏书，或者冒险矫诏发兵；遣使、册封、屯田，把城邦一个个变成属国。</p>
+              <p class="faction-goal"><span class="eyebrow">胜利</span><span>都护功业 G 达到 100，并维持四季</span></p>
+            </div>
+          </div>
+          <div class="faction xn">
+            <div class="faction-seal">匈</div>
+            <div>
+              <h3 class="faction-name">匈奴 · 撑犁孤涂单于</h3>
+              <p class="faction-role">分赏、会盟与威服</p>
+              <p class="faction-desc">每季把赏赐分给左贤王、右贤王、日逐王与犁汗王——分得不均就会有人离心；三会诸王于龙城蹛林，令僮仆都尉赋敛西域，伺机南下河西。</p>
+              <p class="faction-goal"><span class="eyebrow">胜利</span><span>威服 W 达到 100，或夺取河西四郡</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wrap section">
+        <header class="chapter-head">
+          <span class="chapter-no">◆</span>
+          <div>
+            <h2 class="section-title">规则是怎么调出来的</h2>
+            <p class="section-note">每次改规则，都让五种性格的 AI 互相对打 200 局，看胜率是否落在目标区间、有没有一招鲜的打法。下面是当前版本的结果。</p>
+          </div>
+        </header>
+        <div class="figures" id="home-figures">
+          <div class="figure"><div class="figure-v" id="fig-han">34.5<small>%</small></div><div class="figure-k">汉方主胜利率</div><div class="figure-d">目标 20–35%，旧规则为 0</div></div>
+          <div class="figure"><div class="figure-v" id="fig-xn">29.0<small>%</small></div><div class="figure-k">匈奴主胜利率</div><div class="figure-d">目标 20–35%，旧规则为 58%</div></div>
+          <div class="figure"><div class="figure-v" id="fig-sig">69</div><div class="figure-k">种不同结局</div><div class="figure-d">单一结局占比不超过 10%</div></div>
+          <div class="figure"><div class="figure-v" id="fig-cmd">7.3</div><div class="figure-k">前十季每季有效命令</div><div class="figure-d">旧规则仅 1.65 条</div></div>
+        </div>
+        <p style="margin-top:28px"><a class="text-link" href="#/validation">查看完整验证报告 <svg class="icon"><use href="#i-arrow-right" /></svg></a></p>
+      </div>
+    </section>
+
+    <!-- ==================== I · 推演沙盘 ==================== -->
+    <section id="tab-playtest" class="tab-view" data-route="sandbox">
+      <header class="wrap page-head">
+        <div>
+          <p class="chapter-mark"><span class="chapter-no">卷壹</span><span>沙盘</span><span class="en">运筹</span></p>
+          <h1 class="page-title">纸面推演沙盘</h1>
+        </div>
+        <p class="page-lede">不带动画的规则层沙盘。每季从合法命令里勾选若干条，推进后九旬同步结算，读战报、给这一季打分，最后导出一份试玩记录。</p>
+      </header>
+
+      <div class="wrap view-body">
+        <div class="toolbar">
+          <div class="toolbar-row">
+            <label class="field"><span class="field-label">执政阵营</span>
+              <select id="sel-side">
+                <option value="han" selected>大汉 · 持节使臣</option>
+                <option value="xiongnu">匈奴 · 大单于庭</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">剧本</span>
+              <select id="sel-scenario">
+                <option value="mo_bei_zhi_hou" selected>漠北之后 · 前119年 · 40季</option>
+                <option value="lou_lan_gu_shi">楼兰姑师 · 前108年 · 12季</option>
+                <option value="du_hu_fu">西域都护府 · 前68年 · 36季</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">规则集</span>
+              <select id="sel-ruleset">
+                <option value="v1" selected>v1 现行规则</option>
+                <option value="baseline">baseline 旧规则（对照）</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">对手性格</span>
+              <select id="sel-opp-bot">
+                <option value="baseline" selected>均衡</option>
+                <option value="aggressive">激进</option>
+                <option value="conservative">持重</option>
+                <option value="greedy">贪利</option>
+                <option value="random_legal">随机（对照）</option>
+              </select>
+            </label>
+            <label class="field"><span class="field-label">随机种子</span>
+              <input id="inp-seed" type="number" value="11001" style="width:96px" />
+            </label>
+            <button id="btn-new-game" class="btn">重开</button>
+            <span class="spacer"></span>
+            <button id="btn-export-log" class="btn btn-quiet">导出试玩记录</button>
+          </div>
+          <div class="toolbar-row">
+            <button id="btn-step-turn" class="btn btn-accent">推进一季</button>
+            <button id="btn-pick-advisor" class="btn">采纳幕僚建议</button>
+            <button id="btn-clear-cmds" class="btn">清空所选</button>
+            <button id="btn-auto-3" class="btn">托管三季</button>
+            <button id="btn-undo" class="btn btn-quiet">悔一季</button>
+          </div>
+        </div>
+
+        <div id="hud-banner" class="hud-banner"></div>
+        <div id="ending-banner-box"></div>
+
+        <div class="playtest-grid">
+          <div>
+            <div class="panel-box">
+              <div class="panel-header">
+                <div class="panel-title"><h3>战略态势</h3><span class="eyebrow">43 节点（含 1 处路口） · 外交层级 · 粮道</span></div>
+                <span class="panel-hint">点城邦查看详情</span>
+              </div>
+              <div class="map-container">
+                <svg id="map-svg" class="map-svg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="map-legend">
+                  <span class="legend-item"><i class="legend-dot" style="background:#c0392b"></i>汉郡</span>
+                  <span class="legend-item"><i class="legend-dot" style="background:#e08a80"></i>汉属国</span>
+                  <span class="legend-item"><i class="legend-dot" style="background:#5d4037"></i>匈奴</span>
+                  <span class="legend-item"><i class="legend-dot" style="background:#a1887f"></i>匈属国</span>
+                  <span class="legend-item"><i class="legend-dot" style="background:#b8b8b8"></i>关隘</span>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="node-inspector-body"></div>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <div class="panel-header">
+                <div class="panel-title"><h3>结算战报</h3><span class="eyebrow">九旬同步结算</span></div>
+                <div class="rating-bar">
+                  <label class="field-inline">无聊
+                    <select id="sel-boredom" title="这一季有多无聊">
+                      <option value="1" selected>1 紧凑</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5 空转</option>
+                    </select>
+                  </label>
+                  <label class="field-inline">困惑
+                    <select id="sel-confusion" title="结算结果有多难理解">
+                      <option value="1" selected>1 清楚</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                      <option value="5">5 不解</option>
+                    </select>
+                  </label>
+                  <input id="inp-turn-note" type="text" placeholder="这一季的想法…" />
+                </div>
+              </div>
+              <div class="panel-body">
+                <div id="turn-log-stream" class="log-stream"></div>
+                <details class="raw">
+                  <summary>原始文字态势（与 design_sim/play.py 输出一致）</summary>
+                  <pre id="raw-observation-text" class="pre-briefing"></pre>
+                </details>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="panel-box">
+              <div class="panel-header">
+                <div class="panel-title"><h3>本季纪事</h3><span class="eyebrow">季初要务</span></div>
+                <button id="btn-toggle-chronicle-style" class="btn btn-sm btn-quiet">改看白话</button>
+              </div>
+              <div class="panel-body">
+                <div class="chronicle-box">
+                  <div id="chronicle-text" class="chronicle-text"></div>
+                </div>
+                <div id="todo-list" class="todo-list"></div>
+              </div>
+            </div>
+
+            <div class="panel-box">
+              <div class="panel-header">
+                <div class="panel-title"><h3>本季军令</h3></div>
+                <span id="cmd-selected-count" class="panel-hint">已选 0 条</span>
+              </div>
+              <div class="panel-body">
+                <div class="cmd-filter-tabs">
+                  <div class="segmented" role="group" aria-label="命令分类">
+                    <button type="button" class="cmd-tab active" data-cat="all">全部</button>
+                    <button type="button" class="cmd-tab" data-cat="advisor">幕僚推荐</button>
+                    <button type="button" class="cmd-tab" data-cat="politics">朝政</button>
+                    <button type="button" class="cmd-tab" data-cat="diplomacy">外交</button>
+                    <button type="button" class="cmd-tab" data-cat="logistics">粮道</button>
+                    <button type="button" class="cmd-tab" data-cat="military">军事</button>
+                  </div>
+                  <label class="switch"><input type="checkbox" id="chk-filter-node" /><span>只看所选城邦</span></label>
+                </div>
+                <div id="cmd-list" class="cmd-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== II · 模拟验证 ==================== -->
+    <section id="tab-s09" class="tab-view" data-route="validation">
+      <header class="wrap page-head">
+        <div>
+          <p class="chapter-mark"><span class="chapter-no">卷贰</span><span>验证</span><span class="en">校验</span></p>
+          <h1 class="page-title">两百局之后的数字</h1>
+        </div>
+        <p class="page-lede">让不同性格的 AI 在同一套规则下反复对局，检查胜率是否落在目标区间、是否存在稳赢的单一打法、结局是否足够多样。以下为 v1 规则、种子 11001、每局 40 季的结果。</p>
+      </header>
+
+      <div class="wrap view-body">
+        <div class="gate-banner">
+          <span>七项验收指标</span>
+          <span class="verdict"><i class="dot"></i>全部达标</span>
+        </div>
+        <div id="s09-l12-cards" class="gates"></div>
+
+        <div class="panel-box">
+          <div class="panel-header">
+            <div class="panel-title"><h3>新旧规则对照</h3><span class="eyebrow">baseline → v1 · 各 200 局</span></div>
+          </div>
+          <div class="panel-body table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>指标</th>
+                  <th>目标</th>
+                  <th>旧规则</th>
+                  <th>现行规则</th>
+                  <th>结论</th>
+                </tr>
+              </thead>
+              <tbody id="s09-compare-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-header">
+            <div class="panel-title"><h3>策略对抗矩阵</h3><span class="eyebrow">5 × 5 · 汉方胜率</span></div>
+            <div class="segmented" role="group" aria-label="规则集">
+              <button type="button" id="btn-matrix-v1" class="active">现行规则</button>
+              <button type="button" id="btn-matrix-base">旧规则</button>
+            </div>
+          </div>
+          <div class="panel-body table-wrap">
+            <table id="s09-matrix-table" class="data-table matrix-table"></table>
+            <div class="matrix-legend">
+              <span><i style="background:var(--han-wash);box-shadow:inset 0 0 0 1px rgba(196,81,63,.4)"></i>汉方胜率 ≥ 65%</span>
+              <span><i style="background:var(--xn-wash);box-shadow:inset 0 0 0 1px rgba(168,130,95,.4)"></i>汉方胜率 ≤ 35%</span>
+              <span>任一策略平均胜率超过 70% 即视为“一招鲜”</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel-box">
+            <div class="panel-header">
+              <div class="panel-title"><h3>最常见的十五种结局</h3></div>
+              <span class="panel-hint">单一结局占比上限 20%</span>
+            </div>
+            <div class="panel-body table-wrap" style="max-height:420px; overflow-y:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>结局签名</th>
+                    <th style="text-align:right">局数</th>
+                    <th style="text-align:right">占比</th>
+                  </tr>
+                </thead>
+                <tbody id="s09-signatures-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <div class="panel-header">
+              <div class="panel-title"><h3>在浏览器里再跑几局</h3></div>
+            </div>
+            <div class="panel-body">
+              <p class="text-2" style="font-size:13.5px; margin-bottom:16px;">挑两种 AI 性格，直接在本页调用模拟引擎对局，看胜率、都护府达成率与结局数。Python 引擎加载完成后结果与离线脚本一致。</p>
+              <div class="toolbar-row">
+                <label class="field"><span class="field-label">局数</span>
+                  <select id="live-batch-games">
+                    <option value="5">5 局</option>
+                    <option value="10" selected>10 局</option>
+                    <option value="20">20 局</option>
+                  </select>
+                </label>
+                <label class="field"><span class="field-label">汉方</span>
+                  <select id="live-han-bot">
+                    <option value="baseline" selected>均衡</option>
+                    <option value="aggressive">激进</option>
+                    <option value="conservative">持重</option>
+                    <option value="greedy">贪利</option>
+                    <option value="random_legal">随机</option>
+                  </select>
+                </label>
+                <label class="field"><span class="field-label">匈奴</span>
+                  <select id="live-xn-bot">
+                    <option value="baseline" selected>均衡</option>
+                    <option value="aggressive">激进</option>
+                    <option value="conservative">持重</option>
+                    <option value="greedy">贪利</option>
+                    <option value="random_legal">随机</option>
+                  </select>
+                </label>
+                <button id="btn-run-live-batch" class="btn btn-accent">开始模拟</button>
+              </div>
+              <div id="live-batch-result" class="batch-result">选好双方后点“开始模拟”。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== III · 公式实验 ==================== -->
+    <section id="tab-formulas" class="tab-view" data-route="formulas">
+      <header class="wrap page-head">
+        <div>
+          <p class="chapter-mark"><span class="chapter-no">卷叁</span><span>公式</span><span class="en">算学</span></p>
+          <h1 class="page-title">三条最常被问到的公式</h1>
+        </div>
+        <p class="page-lede">都护功业怎么算、单于分赏为什么会惹怒诸王、远征军走多远就回不来了。拖动滑块，结果即时更新；数值与游戏内结算使用同一套系数。</p>
+      </header>
+
+      <div class="wrap view-body">
+        <div class="grid-2">
+          <div class="panel-box">
+            <div class="panel-header">
+              <div class="panel-title"><h3>都护功业 G</h3><span class="eyebrow">汉方主胜利</span></div>
+              <span class="panel-hint">G ≥ 100 并维持四季</span>
+            </div>
+            <div class="panel-body">
+              <div class="slider-row">
+                <div class="slider-head"><span>内属国数量 · 每国 +6</span><strong id="val-vassals">8</strong></div>
+                <input id="calc-vassals" type="range" class="calc-input" min="0" max="18" value="8" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><span>赐印绶国数量 · 每国 +2，上限 12</span><strong id="val-enfeoff">5</strong></div>
+                <input id="calc-enfeoff" type="range" class="calc-input" min="0" max="18" value="5" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><span>控制乌垒、车师前、渠犁 · 每处 +10</span><strong id="val-hubs">2</strong></div>
+                <input id="calc-hubs" type="range" class="calc-input" min="0" max="3" value="2" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><span>西域屯田点 · 每处 +4.5</span><strong id="val-tuntian">2</strong></div>
+                <input id="calc-tuntian" type="range" class="calc-input" min="0" max="4" value="2" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><label><input id="calc-rizhu" type="checkbox" class="calc-input" checked /> 日逐王已来降、僮仆都尉已罢 · +35</label></div>
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><span>河西四郡失守 · 每郡 −12</span><strong id="val-hexi-lost">0</strong></div>
+                <input id="calc-hexi-lost" type="range" class="calc-input" min="0" max="4" value="0" />
+              </div>
+              <div id="calc-g-result" class="calc-result"></div>
+            </div>
+          </div>
+
+          <div class="panel-box">
+            <div class="panel-header">
+              <div class="panel-title"><h3>四部分赏与嫉妒</h3><span class="eyebrow">匈奴内政</span></div>
+              <span class="panel-hint">不患寡而患不均</span>
+            </div>
+            <div class="panel-body">
+              <p class="text-2" style="font-size:13px; margin-bottom:6px;">调整单于给四部的赏赐权重（自动归一）。最多与最少之间相差超过 15%，被冷落的部落就会忠诚下降、怨望上升。</p>
+              <div class="slider-row">
+                <div class="slider-head"><span>左贤王部 · 期望 35%</span></div>
+                <input id="calc-r-zuo" type="range" class="calc-input" min="0" max="100" value="40" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><span>右贤王部 · 期望 30%</span></div>
+                <input id="calc-r-you" type="range" class="calc-input" min="0" max="100" value="30" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><span>日逐王部 · 掌僮仆都尉 · 期望 20%</span></div>
+                <input id="calc-r-rizhu" type="range" class="calc-input" min="0" max="100" value="10" />
+              </div>
+              <div class="slider-row">
+                <div class="slider-head"><span>犁汗王部 · 期望 15%</span></div>
+                <input id="calc-r-lihu" type="range" class="calc-input" min="0" max="100" value="20" />
+              </div>
+              <div id="calc-envy-result" class="calc-result"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-box">
+          <div class="panel-header">
+            <div class="panel-title"><h3>远征余粮与不归点</h3><span class="eyebrow">粮道 · 城邦给食</span></div>
+            <span class="panel-hint">贰师将军一征大宛为何失败</span>
+          </div>
+          <div class="panel-body">
+            <div class="grid-2" style="gap:40px;">
+              <div>
+                <div class="slider-row">
+                  <div class="slider-head"><span>战兵</span><strong id="val-soldiers">6000</strong></div>
+                  <input id="calc-soldiers" type="range" class="calc-input" min="1000" max="20000" step="500" value="6000" />
+                </div>
+                <div class="slider-row">
+                  <div class="slider-head"><span>随军民夫（能背粮，也要吃粮）</span><strong id="val-laborers">4000</strong></div>
+                  <input id="calc-laborers" type="range" class="calc-input" min="0" max="15000" step="500" value="4000" />
+                </div>
+                <div class="slider-row">
+                  <div class="slider-head"><span>单程距离（旬）</span><strong id="val-dist-ticks">6</strong></div>
+                  <input id="calc-dist-ticks" type="range" class="calc-input" min="2" max="14" value="6" />
+                </div>
+                <div class="slider-row">
+                  <div class="slider-head"><span>沿途城邦对汉影响力 · 决定肯不肯给食</span><strong id="val-city-inf">45</strong></div>
+                  <input id="calc-city-inf" type="range" class="calc-input" min="0" max="100" value="45" />
+                </div>
+              </div>
+              <div>
+                <svg id="calc-food-svg" class="food-chart" viewBox="0 0 560 175" preserveAspectRatio="none"></svg>
+                <div id="calc-food-summary" class="food-summary"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== IV · 设计文档 ==================== -->
+    <section id="tab-docs" class="tab-view" data-route="docs">
+      <header class="wrap page-head">
+        <div>
+          <p class="chapter-mark"><span class="chapter-no">卷肆</span><span>文档</span><span class="en">典籍</span></p>
+          <h1 class="page-title">设计规范与开发工单</h1>
+        </div>
+        <p class="page-lede">从设计总纲到十个系统的规则细则，再到拆给程序的二十四张工单。左侧选一篇开始读；内容与仓库中的 Markdown 原文同步。</p>
+      </header>
+
+      <div class="wrap view-body">
+        <div class="docs-layout">
+          <aside id="docs-sidebar-nav" class="docs-nav"></aside>
+          <article class="doc-viewer">
+            <div id="doc-viewer-header" class="doc-viewer-header"></div>
+            <div id="doc-viewer-body"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <div>
+          <a class="footer-brand" href="#/"><svg class="brand-mark"><use href="#i-mark" /></svg><span class="brand-name">西域</span></a>
+          <p class="footer-note">《西域 · 汉匈争霸》的设计与验证工作台。地图为依史料方位整理的战略示意，并非经纬度投影；人物与事件取材于《史记》《汉书》，为游戏性有所取舍。</p>
+        </div>
+        <div>
+          <p class="footer-h">浏览</p>
+          <nav class="footer-links" aria-label="页脚导航">
+            <a href="play.html">进入游戏</a>
+            <a href="#/sandbox">推演沙盘</a>
+            <a href="#/validation">模拟验证</a>
+            <a href="#/formulas">公式实验</a>
+            <a href="#/docs">设计文档</a>
+          </nav>
+        </div>
+        <div>
+          <p class="footer-h">剧本</p>
+          <nav class="footer-links" aria-label="剧本">
+            <a href="play.html">楼兰姑师</a>
+            <a href="play.html">漠北之后</a>
+            <a href="play.html">西域都护府</a>
+          </nav>
+        </div>
+        <div>
+          <p class="footer-h">版本说明</p>
+          <p class="colophon">标题以江西拙楷书写，正文用霞鹜文楷，数据使用 IBM Plex Mono。规则引擎有浏览器原生与 Python 两套实现，结果互相校验。</p>
+        </div>
+      </div>
+      <p class="footer-wordmark" aria-hidden="true">西域</p>
+      <div class="footer-base">
+        <span>© 2026 西域 · 汉匈争霸 · 内部试玩版</span>
+        <span>游戏内按 <kbd>Space</kbd> 结束本季</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/bundle_data.js"></script>
+  <script src="assets/docs_bundle.js"></script>
+  <script src="assets/js_engine.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>

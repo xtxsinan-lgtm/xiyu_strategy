@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>西域 · 汉匈争霸 — 漆案舆图战略沙盘</title>
+  <meta name="theme-color" content="#1C1511" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23A33A2A'/%3E%3Crect x='3' y='3' width='26' height='26' fill='none' stroke='%23F2EAD8' stroke-width='1.5'/%3E%3Ctext x='16' y='22.5' font-size='17' text-anchor='middle' fill='%23F2EAD8' font-family='serif'%3E%E6%B1%89%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-regular.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/lxgwwenkai-bold.css" />
+  <link rel="stylesheet" href="assets/game_play.css" />
+</head>
+<body class="faction-han">
+<!-- 「漆案舆图」：1920×1080 逻辑舞台，等比缩放并向多余方向扩展（同 Godot stretch canvas_items + aspect expand）。
+     分区与配色见 docs/ui_desk_spec.md，Godot 版 ui/main.gd 使用同一套坐标。 -->
+<div id="viewport">
+<div id="stage">
+
+  <!-- ==================== 顶栏 TopBar（漆面，高 60） ==================== -->
+  <header class="top-bar">
+    <button class="tb-faction" id="btn-open-scenario-modal" title="切换执政阵营或重选历史剧本">
+      <span class="seal" id="hud-seal">汉</span>
+      <span class="tb-who">
+        <span class="tb-leader" id="hud-leader-title">博望侯 · 张骞</span>
+        <span class="tb-sub" id="hud-scenario-subtitle">《漠北之后》</span>
+      </span>
+    </button>
+
+    <div class="tb-metrics" id="hud-asymmetric-pills"></div>
+
+    <div class="tb-date">
+      <span class="tb-date-main" id="hud-date-badge">前119年 春</span>
+      <span class="tb-date-sub" id="hud-order-count-badge">第 1 / 40 季</span>
+    </div>
+
+    <nav class="tb-menu" aria-label="系统菜单">
+      <button class="tb-btn" id="btn-open-chronicle-modal" title="本季纪事与太史公评（Tab）">
+        <svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6M9 11h4"/></svg><span>纪事</span>
+      </button>
+      <button class="tb-btn" id="btn-open-save-modal" title="存档 / 读档">
+        <svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4"/><path d="M8 20v-6h8v6"/></svg><span>存档</span>
+      </button>
+      <button class="tb-btn" id="btn-open-newgame-modal" title="新战役：剧本 / 阵营 / 难度">
+        <svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-6h6v6"/></svg><span>剧本</span>
+      </button>
+      <button class="tb-btn" id="btn-open-help" title="操作说明与百科（?）">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><path d="M12 16.6v.4"/></svg><span>说明</span>
+      </button>
+      <a class="tb-btn" href="index.html" title="设计验证工作台（模拟统计 · 文档）">
+        <svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 16V10M12 16V6M17 16v-4"/></svg><span>工作台</span>
+      </a>
+    </nav>
+  </header>
+
+  <!-- ==================== 舆图 MapDesk（画框 + 地图 + 抽屉） ==================== -->
+  <section class="map-desk" id="map-desk">
+    <div class="map-frame">
+      <div class="map-viewport" id="map-viewport">
+        <svg id="game-map-svg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="map-vignette"></div>
+        <div id="godot-route-tooltip" class="godot-route-tooltip"></div>
+
+        <!-- 左上：古典双线折角题签 (Cartouche) -->
+        <div class="map-cartouche" id="map-cartouche">
+          <span class="cartouche-corner tl"></span>
+          <span class="cartouche-corner tr"></span>
+          <span class="cartouche-corner bl"></span>
+          <span class="cartouche-corner br"></span>
+          <div class="cartouche-title">西域都护舆图</div>
+          <div class="cartouche-rule"><span class="cartouche-diamond"></span></div>
+          <div class="cartouche-sub" id="map-cartouche-sub">前119年 · 道里据《汉书·西域传》</div>
+          <div class="cartouche-mode" id="map-cartouche-mode">與图视角：疆域与臣属态势</div>
+        </div>
+
+        <!-- 左上（题签下）：舆图城塞速览卡 (RegionInspectorCard 对标) -->
+        <div class="map-inspector-card" id="map-inspector-card" aria-hidden="true"></div>
+
+        <!-- 右上：72刻度古典方位罗盘 (Compass Rose) -->
+        <svg class="map-compass" id="map-compass-svg" viewBox="-48 -48 96 96" aria-hidden="true"></svg>
+
+        <!-- 右上（罗盘下）：可锁定因果拆解与趋势浮窗栈 (CausalTooltipManager 对标) -->
+        <div class="causal-tooltip-stack" id="causal-tooltip-stack"></div>
+
+        <!-- 顶部居中：九旬推演回放 -->
+        <div class="wego-replay-overlay" id="wego-replay-bar">
+          <div class="wego-head">
+            <strong id="wego-replay-title">推演本季九旬军政</strong>
+            <span class="wego-tick" id="wego-replay-tick-label">第 1 / 9 旬</span>
+          </div>
+          <div class="mini-bar wego-bar"><div class="mini-bar-fill" id="wego-replay-progress" style="width:10%;"></div></div>
+          <div class="wego-toast" id="wego-replay-event-toast"></div>
+        </div>
+
+        <!-- 顶部居中：下令反馈 -->
+        <div class="order-toast" id="order-toast"></div>
+
+        <!-- 左下：舆图视角切换条 (Map Mode Bar) + 图层浮层 + 古典黑白交替比例尺 -->
+        <div class="map-bottom-left-bar" id="map-layers">
+          <div class="map-mode-pills" id="map-mode-pills" role="group" aria-label="舆图热力与专题视角">
+            <button type="button" class="map-mode-pill active" data-map-mode="political" title="政治疆域、宗主归属与册封态势">疆域臣属</button>
+            <button type="button" class="map-mode-pill" data-map-mode="influence" title="汉室教化影响力 vs 匈奴铁骑威吓对比热力">汉匈倾侧</button>
+            <button type="button" class="map-mode-pill" data-map-mode="supply" title="各国存粮、塞外军屯与万里自动粮道">仓廪粮道</button>
+            <button type="button" class="map-mode-pill" data-map-mode="intel" title="汉塞烽燧亭障、迷雾视野层级与讨伐罪状">烽燧视野</button>
+            <button type="button" class="map-mode-pill" data-map-mode="military" title="驻军兵力、城防等级与敌军 30/60/90 日威胁半径">兵力态势</button>
+          </div>
+          <button class="map-ctrl wide" id="btn-layers" title="底图细节开关与舆图图例" aria-expanded="false">
+            <svg viewBox="0 0 24 24"><path d="M12 4l8.5 4.5L12 13 3.5 8.5z"/><path d="M3.5 12.5L12 17l8.5-4.5"/><path d="M3.5 16.5L12 21l8.5-4.5"/></svg><span>底图 · 图例</span>
+          </button>
+          <div class="map-scale-bar" aria-hidden="true" title="汉代驿程比例尺（百里约合今 41.5 公里）">
+            <div class="scale-label">比例尺 · 五百里 (210 km)</div>
+            <div class="scale-segments">
+              <span class="seg-dark"></span><span class="seg-light"></span><span class="seg-dark"></span><span class="seg-light"></span>
+            </div>
+            <div class="scale-ticks"><span>0</span><span>250里</span><span>500里</span></div>
+          </div>
+
+          <div class="layers-pop" id="layers-pop">
+            <div class="pop-title">舆图要素开关</div>
+            <label class="layer-row"><input type="checkbox" id="chk-layer-trade" checked /><span>丝路商道</span><small>畅通南北道</small></label>
+            <label class="layer-row"><input type="checkbox" id="chk-layer-supply" checked /><span>万里粮道</span><small>自动转运补给线</small></label>
+            <label class="layer-row"><input type="checkbox" id="chk-layer-tokens" checked /><span>大军节旗</span><small>驻军与行军序列</small></label>
+            <label class="layer-row"><input type="checkbox" id="chk-layer-fog" checked /><span>烽燧军屯</span><small>亭障 · 屯田 · 罪状</small></label>
+            <label class="layer-row"><input type="checkbox" id="chk-layer-threat" /><span>铁骑威胁</span><small>敌军 30/60/90 日</small></label>
+            <label class="layer-row"><input type="checkbox" id="chk-layer-zone" checked /><span>政区设色</span><small>诸国疆域与斜纹</small></label>
+            <label class="layer-row"><input type="checkbox" id="chk-layer-grid" checked /><span>计里画方</span><small>干支经纬与水系</small></label>
+            <div class="pop-title">舆图图例</div>
+            <div class="legend-grid">
+              <span><i class="lg-dot" style="background:#c0392b"></i>汉郡直辖</span>
+              <span><i class="lg-dot" style="background:#e08a80"></i>汉内属国</span>
+              <span><i class="lg-dot" style="background:#5d4037"></i>匈奴王庭</span>
+              <span><i class="lg-dot" style="background:#a1887f"></i>匈奴服属</span>
+              <span><i class="lg-line lg-gold"></i>畅通丝路</span>
+              <span><i class="lg-line lg-dash"></i>大碛 / 山道</span>
+              <span><i class="lg-line lg-green"></i>自动粮道</span>
+              <span><i class="lg-ring"></i>交战围城</span>
+            </div>
+            <div class="pop-note">據《汉书·西域传》道里与绿洲山口通道绘制，悬停古道可查考实测里程与行军日耗。</div>
+          </div>
+        </div>
+
+        <!-- 右下：镜头 -->
+        <div class="map-hud-controls">
+          <button class="map-ctrl" id="btn-zoom-in" title="放大（滚轮 / 双指）">＋</button>
+          <button class="map-ctrl" id="btn-zoom-out" title="缩小（滚轮 / 双指）">－</button>
+          <button class="map-ctrl" id="btn-zoom-reset" title="全图复位">
+            <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          </button>
+          <button class="map-ctrl" id="btn-focus-capital" title="聚焦帅帐">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+    <!-- 画框带：黑白交替刻度 + 干支坐标随镜头更新 -->
+    <svg class="map-frame-svg" id="map-frame-svg" aria-hidden="true"></svg>
+
+    <!-- ==================== 抽屉 Drawer（含顶部快速切换标签栏 + 双栏高密度卷宗） ==================== -->
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-tabs" id="drawer-tabs" role="tablist" aria-label="六部案卷快速切换">
+        <button type="button" class="drawer-tab" data-tab-panel="inspector">F1 图籍 · 城塞驻军</button>
+        <button type="button" class="drawer-tab" data-tab-panel="court" id="dtab-court">F2 诏书 · 朝廷因果</button>
+        <button type="button" class="drawer-tab" data-tab-panel="diplomacy">F3 符节 · 西域诸国</button>
+        <button type="button" class="drawer-tab" data-tab-panel="logistics">F4 仓廪 · 粮道军屯</button>
+        <button type="button" class="drawer-tab" data-tab-panel="military">F5 虎符 · 军令远征</button>
+        <button type="button" class="drawer-tab" data-tab-panel="chronicle">F6 史册 · 战报纪事</button>
+      </div>
+      <div class="drawer-panel-box">
+        <div class="drawer-head">
+          <span class="drawer-seal" id="drawer-seal">城</span>
+          <div class="drawer-titles">
+            <div class="drawer-title" id="drawer-title">城塞</div>
+            <div class="drawer-sub" id="drawer-sub">所选城邑与驻军</div>
+          </div>
+          <span class="drawer-key" id="drawer-key">F1 · 点击指标可看因果拆解 · Esc 收起</span>
+          <button class="drawer-close" id="btn-drawer-close" title="收起（Esc）">×</button>
+        </div>
+        <div class="drawer-scroll">
+          <div class="dock-content" id="dock-panel-body"></div>
+
+          <!-- 远征粮秣预演（在「军令」抽屉中联动显示） -->
+          <div class="plan-curve-drawer" id="plan-curve-drawer">
+            <div class="drawer-header" id="btn-toggle-curve-drawer">
+              <span class="curve-title" id="curve-drawer-title">远征粮秣预演</span>
+              <span class="badge badge-green" id="curve-garrison-badge">就食城仓</span>
+            </div>
+            <div class="curve-body">
+              <div class="curve-wrap">
+                <svg id="plan-food-curve-svg" viewBox="0 0 540 135" preserveAspectRatio="xMidYMid meet"></svg>
+              </div>
+              <div id="plan-food-curve-meta" class="curve-meta"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- ==================== 军情栏 Outliner（宽 300） ==================== -->
+  <aside class="outliner" id="outliner">
+    <section class="ol-sec">
+      <div class="ol-head"><span>所选</span><small id="ol-selected-kind">城邑</small></div>
+      <div id="outliner-selected"></div>
+    </section>
+    <!-- 新手教学（收在军情栏，联动聚光灯高亮） -->
+    <section class="ol-sec tutorial-floating-card" id="tutorial-card">
+      <div class="tut-head">
+        <span class="tut-title" id="tut-title">新手教学</span>
+        <div class="tut-nav">
+          <button class="btn btn-xs" id="btn-tut-prev" title="上一课">‹</button>
+          <button class="btn btn-xs" id="btn-tut-next" title="下一课">›</button>
+          <button class="btn btn-xs btn-ghost" id="btn-tut-close" title="收起教学（可在「说明」中重新打开）">×</button>
+        </div>
+      </div>
+      <div class="tut-body" id="tut-body"></div>
+      <div class="tut-actions" id="tut-action-bar"></div>
+    </section>
+    <section class="ol-sec ol-alerts">
+      <div class="ol-head"><span>急报</span><small id="ol-alert-count"></small></div>
+      <div id="outliner-alerts"></div>
+    </section>
+    <section class="ol-sec ol-queue">
+      <div class="dock-footer-queue" id="dock-order-bar"></div>
+      <div class="ol-tools">
+        <button class="btn btn-sm btn-gold" id="btn-advisor-fill" title="由幕僚拟定本季推荐军令">幕僚代拟</button>
+        <button class="btn btn-sm" id="btn-undo-season" title="回退至上一季初">悔棋</button>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ==================== 案上器物 DeskBar（漆面，高 96） ==================== -->
+  <footer class="desk-bar">
+    <div class="desk-props" id="desk-props">
+      <button class="desk-prop" data-panel="inspector" title="展开城邑图籍：所选城邑的户口、仓储、邦交与驻军（F1）">
+        <i class="prop-icon i-tuji"></i>
+        <span class="prop-text"><span class="prop-name">图籍</span><span class="prop-act">城塞与驻军 · F1</span></span>
+      </button>
+      <button class="desk-prop" data-panel="court" id="prop-court" title="展开诏书：长安诏令、国策方略、持节矫诏与因果网（F2）">
+        <i class="prop-icon i-zhaoshu" id="prop-court-icon"></i>
+        <span class="prop-text"><span class="prop-name" id="prop-court-name">诏书</span><span class="prop-act" id="prop-court-act">朝廷与因果 · F2</span></span>
+      </button>
+      <button class="desk-prop" data-panel="diplomacy" title="手持符节：西域诸国矩阵与都护四阶宏图（F3）">
+        <i class="prop-icon i-fujie"></i>
+        <span class="prop-text"><span class="prop-name">符节</span><span class="prop-act">西域诸国 · F3</span></span>
+      </button>
+      <button class="desk-prop" data-panel="speed" id="prop-speed" title="拨动漏刻：切换九旬回放速度（慢 / 快 / 瞬时）">
+        <i class="prop-icon i-louke"></i>
+        <span class="prop-text"><span class="prop-name">漏刻</span><span class="prop-act" id="prop-speed-act">回放：快</span></span>
+      </button>
+      <button class="desk-prop" data-panel="logistics" title="查点仓廪：粮道瀑布流账本、自动补给线与军屯矩阵（F4）">
+        <i class="prop-icon i-canglin"></i>
+        <span class="prop-text"><span class="prop-name">仓廪</span><span class="prop-act">粮道与屯田 · F4</span></span>
+      </button>
+      <button class="desk-prop" data-panel="military" title="合验虎符：在编军团、远征计划与0-18旬不归点曲线（F5）">
+        <i class="prop-icon i-hufu"></i>
+        <span class="prop-text"><span class="prop-name">虎符</span><span class="prop-act">军令与远征 · F5</span></span>
+      </button>
+      <button class="desk-prop" data-panel="chronicle" title="翻阅史册：会战详报、伤亡拆解与太史公编年纪事（F6）">
+        <i class="prop-icon i-shice"></i>
+        <span class="prop-text"><span class="prop-name">史册</span><span class="prop-act">战报与纪事 · F6</span></span>
+      </button>
+    </div>
+    <button class="seal-btn" id="btn-end-season" title="用印：结束本季，推演九旬（空格键）">
+      <span class="seal-main" id="seal-main">结束本季</span>
+      <span class="seal-sub" id="seal-sub">Space · 已拟 0 令</span>
+    </button>
+    <select id="sel-replay-speed" hidden>
+      <option value="220">慢</option>
+      <option value="110" selected>快</option>
+      <option value="0">瞬时</option>
+    </select>
+  </footer>
+
+  <!-- 新手引导聚光灯高亮框 -->
+  <div class="onboarding-spotlight" id="onboarding-spotlight" aria-hidden="true"></div>
+
+  <!-- ==================== 弹窗：操作说明 ==================== -->
+  <div class="modal-backdrop" id="modal-help">
+    <div class="modal-scroll" style="max-width:740px;">
+      <div class="modal-title-bar">
+        <h2>操作说明与因果机制</h2>
+        <button class="btn btn-sm btn-ghost" id="btn-help-close" title="关闭">×</button>
+      </div>
+      <div class="help-grid">
+        <div><b>舆图与五维视角</b>滚轮缩放、拖动平移；左下角切换「疆域臣属 / 汉匈倾侧 / 仓廪粮道 / 烽燧视野 / 兵力态势」五种专题视角。</div>
+        <div><b>案上器物与顶栏标签</b>底部七件器物或抽屉顶部标签栏可一键切换六部卷宗（F1–F6），按 Esc 收起。</div>
+        <div><b>可锁定因果拆解</b>点击顶栏任意指标或抽屉内指标卡（带「因果」标记），即可弹出实时因果贡献拆解与历史趋势折线，最多同时锁定 3 张。</div>
+        <div><b>国策杠杆与拟令</b>抽屉内提供多档位方略按钮与即时行动；拟入的命令显示在右侧「本季军令」，可随时撤回。</div>
+        <div><b>用印与九旬推演</b>右下角朱印（空格）结束本季，汉匈双方按九旬（90日）同时推进并回放战局。</div>
+        <div><b>快捷键</b>F1 图籍 · F2 诏书/王庭 · F3 符节 · F4 仓廪 · F5 虎符 · F6 史册 · Tab 季初纪事 · Space 用印</div>
+      </div>
+      <div class="modal-footer">
+        <span class="note">规范与 Godot 版一致：docs/ui_desk_spec.md</span>
+        <button class="btn btn-gold" id="btn-toggle-tutorial">显示 / 收起新手教学</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：本季纪事与待办 ==================== -->
+  <div class="modal-backdrop" id="modal-season-summary">
+    <div class="modal-scroll modal-chronicle">
+      <div class="modal-title-bar">
+        <h2 id="sum-modal-title">本季纪事</h2>
+        <div class="modal-title-tools">
+          <button class="btn btn-sm btn-ghost" id="btn-sum-toggle-style">文言 / 白话</button>
+          <button class="btn btn-sm btn-ghost" id="btn-sum-close" title="关闭">×</button>
+        </div>
+      </div>
+      <div class="chronicle-quote" id="sum-modal-chronicle"></div>
+      <div class="section-label">本季要务</div>
+      <div id="sum-modal-todos"></div>
+      <div class="modal-footer">
+        <label class="chk-inline">
+          <input type="checkbox" id="chk-auto-popup-summary" /> 每季初自动展开（Tab 键随时呼出）
+        </label>
+        <div class="modal-footer-btns">
+          <button class="btn btn-gold" id="btn-sum-advisor">采纳幕僚建议</button>
+          <button class="btn btn-han" id="btn-sum-enter">入局筹策</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：新战役 / 剧本 / 存档 ==================== -->
+  <div class="modal-backdrop" id="modal-scenario-menu">
+    <div class="modal-scroll modal-wide">
+      <div class="modal-title-bar">
+        <h2>新战役</h2>
+        <button class="btn btn-sm btn-ghost" id="btn-scen-close" title="返回沙盘">×</button>
+      </div>
+
+      <div class="section-label">执政阵营</div>
+      <div class="choice-grid choice-2">
+        <label class="choice-card side-han">
+          <input type="radio" name="scen-side" value="han" checked />
+          <div class="choice-seal">汉</div>
+          <div class="choice-body">
+            <div class="choice-title">大汉 · 持节使臣</div>
+            <div class="choice-desc">经营万里粮道，周旋长安诏令，遣使抚谕西域诸国，迎降日逐王，奏立西域都护府。</div>
+            <div class="choice-goal">胜利：都护功业 G ≥ 100</div>
+          </div>
+        </label>
+        <label class="choice-card side-xn">
+          <input type="radio" name="scen-side" value="xiongnu" />
+          <div class="choice-seal">匈</div>
+          <div class="choice-body">
+            <div class="choice-title">匈奴 · 撑犁孤涂单于</div>
+            <div class="choice-desc">均分赏赐以安四部，三会诸王于龙城蹛林，令僮仆都尉赋敛西域，伺机南下河西。</div>
+            <div class="choice-goal">胜利：威服 W ≥ 100 或夺取河西</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="section-label">历史篇章</div>
+      <input type="hidden" id="modal-sel-scenario" value="mo_bei_zhi_hou" />
+      <div class="choice-grid choice-3" id="scenario-cards">
+        <button type="button" class="scen-card" data-scen="lou_lan_gu_shi">
+          <div class="scen-year">前108年 · 12季</div>
+          <div class="scen-name">楼兰姑师</div>
+          <div class="scen-desc">赵破奴轻骑破楼兰。短局，附五课教学。</div>
+        </button>
+        <button type="button" class="scen-card active" data-scen="mo_bei_zhi_hou">
+          <div class="scen-year">前119年 · 40季</div>
+          <div class="scen-name">漠北之后</div>
+          <div class="scen-desc">张骞再使西域。主剧本，完整沙盘。</div>
+        </button>
+        <button type="button" class="scen-card" data-scen="du_hu_fu">
+          <div class="scen-year">前68年 · 36季</div>
+          <div class="scen-name">西域都护府</div>
+          <div class="scen-desc">郑吉五争车师，日逐王来降。</div>
+        </button>
+      </div>
+
+      <div class="form-row">
+        <label class="form-field">难度
+          <select id="modal-sel-difficulty">
+            <option value="easy">轻车 · 宽裕</option>
+            <option value="standard" selected>持节 · 标准</option>
+            <option value="hard">虽远必诛 · 严苛</option>
+          </select>
+        </label>
+        <label class="form-field">对手性格
+          <select id="modal-sel-bot">
+            <option value="balanced" selected>均衡</option>
+            <option value="aggressive">猛攻秋掠</option>
+            <option value="diplomatic">怀柔固盟</option>
+            <option value="opportunist">奇谋截击</option>
+          </select>
+        </label>
+        <button class="btn btn-han btn-lg" id="btn-start-selected-scenario">开启新战役</button>
+      </div>
+
+      <div class="section-label">存档</div>
+      <div id="save-slots-container" class="save-grid"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 弹窗：战报详情 ==================== -->
+  <div class="modal-backdrop" id="modal-battle-detail">
+    <div class="modal-scroll" style="max-width:680px;">
+      <div class="modal-title-bar">
+        <h2 id="battle-modal-title">战报</h2>
+        <button class="btn btn-sm btn-ghost" id="btn-battle-close" title="关闭">×</button>
+      </div>
+      <div id="battle-modal-body"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+  <!-- 静态数据包与可玩游戏主控制器 -->
+  <script src="assets/bundle_data.js"></script>
+  <script src="assets/js_engine.js"></script>
+  <script src="assets/game_play.js"></script>
+</body>
+</html>
