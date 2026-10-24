@@ -1323,3 +1323,69 @@ label { color: var(--ink-2); }
   bottom: 0;
   background: repeating-linear-gradient(45deg, rgba(163, 58, 42, 0.65), rgba(163, 58, 42, 0.65) 4px, rgba(214, 160, 74, 0.65) 4px, rgba(214, 160, 74, 0.65) 8px);
 }
+
+/* —— 试玩体验一致性：目标卡 / 季结算 / 分赏预览 / 可读性 —— */
+.ol-goal { background: linear-gradient(180deg, #f7f0e0 0%, var(--silk-2) 100%); }
+.goal-card { font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
+.goal-card .goal-progress {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--ink);
+  margin: 4px 0 6px;
+}
+.goal-card .goal-check { margin: 0; padding: 0; list-style: none; }
+.goal-card .goal-check li {
+  display: flex; gap: 6px; align-items: flex-start;
+  padding: 2px 0; border-bottom: 1px dashed var(--rule-soft);
+}
+.goal-card .goal-check li:last-child { border-bottom: 0; }
+.goal-card .goal-check .mark { flex: 0 0 auto; width: 14px; color: var(--muted); }
+.goal-card .goal-check .done .mark { color: var(--jade); }
+.goal-card .goal-alt {
+  margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--rule);
+  font-size: 11.5px; color: var(--muted);
+}
+.goal-card .goal-alt b { color: var(--ink); font-weight: 600; }
+
+.season-brief {
+  display: grid; gap: 8px; margin-bottom: 12px;
+  padding: 10px 12px; background: var(--silk-3); border: 1px solid var(--rule);
+}
+.season-brief .sb-row { font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.season-brief .sb-row b { color: var(--ink); }
+.season-brief .sb-delta-up { color: var(--jade); font-weight: 700; }
+.season-brief .sb-delta-down { color: var(--cinnabar); font-weight: 700; }
+.season-brief .sb-title {
+  font-family: var(--font-title); font-size: 15px; letter-spacing: 0.12em; margin-bottom: 2px;
+}
+
+.advisor-plans { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.advisor-plan {
+  text-align: left; width: 100%; cursor: pointer;
+  padding: 7px 8px; background: var(--silk-3); border: 1px solid var(--rule-soft);
+  font-size: 12px; line-height: 1.4; color: var(--ink-2);
+}
+.advisor-plan:hover { border-color: var(--cinnabar); background: #fff; }
+.advisor-plan .ap-title { font-family: var(--font-title); font-size: 13.5px; font-weight: 700; color: var(--ink); }
+.advisor-plan .ap-purpose { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.advisor-plan .ap-cost { font-family: var(--font-mono); font-size: 11px; color: #8a6524; margin-top: 2px; }
+.advisor-plan.critical { border-left: 3px solid var(--cinnabar); }
+
+.reward-preview {
+  margin-top: 6px; padding: 7px 8px; background: #fff8ea; border: 1px dashed var(--bronze);
+  font-size: 11.5px; line-height: 1.45; color: var(--ink-2);
+}
+.reward-preview b { font-family: var(--font-mono); }
+
+.garrison-banner {
+  margin: 0 0 8px; padding: 8px 10px; background: #fff4e8; border: 1px solid var(--bronze);
+  border-left: 3px solid var(--cinnabar); font-size: 12.5px; line-height: 1.45;
+}
+.garrison-banner .gb-acts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+
+/* 地图自适应：减少留白，正文可读 */
+.map-frame { padding: 12px; }
+.map-frame::after { inset: 11px; }
+.tb-metrics .metric-value { font-size: 18px; }
+.tb-metrics .metric-label { font-size: 12px; }
+.outliner .ol-head span { font-size: 15px; }
+.sel-name { font-size: 18px; }
+.drawer-body, .d-compact-summary, .act-meta { font-size: 13px; }
